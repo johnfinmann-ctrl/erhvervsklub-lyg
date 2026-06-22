@@ -1,15 +1,20 @@
-const CACHE_NAME = 'lyg-erhverv-v1';
+/* Lyngbygaard Erhvervsklub — Service Worker v2 */
+const CACHE = 'lyg-ek-v2';
+const BASE  = self.registration.scope;          // e.g. https://johnfinmann-ctrl.github.io/erhvervsklub-lyg/
+
 const ASSETS = [
-  '/',
-  '/index.html',
-  '/style.css',
-  '/app.js',
-  '/manifest.json'
+  BASE,
+  BASE + 'index.html',
+  BASE + 'style.css',
+  BASE + 'app.js',
+  BASE + 'manifest.json',
+  BASE + 'icons/icon-192.png',
+  BASE + 'icons/icon-512.png',
 ];
 
 self.addEventListener('install', e => {
   e.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
+    caches.open(CACHE).then(c => c.addAll(ASSETS).catch(() => {}))
   );
   self.skipWaiting();
 });
@@ -17,20 +22,21 @@ self.addEventListener('install', e => {
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
     )
   );
   self.clients.claim();
 });
 
 self.addEventListener('fetch', e => {
+  // Only handle same-origin GET requests
+  if (e.request.method !== 'GET') return;
   e.respondWith(
-    caches.match(e.request).then(cached => cached || fetch(e.request))
+    caches.match(e.request).then(hit => hit || fetch(e.request).catch(() => caches.match(BASE + 'index.html')))
   );
 });
 
-// Push notification support (local scheduling)
 self.addEventListener('notificationclick', e => {
   e.notification.close();
-  e.waitUntil(clients.openWindow('/'));
+  e.waitUntil(clients.openWindow(BASE));
 });

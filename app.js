@@ -1,1283 +1,1037 @@
-/* ============================================================
-   LYNGBYGAARD ERHVERVSKLUB — APP.JS
-   Al konfiguration og data samlet ét sted.
-   ============================================================ */
+/* ================================================================
+   LYNGBYGAARD ERHVERVSKLUB — app.js v2
+   Al konfiguration samlet øverst. Ret her – ingen andre steder.
+   ================================================================ */
 
 const CONFIG = {
-  /* ── Klub ── */
-  klubNavn:    'Lyngbygaard Erhvervsklub',
-  tagline:     'Erhverv, netværk og golfoplevelser i Lyngbygaard Golf',
-  adresse:     'Lyngbygårdsvej 29, 8220 Brabrand',
-  telefon:     '87 44 10 70',
-  email:       'info@lyg.dk',
-  website:     'https://lyg.dk',
+  /* Klub */
+  klubNavn:  'Lyngbygaard Erhvervsklub',
+  tagline:   'Erhverv, netværk og golfoplevelser i Lyngbygaard Golf',
+  adresse:   'Lyngbygårdsvej 29, 8220 Brabrand',
+  telefon:   '87 44 10 70',
+  email:     'info@lyg.dk',
+  website:   'https://lyg.dk',
+  golfboxUrl:'https://www.golfbox.dk',
 
-  /* ── Farver (justér her, ikke i CSS) ── */
-  farver: {
-    primaer:   '#0d2b1a',   // mørkegrøn
-    accent:    '#b8973a',   // guld
-    lys:       '#f5f0e8',   // cremet hvid
-    tekst:     '#1a1a1a',
-    muted:     '#6b7280',
-  },
+  /* Hero */
+  heroTekst:   'Erhverv, netværk og golfoplevelser',
+  heroUnder:   'Lyngbygaard Erhvervsklub samler virksomheder i Aarhus-regionen om golf, relationer og fællesskab.',
+  heroBillede: 'https://images.unsplash.com/photo-1535131749006-b7f58c99034b?w=1400&q=80',
 
-  /* ── Hero ── */
-  heroTekst:    'Erhverv, netværk og golfoplevelser i Lyngbygaard Golf',
-  heroUnder:    'Bliv en del af erhvervsklubben og oplev golf, relationer og fællesskab i professionelle rammer.',
-  heroBillede:  'https://images.unsplash.com/photo-1535131749006-b7f58c99034b?w=1400&q=80',
-
-  /* ── Admin ── */
+  /* Admin */
   adminKode: '1234',
 
-  /* ── Kontaktpersoner ── */
-  kontaktPersoner: [
-    { navn: 'Lyngbygaard Golf', titel: 'Erhvervsklubben', telefon: '87 44 10 70', email: 'info@lyg.dk' }
-  ],
-
-  /* ── Golf pakker ── */
+  /* Golf-pakker */
   golfPakker: [
-    {
-      id: 'companyday',
-      titel: 'Company Day',
-      pris: 'Fra 4.500 kr./hold',
-      beskrivelse: 'En hel dag på banen med morgenmad, frokost og 18 huller. Perfekt til teambuilding og kundepleje.',
-      inkluderer: ['18 huller golf', 'Morgenmad', 'Frokost', 'Leje af golfvogn', 'Priser og diplomer']
-    },
-    {
-      id: 'kundearrangement',
-      titel: 'Kundearrangement',
-      pris: 'Fra 2.800 kr./hold',
-      beskrivelse: 'Eksklusiv golfoplevelse til jeres vigtigste kunder med VIP-service og middag.',
-      inkluderer: ['9 eller 18 huller golf', 'VIP-velkomst', 'Middag på klubhuset', 'Fotoservice']
-    },
-    {
-      id: 'medarbejderdag',
-      titel: 'Medarbejderdag',
-      pris: 'Fra 1.900 kr./person',
-      beskrivelse: 'Giv dine medarbejdere en uforglemmelig dag med golf og samvær.',
-      inkluderer: ['9 huller golf', 'Forfriskninger undervejs', 'Afslutningsfest', 'Overraskelser']
-    },
-    {
-      id: 'firmagolf',
-      titel: 'FirmaGolf',
-      pris: 'Fra 950 kr./person',
-      beskrivelse: 'Hurtig og social golfoplevelse – perfekt til firmaets eftermiddag.',
-      inkluderer: ['Driving range', '9 huller golf', 'Sandwich & øl', 'Konkurrencer']
-    },
-    {
-      id: 'konference',
-      titel: 'Konference + Golf',
-      pris: 'Fra 6.500 kr./hold',
-      beskrivelse: 'Kombinér jeres næste konference eller strategidag med en runde golf.',
-      inkluderer: ['Mødelokale hele dagen', '18 huller golf', 'Forplejning', 'Overnatning v/aftale']
-    },
-    {
-      id: 'vip',
-      titel: 'VIP-arrangement',
-      pris: 'Tilbud på forespørgsel',
-      beskrivelse: 'Skræddersyet VIP-oplevelse til særlige gæster eller eksklusive anledninger.',
-      inkluderer: ['Fuld service', 'Personlig caddie', 'Gourmetmiddag', 'Eksklusivt program']
-    }
+    { id:'gp1', titel:'Company Day',        pris:'Fra 4.500 kr./hold',       beskrivelse:'En hel dag på banen med morgenmad, frokost og 18 huller. Perfekt til teambuilding og kundepleje.',         inkl:['18 huller golf','Morgenmad & frokost','Golfvogn inkl.','Priser & diplomer'] },
+    { id:'gp2', titel:'Kundearrangement',   pris:'Fra 2.800 kr./hold',       beskrivelse:'Eksklusiv golfoplevelse til jeres vigtigste kunder med VIP-service og middag efter runden.',             inkl:['9 eller 18 huller','VIP-velkomst','Middag på klubhuset','Fotoservice'] },
+    { id:'gp3', titel:'Medarbejderdag',     pris:'Fra 1.900 kr./person',     beskrivelse:'Giv dine medarbejdere en dag de husker — med golf, samvær og god stemning.',                              inkl:['9 huller golf','Forfriskninger undervejs','Afslutningsfest','Overraskelser'] },
+    { id:'gp4', titel:'FirmaGolf',          pris:'Fra 950 kr./person',       beskrivelse:'Hurtig og social golfoplevelse — perfekt til firmaets eftermiddag. Ingen golferfaring nødvendig.',        inkl:['Driving range','9 huller golf','Sandwich & øl','Konkurrencer'] },
+    { id:'gp5', titel:'Konference + Golf',  pris:'Fra 6.500 kr./hold',       beskrivelse:'Kombinér jeres næste strategidag med en runde golf. Vi sørger for lokaler og forplejning.',              inkl:['Mødelokale hele dagen','18 huller golf','Fuld forplejning','Overnatning v/aftale'] },
+    { id:'gp6', titel:'VIP-arrangement',    pris:'Tilbud på forespørgsel',   beskrivelse:'Skræddersyet VIP-oplevelse til særlige gæster eller eksklusive anledninger.',                            inkl:['Fuld personlig service','Gourmetmiddag','Eksklusivt program','Caddie inkl.'] }
   ],
 
-  /* ── Sponsor fordele ── */
+  /* Sponsor */
   sponsorFordele: [
-    { ikon: '🏌️', titel: 'Synlighed', tekst: 'Logo på bane, hjemmeside, app og arrangementer' },
-    { ikon: '🤝', titel: 'Netværk', tekst: 'Adgang til erhvervsarrangementer og eksklusiv sponsor-lounge' },
-    { ikon: '⛳', titel: 'Golfoplevelser', tekst: 'Invitationer til greenfee, turneringer og golfrejser' },
-    { ikon: '📣', titel: 'Kommunikation', tekst: 'Omtale i nyhedsbrev, sociale medier og presse' }
+    { ikon:'📢', titel:'Synlighed',    tekst:'Logo på bane, hjemmeside, app og ved alle arrangementer.' },
+    { ikon:'🤝', titel:'Netværk',      tekst:'Adgang til eksklusive erhvervsarrangementer og sponsor-lounge.' },
+    { ikon:'⛳', titel:'Golf',          tekst:'Greenfee-invitationer, turneringer og golfrejser.' },
+    { ikon:'📣', titel:'PR & omtale',  tekst:'Omtale i nyhedsbrev, sociale medier og lokal presse.' },
+    { ikon:'🎯', titel:'Målgruppe',    tekst:'Direkte adgang til beslutningstagere i Aarhus-regionen.' },
+    { ikon:'🏆', titel:'Prestige',     tekst:'Associering med Lyngbygaard Golf — en stærk lokal brand.' }
   ],
 
-  /* ── Om erhvervsklubben ── */
+  /* Om EK */
   omEK: {
-    tekst: 'Erhvervsklubben samler virksomheder og beslutningstagere omkring relationer, netværk og golf i professionelle, uformelle rammer.',
+    tekst: 'Erhvervsklubben samler virksomheder og beslutningstagere om relationer, netværk og golf i professionelle, uformelle rammer.',
     punkter: [
-      { ikon: '🤝', titel: 'Netværk', tekst: 'Mød beslutningstagere fra Aarhus-regionen i afslappede rammer.' },
-      { ikon: '⛳', titel: 'Golf', tekst: 'EK-golf, turneringer og rejser på højt niveau.' },
-      { ikon: '🌍', titel: 'Oplevelser', tekst: 'Udenlandsture, eksklusive events og uforglemmelige dage.' },
-      { ikon: '📢', titel: 'Sponsorværdi', tekst: 'Synlighed og associering med Lyngbygaard Golf.' },
-      { ikon: '🏆', titel: 'EK-golf', tekst: 'Egne turneringer, mesterskaber og konkurrencer for erhvervsmedlemmer.' },
-      { ikon: '📅', titel: 'Arrangementer', tekst: 'Mere end 10 arrangementer om året — fra SIM Golf til udlandsrejser.' }
+      { ikon:'🤝', titel:'Netværk',          tekst:'Mød 100+ virksomheder fra Aarhus-regionen.' },
+      { ikon:'⛳', titel:'Golf',              tekst:'Turneringer, EK-mesterskaber og golfrejser.' },
+      { ikon:'🌍', titel:'Udlandsoplevelser', tekst:'Skotland, Tyskland, Jylland og meget mere.' },
+      { ikon:'📢', titel:'Sponsorværdi',     tekst:'Synlighed og associering med Lyngbygaard Golf.' },
+      { ikon:'🏆', titel:'EK-mesterskabet',  tekst:'Årets sportslige højdepunkt for erhvervsmedlemmer.' },
+      { ikon:'📅', titel:'10+ events/år',    tekst:'Fra SIM Golf til julefrokost — altid noget i kalenderen.' }
     ]
   }
 };
 
-/* ── Standard arrangementer (første opstart) ── */
-const STANDARD_ARRANGEMENTER = [
-  { id: 'a1',  dato: '2026-02-04', tid: '',          titel: 'Høj Sol over Aarhus',      sted: 'Hermans, Tivoli Friheden',                          type: 'Koncert / netværk',    beskrivelse: 'Årets første store erhvervsarrangement med musik og netværk.', maks: 80,  tilmeldte: 0, status: 'aaben', tilmeldingAaben: true },
-  { id: 'a2',  dato: '2026-03-04', tid: '16.00-21.00', titel: 'SIM Golf',               sted: 'Golfarena Aarhus',                                   type: 'Golf / netværk',       beskrivelse: 'Netværk og konkurrence på indoor simulator-bane.',              maks: 24,  tilmeldte: 0, status: 'aaben', tilmeldingAaben: true },
-  { id: 'a3',  dato: '2026-03-18', tid: '16.00-21.00', titel: 'SIM Golf',               sted: 'Golfarena Aarhus',                                   type: 'Golf / netværk',       beskrivelse: 'Netværk og konkurrence på indoor simulator-bane.',              maks: 24,  tilmeldte: 0, status: 'aaben', tilmeldingAaben: true },
-  { id: 'a4',  dato: '2026-03-24', tid: '',          titel: 'Byudvikling & Bajere',      sted: 'Aarhus',                                             type: 'Netværksarrangement',  beskrivelse: 'Uformel debat og netværk om byudvikling i Aarhus.',            maks: 50,  tilmeldte: 0, status: 'aaben', tilmeldingAaben: true },
-  { id: 'a5',  dato: '2026-04-22', tid: '',          titel: 'Hjemmekamp mod Himmerland Business Club', sted: 'Lyngbygaard Golf',                   type: 'Golf / netværk',       beskrivelse: 'Venlighedskamp og netværk med Himmerland Business Club.',      maks: 40,  tilmeldte: 0, status: 'aaben', tilmeldingAaben: true },
-  { id: 'a6',  dato: '2026-05-01', tid: '',          titel: 'Udlandsrejse — Skotland',   sted: 'Skotland',                                           type: 'Golfrejse',            beskrivelse: 'Golfrejse til Skotland 1.–4. maj 2026. Kontakt klubben for tilmelding.', maks: 20, tilmeldte: 0, status: 'aaben', tilmeldingAaben: true },
-  { id: 'a7',  dato: '2026-06-02', tid: '',          titel: 'Tysklandstur',              sted: 'Timmendorfer Strand',                                type: 'Golfrejse',            beskrivelse: 'Golfrejse til Timmendorfer Strand 2.–3. juni 2026.',           maks: 20,  tilmeldte: 0, status: 'aaben', tilmeldingAaben: true },
-  { id: 'a8',  dato: '2026-08-14', tid: '',          titel: 'Danish Golf Championship',  sted: 'Great Northern',                                     type: 'Golfoplevelse',        beskrivelse: 'Se årets store golfchampionship med erhvervsklubben.',         maks: 30,  tilmeldte: 0, status: 'aaben', tilmeldingAaben: true },
-  { id: 'a9',  dato: '2026-09-01', tid: '',          titel: 'Jyllandstur',               sted: 'Nordvestjysk Golfklub & Holstebro Golfklub',          type: 'Golfrejse',            beskrivelse: 'Jyllandstur 1.–2. september med golf på to baner.',            maks: 24,  tilmeldte: 0, status: 'aaben', tilmeldingAaben: true },
-  { id: 'a10', dato: '2026-10-09', tid: '',          titel: 'EK-Mesterskaberne',         sted: 'Silkeborg Ry Golfklub',                              type: 'Mesterskab',           beskrivelse: 'Erhvervsklubbens eget mesterskab — hvem bliver årets EK-mester?', maks: 48, tilmeldte: 0, status: 'aaben', tilmeldingAaben: true },
-  { id: 'a11', dato: '2026-11-20', tid: '',          titel: 'Julefrokost & Gokart',      sted: 'Racehall Aarhus',                                    type: 'Socialt arrangement',  beskrivelse: 'Julefrokost med gokart — årets hyggeligste erhvervsarrangement.', maks: 60, tilmeldte: 0, status: 'aaben', tilmeldingAaben: true }
+/* ── Standard arrangementer ── */
+const STD_ARR = [
+  { id:'a1',  dato:'2026-02-04', tid:'',           titel:'Høj Sol over Aarhus',               sted:'Hermans, Tivoli Friheden',                 type:'Koncert / netværk',   besk:'Årets første store erhvervsarrangement med musik og netværk.', maks:80,  tlm:0, status:'aaben', aaben:true },
+  { id:'a2',  dato:'2026-03-04', tid:'16.00-21.00', titel:'SIM Golf',                          sted:'Golfarena Aarhus',                          type:'Golf / netværk',      besk:'Netværk og konkurrence på indoor simulator-bane.',             maks:24,  tlm:0, status:'aaben', aaben:true },
+  { id:'a3',  dato:'2026-03-18', tid:'16.00-21.00', titel:'SIM Golf',                          sted:'Golfarena Aarhus',                          type:'Golf / netværk',      besk:'Netværk og konkurrence på indoor simulator-bane.',             maks:24,  tlm:0, status:'aaben', aaben:true },
+  { id:'a4',  dato:'2026-03-24', tid:'',           titel:'Byudvikling & Bajere',               sted:'Aarhus',                                    type:'Netværksarrangement', besk:'Uformel debat og netværk om byudvikling i Aarhus.',            maks:50,  tlm:0, status:'aaben', aaben:true },
+  { id:'a5',  dato:'2026-04-22', tid:'',           titel:'Hjemmekamp mod Himmerland BC',       sted:'Lyngbygaard Golf',                          type:'Golf / netværk',      besk:'Venlighedskamp og netværk med Himmerland Business Club.',      maks:40,  tlm:0, status:'aaben', aaben:true },
+  { id:'a6',  dato:'2026-05-01', tid:'',           titel:'Udlandsrejse — Skotland',            sted:'Skotland',                                  type:'Golfrejse',           besk:'Golfrejse til Skotland 1.–4. maj 2026.',                       maks:20,  tlm:0, status:'aaben', aaben:true },
+  { id:'a7',  dato:'2026-06-02', tid:'',           titel:'Tysklandstur',                       sted:'Timmendorfer Strand',                       type:'Golfrejse',           besk:'Golfrejse til Timmendorfer Strand 2.–3. juni 2026.',           maks:20,  tlm:0, status:'aaben', aaben:true },
+  { id:'a8',  dato:'2026-08-14', tid:'',           titel:'Danish Golf Championship',           sted:'Great Northern',                            type:'Golfoplevelse',       besk:'Se årets store golfchampionship med erhvervsklubben.',         maks:30,  tlm:0, status:'aaben', aaben:true },
+  { id:'a9',  dato:'2026-09-01', tid:'',           titel:'Jyllandstur',                        sted:'Nordvestjysk & Holstebro Golfklub',         type:'Golfrejse',           besk:'Jyllandstur 1.–2. september med golf på to baner.',            maks:24,  tlm:0, status:'aaben', aaben:true },
+  { id:'a10', dato:'2026-10-09', tid:'',           titel:'EK-Mesterskaberne',                  sted:'Silkeborg Ry Golfklub',                     type:'Mesterskab',          besk:'Erhvervsklubbens eget mesterskab — hvem vinder EK-trofæet?', maks:48,  tlm:0, status:'aaben', aaben:true },
+  { id:'a11', dato:'2026-11-20', tid:'',           titel:'Julefrokost & Gokart',               sted:'Racehall Aarhus',                           type:'Socialt arrangement', besk:'Julefrokost med gokart — årets hyggeligste erhvervsarrangement.', maks:60, tlm:0, status:'aaben', aaben:true }
 ];
 
-/* ── Default sponsorer ── */
-const STANDARD_SPONSORER = [
-  { id: 's1', navn: 'Hovedsponsor A/S', logo: '', link: '#', niveau: 'guld' },
-  { id: 's2', navn: 'Partner Gruppen',  logo: '', link: '#', niveau: 'sølv' }
+const STD_SPONSORER = [
+  { id:'s1', navn:'Hovedsponsor — ledigt',  logo:'', link:'#', niveau:'guld' },
+  { id:'s2', navn:'Partner — ledigt',       logo:'', link:'#', niveau:'sølv' }
 ];
 
-/* ============================================================
-   STORAGE HELPERS
-   ============================================================ */
+/* ================================================================
+   STORAGE
+   ================================================================ */
 const DB = {
   get: k => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
-  set: (k, v) => localStorage.setItem(k, JSON.stringify(v)),
+  set: (k,v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch(e) { console.warn('localStorage full', e); } },
   del: k => localStorage.removeItem(k)
 };
 
-function initData() {
-  if (!DB.get('lyg_init')) {
-    DB.set('lyg_arrangementer', STANDARD_ARRANGEMENTER);
-    DB.set('lyg_sponsorer', STANDARD_SPONSORER);
-    DB.set('lyg_tilmeldinger', []);
-    DB.set('lyg_admin_kode', CONFIG.adminKode);
-    DB.set('lyg_hero', { tekst: CONFIG.heroTekst, under: CONFIG.heroUnder, billede: CONFIG.heroBillede });
-    DB.set('lyg_kontakt', CONFIG.kontaktPersoner);
-    DB.set('lyg_golf_pakker', CONFIG.golfPakker);
-    DB.set('lyg_init', true);
+function init() {
+  if (!DB.get('ek_init')) {
+    DB.set('ek_arr',       STD_ARR);
+    DB.set('ek_sponsorer', STD_SPONSORER);
+    DB.set('ek_tilm',      []);
+    DB.set('ek_kode',      CONFIG.adminKode);
+    DB.set('ek_hero',      { tekst: CONFIG.heroTekst, under: CONFIG.heroUnder, billede: CONFIG.heroBillede });
+    DB.set('ek_pakker',    CONFIG.golfPakker);
+    DB.set('ek_init',      true);
   }
 }
 
-function getArrangementer() {
-  const arr = DB.get('lyg_arrangementer') || [];
-  return arr.sort((a, b) => a.dato.localeCompare(b.dato));
-}
+/* ================================================================
+   HELPERS
+   ================================================================ */
+function getArr()   { return (DB.get('ek_arr') || []).sort((a,b) => a.dato.localeCompare(b.dato)); }
+function getKode()  { return DB.get('ek_kode') || CONFIG.adminKode; }
 
-function getAdminKode() {
-  return DB.get('lyg_admin_kode') || CONFIG.adminKode;
-}
-
-/* ============================================================
-   DATE HELPERS
-   ============================================================ */
 function fmtDato(iso) {
-  const d = new Date(iso + 'T12:00:00');
-  return d.toLocaleDateString('da-DK', { day: 'numeric', month: 'long', year: 'numeric' });
+  if (!iso) return '';
+  return new Date(iso + 'T12:00:00').toLocaleDateString('da-DK', { day:'numeric', month:'long', year:'numeric' });
+}
+function erFremtidig(iso) { return new Date(iso + 'T23:59:59') >= new Date(); }
+function ledigePladser(a) { return Math.max(0, a.maks - a.tlm); }
+
+function esc(str) {
+  return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
-function dageFor(iso, dage) {
-  const d = new Date(iso + 'T00:00:00');
-  d.setDate(d.getDate() - dage);
-  return d;
-}
-
-function isFremtidig(iso) {
-  return new Date(iso + 'T23:59:59') >= new Date();
-}
-
-/* ============================================================
-   REMINDER SYSTEM (localStorage-based scheduler)
-   ============================================================ */
-function gemPåmindelser(arrangementId, datIso, titel) {
-  const påm = DB.get('lyg_paamindelser') || {};
-  påm[arrangementId] = { datIso, titel, tider: [14, 7, 3] };
-  DB.set('lyg_paamindelser', påm);
-}
-
-function tjekPåmindelser() {
-  if (!('Notification' in window)) return;
-  const påm = DB.get('lyg_paamindelser') || {};
-  const vist = DB.get('lyg_paam_vist') || {};
-  const nu = new Date();
-
-  Object.entries(påm).forEach(([id, p]) => {
-    p.tider.forEach(dage => {
-      const nøgle = `${id}_${dage}`;
-      if (vist[nøgle]) return;
-      const påmTid = dageFor(p.datIso, dage);
-      if (nu >= påmTid) {
-        if (Notification.permission === 'granted') {
-          new Notification(`Husk: ${p.titel}`, {
-            body: `Arrangementet er om ${dage} dag${dage > 1 ? 'e' : ''}.`,
-            icon: '/icons/icon-192.png'
-          });
-        }
-        vist[nøgle] = true;
-      }
-    });
-  });
-  DB.set('lyg_paam_vist', vist);
-}
-
-async function anmodNotifikationer() {
-  if (!('Notification' in window)) return 'unsupported';
-  if (Notification.permission === 'granted') return 'granted';
-  const res = await Notification.requestPermission();
-  return res;
-}
-
-/* ============================================================
+/* ================================================================
    ROUTER
-   ============================================================ */
-let aktivSide = 'forside';
+   ================================================================ */
+let side = 'forside';
 
-function navTil(side, data) {
-  aktivSide = side;
-  renderApp(data);
-  window.scrollTo(0, 0);
-}
-
-/* ============================================================
-   CSV EXPORT
-   ============================================================ */
-function exportCSV(arrangementId) {
-  const alle = DB.get('lyg_tilmeldinger') || [];
-  const data = arrangementId ? alle.filter(t => t.arrangementId === arrangementId) : alle;
-  const headers = ['Arrangement', 'Navn', 'Virksomhed', 'Email', 'Telefon', 'Antal', 'Kommentar', 'Dato', 'Mødt'];
-  const rows = data.map(t => [
-    t.arrangementTitel || '', t.navn, t.virksomhed, t.email, t.telefon,
-    t.antal, t.kommentar || '', t.oprettetDato || '', t.mødt ? 'Ja' : 'Nej'
-  ]);
-  const csv = [headers, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
-  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url;
-  a.download = `tilmeldinger_${arrangementId || 'alle'}_${Date.now()}.csv`;
-  a.click(); URL.revokeObjectURL(url);
-}
-
-/* ============================================================
-   RENDER ENGINE
-   ============================================================ */
-function renderApp(data) {
+function navTil(s, data) {
+  side = s;
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.toggle('active', el.dataset.side === s));
   const main = document.getElementById('main-content');
-  const nav = document.getElementById('bottom-nav');
-
-  // Update active nav
-  document.querySelectorAll('.nav-item').forEach(el => {
-    el.classList.toggle('active', el.dataset.side === aktivSide);
-  });
-
-  switch (aktivSide) {
-    case 'forside':       main.innerHTML = renderForside(); break;
-    case 'kalender':      main.innerHTML = renderKalender(); break;
-    case 'tilmelding':    main.innerHTML = renderTilmelding(data); break;
-    case 'golfarr':       main.innerHTML = renderGolfArrangementer(); break;
-    case 'sponsor':       main.innerHTML = renderSponsor(); break;
-    case 'om':            main.innerHTML = renderOm(); break;
-    case 'kontakt':       main.innerHTML = renderKontakt(); break;
-    case 'admin':         main.innerHTML = renderAdmin(); break;
-    default:              main.innerHTML = renderForside();
+  switch(s) {
+    case 'forside':   main.innerHTML = pgForside();  break;
+    case 'kalender':  main.innerHTML = pgKalender(); break;
+    case 'tilmelding':main.innerHTML = pgTilm(data); break;
+    case 'golfarr':   main.innerHTML = pgGolf();     break;
+    case 'sponsor':   main.innerHTML = pgSponsor();  break;
+    case 'om':        main.innerHTML = pgOm();       break;
+    case 'kontakt':   main.innerHTML = pgKontakt();  break;
+    case 'admin':     main.innerHTML = pgAdmin();    break;
   }
-
-  bindEvents();
+  bindAll();
+  window.scrollTo(0,0);
 }
 
-/* ============================================================
+/* ================================================================
    FORSIDE
-   ============================================================ */
-function renderForside() {
-  const hero = DB.get('lyg_hero') || { tekst: CONFIG.heroTekst, under: CONFIG.heroUnder, billede: CONFIG.heroBillede };
-  const kommendeArr = getArrangementer().filter(a => isFremtidig(a.dato)).slice(0, 3);
-
+   ================================================================ */
+function pgForside() {
+  const hero = DB.get('ek_hero') || {};
+  const næste = getArr().filter(a => erFremtidig(a.dato)).slice(0,3);
   return `
-  <div class="hero" style="background-image: url('${hero.billede}')">
-    <div class="hero-overlay">
-      <div class="hero-logo">⛳ LYG Erhverv</div>
-      <h1 class="hero-titel">${hero.tekst}</h1>
-      <p class="hero-under">${hero.under}</p>
-    </div>
+<div class="hero" style="background-image:url('${esc(hero.billede||CONFIG.heroBillede)}')">
+  <div class="hero-lag">
+    <div class="hero-logo">⛳ LYG Erhvervsklub</div>
+    <h1 class="hero-h1">${esc(hero.tekst||CONFIG.heroTekst)}</h1>
+    <p class="hero-p">${esc(hero.under||CONFIG.heroUnder)}</p>
   </div>
+</div>
 
-  <section class="sektion">
-    <div class="grid-2">
-      <button class="stor-knap" onclick="navTil('kalender')">📅 Se kalender</button>
-      <button class="stor-knap" onclick="navTil('tilmelding')">✅ Tilmeld arrangement</button>
-      <button class="stor-knap guld" onclick="navTil('golfarr')">⛳ Book golfarrangement</button>
-      <button class="stor-knap guld" onclick="navTil('sponsor')">🌟 Bliv sponsor</button>
-    </div>
-  </section>
+<section class="sek">
+  <div class="g2">
+    <button class="sknap" onclick="navTil('kalender')">📅<span>Se kalender</span></button>
+    <button class="sknap" onclick="navTil('tilmelding')">✅<span>Tilmeld dig</span></button>
+    <button class="sknap gold" onclick="navTil('golfarr')">⛳<span>Book firma-golf</span></button>
+    <button class="sknap gold" onclick="åbnGolfBox()">🔗<span>GolfBox login</span></button>
+  </div>
+</section>
 
-  <section class="sektion">
-    <div class="ikon-grid">
-      <div class="ikon-kort">
-        <span class="ikon-stor">🤝</span>
-        <strong>Netværk & relationer</strong>
-        <p>Mød Aarhus-regionens erhvervsliv</p>
-      </div>
-      <div class="ikon-kort">
-        <span class="ikon-stor">⛳</span>
-        <strong>Golf & oplevelser</strong>
-        <p>Turneringer, rejser og eksklusive events</p>
-      </div>
-      <div class="ikon-kort">
-        <span class="ikon-stor">📢</span>
-        <strong>Sponsorer & synlighed</strong>
-        <p>Styrk din virksomheds tilstedeværelse</p>
-      </div>
-      <div class="ikon-kort">
-        <span class="ikon-stor">📅</span>
-        <strong>Kalender & arrangementer</strong>
-        <p>Mere end 10 events om året</p>
-      </div>
-    </div>
-  </section>
+<section class="sek">
+  <div class="ikg">
+    <button class="ikb" onclick="navTil('om')"><span class="iks">🤝</span><strong>Netværk</strong><p>Relationer & fællesskab</p></button>
+    <button class="ikb" onclick="navTil('golfarr')"><span class="iks">⛳</span><strong>Golf</strong><p>Events & rejser</p></button>
+    <button class="ikb" onclick="navTil('sponsor')"><span class="iks">📢</span><strong>Sponsor</strong><p>Synlighed & brand</p></button>
+    <button class="ikb" onclick="navTil('kalender')"><span class="iks">📅</span><strong>Kalender</strong><p>10+ events/år</p></button>
+  </div>
+</section>
 
-  ${kommendeArr.length ? `
-  <section class="sektion">
-    <h2 class="sektions-titel">Kommende arrangementer</h2>
-    <div class="arr-liste">
-      ${kommendeArr.map(a => renderArrKort(a, true)).join('')}
-    </div>
-    <div style="text-align:center;margin-top:1rem">
-      <button class="knap-sekundær" onclick="navTil('kalender')">Se alle arrangementer →</button>
-    </div>
-  </section>` : ''}
-  `;
+${næste.length ? `
+<section class="sek">
+  <h2 class="stitl">Kommende arrangementer</h2>
+  <div class="arr-l">${næste.map(a => arrKort(a, true)).join('')}</div>
+  <div class="tc mt1"><button class="knap-sek" onclick="navTil('kalender')">Se alle arrangementer →</button></div>
+</section>` : ''}
+
+<section class="sek golfbox-banner" onclick="åbnGolfBox()">
+  <div class="gb-inner">
+    <span class="gb-ikon">🏌️</span>
+    <div><strong>Book tid i GolfBox</strong><br><small>Log ind og book direkte på banen</small></div>
+    <span class="gb-pil">→</span>
+  </div>
+</section>
+
+<footer class="app-footer">
+  <p>Lyngbygaard Golf · Lyngbygårdsvej 29, 8220 Brabrand</p>
+  <p><a href="tel:87441070">📞 87 44 10 70</a> · <a href="mailto:info@lyg.dk">✉️ info@lyg.dk</a></p>
+  <p class="foot-credit">Bygget af Nordic Operations · nordicoperations.dk</p>
+</footer>`;
 }
 
-/* ============================================================
+function åbnGolfBox() {
+  window.open(CONFIG.golfboxUrl, '_blank', 'noopener');
+}
+
+/* ================================================================
    ARRANGEMENT KORT
-   ============================================================ */
-function renderArrKort(a, kompakt = false) {
-  const ledig = a.maks - a.tilmeldte;
-  const pct   = Math.min(100, Math.round((a.tilmeldte / a.maks) * 100));
-  let statusKlasse = 'status-aaben';
-  let statusTekst  = 'Åben';
-  if (!a.tilmeldingAaben || a.status === 'lukket') { statusKlasse = 'status-lukket'; statusTekst = 'Lukket'; }
-  else if (ledig <= 3 && ledig > 0)               { statusKlasse = 'status-faa';    statusTekst = 'Få pladser'; }
-  else if (ledig <= 0)                              { statusKlasse = 'status-lukket'; statusTekst = 'Fuldt'; }
-
-  const fremtidig = isFremtidig(a.dato);
+   ================================================================ */
+function arrKort(a, kompakt=false) {
+  const ledig = ledigePladser(a);
+  const pct   = Math.min(100, Math.round((a.tlm / a.maks) * 100));
+  const fuldt = ledig <= 0;
+  const faa   = !fuldt && ledig <= 3;
+  const lukket= !a.aaben || a.status === 'lukket';
+  let sbKls = lukket||fuldt ? 'sb-lukket' : faa ? 'sb-faa' : 'sb-aaben';
+  let sbTxt = lukket ? 'Lukket' : fuldt ? 'Fuldt' : faa ? 'Få pladser' : 'Åben';
+  const frem = erFremtidig(a.dato);
 
   return `
-  <div class="arr-kort ${kompakt ? 'kompakt' : ''}">
-    <div class="arr-header">
-      <div>
-        <div class="arr-dato">${fmtDato(a.dato)}${a.tid ? ' · ' + a.tid : ''}</div>
-        <h3 class="arr-titel">${a.titel}</h3>
-        ${a.sted ? `<div class="arr-sted">📍 ${a.sted}</div>` : ''}
-        ${a.type ? `<div class="arr-type">${a.type}</div>` : ''}
-      </div>
-      <span class="status-badge ${statusKlasse}">${statusTekst}</span>
+<div class="akort${kompakt?' akort-k':''}">
+  <div class="ak-top">
+    <div>
+      <div class="ak-dato">${fmtDato(a.dato)}${a.tid?' · '+esc(a.tid):''}</div>
+      <h3 class="ak-titel">${esc(a.titel)}</h3>
+      ${a.sted?`<div class="ak-sted">📍 ${esc(a.sted)}</div>`:''}
+      ${a.type&&!kompakt?`<div class="ak-type">${esc(a.type)}</div>`:''}
     </div>
-    ${!kompakt ? `<p class="arr-besk">${a.beskrivelse || ''}</p>` : ''}
-    ${!kompakt ? `
-    <div class="arr-info-grid">
-      <div class="arr-info-felt"><span class="arr-info-label">Maks</span><strong>${a.maks}</strong></div>
-      <div class="arr-info-felt"><span class="arr-info-label">Tilmeldte</span><strong>${a.tilmeldte}</strong></div>
-      <div class="arr-info-felt"><span class="arr-info-label">Ledige</span><strong>${Math.max(0, ledig)}</strong></div>
-    </div>
-    <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
-    ` : ''}
-    ${fremtidig ? `
-    <div class="arr-knapper">
-      ${a.tilmeldingAaben && ledig > 0 ? `<button class="knap-primaer" onclick="navTil('tilmelding', {id:'${a.id}'})">Tilmeld</button>` : ''}
-      ${a.tilmeldingAaben && ledig <= 0 ? `<button class="knap-sekundær" onclick="venteListe('${a.id}')">Venteliste</button>` : ''}
-      <button class="knap-ikon" onclick="tilfoejKalender('${a.id}')" title="Tilføj til kalender">📆</button>
-      <button class="knap-ikon" onclick="aktiverPaamindelse('${a.id}')" title="Aktiver påmindelser">🔔</button>
-    </div>` : ''}
-  </div>`;
+    <span class="sb ${sbKls}">${sbTxt}</span>
+  </div>
+  ${!kompakt&&a.besk?`<p class="ak-besk">${esc(a.besk)}</p>`:''}
+  ${!kompakt?`
+  <div class="ak-tal">
+    <div class="ak-tf"><span>Maks</span><strong>${a.maks}</strong></div>
+    <div class="ak-tf"><span>Tilmeldte</span><strong>${a.tlm}</strong></div>
+    <div class="ak-tf"><span>Ledige</span><strong>${ledig}</strong></div>
+  </div>
+  <div class="pbw"><div class="pbf" style="width:${pct}%"></div></div>`:'' }
+  ${frem?`
+  <div class="ak-kn">
+    ${a.aaben&&ledig>0?`<button class="knap-p" onclick="navTil('tilmelding',{id:'${a.id}'})">Tilmeld</button>`:''}
+    ${a.aaben&&ledig<=0&&!lukket?`<button class="knap-sek" onclick="venteListe('${a.id}')">Venteliste</button>`:''}
+    <button class="knap-i" onclick="tilfoejKal('${a.id}')" title="Tilføj til kalender">📆</button>
+    <button class="knap-i" onclick="aktPaam('${a.id}')" title="Aktivér påmindelser">🔔</button>
+  </div>`:'' }
+</div>`;
 }
 
-/* ============================================================
+/* ================================================================
    KALENDER
-   ============================================================ */
-function renderKalender() {
-  const alle = getArrangementer();
-  const fremtidige = alle.filter(a => isFremtidig(a.dato));
-  const tidligere  = alle.filter(a => !isFremtidig(a.dato));
-
+   ================================================================ */
+function pgKalender() {
+  const alle = getArr();
+  const frem = alle.filter(a => erFremtidig(a.dato));
+  const tidl = alle.filter(a => !erFremtidig(a.dato)).reverse();
   return `
-  <div class="side-header"><h1>Kalender</h1><p>Alle arrangementer i Erhvervsklubben</p></div>
-  <section class="sektion">
-    ${fremtidige.length ? fremtidige.map(a => renderArrKort(a)).join('') : '<p class="muted-txt">Ingen kommende arrangementer.</p>'}
-  </section>
-  ${tidligere.length ? `
-  <section class="sektion">
-    <h2 class="sektions-titel muted">Tidligere arrangementer</h2>
-    ${tidligere.reverse().map(a => renderArrKort(a)).join('')}
-  </section>` : ''}
-  `;
+<div class="ph bg-mork">
+  <h1>Kalender 📅</h1>
+  <p>Alle arrangementer i Erhvervsklubben</p>
+</div>
+<section class="sek">
+  ${frem.length ? `<div class="arr-l">${frem.map(a=>arrKort(a)).join('')}</div>` : '<p class="muted">Ingen kommende arrangementer.</p>'}
+</section>
+${tidl.length?`
+<section class="sek">
+  <h2 class="stitl muted">Tidligere arrangementer</h2>
+  <div class="arr-l">${tidl.map(a=>arrKort(a)).join('')}</div>
+</section>`:''}`;
 }
 
-/* ============================================================
+/* ================================================================
    TILMELDING
-   ============================================================ */
-function renderTilmelding(data) {
-  const arrangementer = getArrangementer().filter(a => isFremtidig(a.dato) && a.tilmeldingAaben);
-  const valgtId = data?.id || '';
-
+   ================================================================ */
+function pgTilm(data) {
+  const valgtId = data?.id||'';
+  const åbne = getArr().filter(a => erFremtidig(a.dato) && a.aaben);
   return `
-  <div class="side-header"><h1>Tilmeld dig</h1><p>Tilmeld dig et arrangement nedenfor</p></div>
-  <section class="sektion">
-    <form id="tilmeld-form" onsubmit="indsendTilmelding(event)">
-      <div class="form-gruppe">
-        <label>Arrangement *</label>
-        <select name="arrangementId" required>
-          <option value="">Vælg arrangement…</option>
-          ${arrangementer.map(a => `<option value="${a.id}" ${valgtId === a.id ? 'selected' : ''}>${fmtDato(a.dato)} — ${a.titel}</option>`).join('')}
-        </select>
-      </div>
-      <div class="form-gruppe">
-        <label>Navn *</label>
-        <input type="text" name="navn" required placeholder="Dit fulde navn">
-      </div>
-      <div class="form-gruppe">
-        <label>Virksomhed *</label>
-        <input type="text" name="virksomhed" required placeholder="Virksomhedens navn">
-      </div>
-      <div class="form-gruppe">
-        <label>Email *</label>
-        <input type="email" name="email" required placeholder="din@email.dk">
-      </div>
-      <div class="form-gruppe">
-        <label>Telefon</label>
-        <input type="tel" name="telefon" placeholder="12 34 56 78">
-      </div>
-      <div class="form-gruppe">
-        <label>Antal deltagere *</label>
-        <input type="number" name="antal" min="1" max="10" value="1" required>
-      </div>
-      <div class="form-gruppe">
-        <label>Kommentar</label>
-        <textarea name="kommentar" rows="3" placeholder="Særlige ønsker, allergier eller spørgsmål…"></textarea>
-      </div>
-      <button type="submit" class="knap-primaer fuld-bredde">Send tilmelding</button>
-    </form>
-    <div id="tilmelding-kvittering" style="display:none"></div>
-  </section>`;
+<div class="ph bg-mork">
+  <h1>Tilmeld dig ✅</h1>
+  <p>Udfyld formularen nedenfor</p>
+</div>
+<section class="sek">
+  <form id="tf" onsubmit="submitTilm(event)">
+    <div class="fg">
+      <label>Arrangement *</label>
+      <select name="arrId" required>
+        <option value="">Vælg arrangement…</option>
+        ${åbne.map(a=>`<option value="${a.id}" ${valgtId===a.id?'selected':''}>${fmtDato(a.dato)} — ${esc(a.titel)}</option>`).join('')}
+      </select>
+    </div>
+    <div class="fg"><label>Navn *</label><input name="navn" required placeholder="Dit fulde navn"></div>
+    <div class="fg"><label>Virksomhed *</label><input name="virk" required placeholder="Virksomhedens navn"></div>
+    <div class="fg"><label>Email *</label><input type="email" name="email" required placeholder="din@email.dk"></div>
+    <div class="fg"><label>Telefon</label><input type="tel" name="tlf" placeholder="12 34 56 78"></div>
+    <div class="fg"><label>Antal deltagere *</label><input type="number" name="antal" min="1" max="10" value="1" required></div>
+    <div class="fg"><label>Kommentar</label><textarea name="kom" rows="3" placeholder="Særlige ønsker, allergier…"></textarea></div>
+    <button type="submit" class="knap-p fb">Send tilmelding</button>
+  </form>
+  <div id="tilm-kv" style="display:none"></div>
+</section>`;
 }
 
-function indsendTilmelding(e) {
+function submitTilm(e) {
   e.preventDefault();
   const f = e.target;
-  const arrId = f.arrangementId.value;
-  const arr = getArrangementer().find(a => a.id === arrId);
-  if (!arr) return alert('Vælg venligst et arrangement.');
+  const arr = getArr().find(a => a.id === f.arrId.value);
+  if (!arr) { alert('Vælg et arrangement.'); return; }
+  const antal = parseInt(f.antal.value)||1;
+  const ledig = ledigePladser(arr);
+  if (antal > ledig) { alert(`Kun ${ledig} ledig${ledig===1?'':'e'} plads${ledig===1?'':'er'}.`); return; }
 
-  const antal = parseInt(f.antal.value) || 1;
-  const ledig = arr.maks - arr.tilmeldte;
-  if (antal > ledig) {
-    alert(`Der er kun ${ledig} ledig${ledig === 1 ? '' : 'e'} plads${ledig === 1 ? '' : 'er'}.`);
-    return;
-  }
+  const t = { id:'t'+Date.now(), arrId:arr.id, arrTitel:arr.titel,
+    navn:f.navn.value, virk:f.virk.value, email:f.email.value,
+    tlf:f.tlf.value, antal, kom:f.kom.value,
+    dato:new Date().toISOString().split('T')[0], mødt:false };
 
-  const tilmelding = {
-    id: 't' + Date.now(),
-    arrangementId: arrId,
-    arrangementTitel: arr.titel,
-    navn: f.navn.value,
-    virksomhed: f.virksomhed.value,
-    email: f.email.value,
-    telefon: f.telefon.value,
-    antal, kommentar: f.kommentar.value,
-    oprettetDato: new Date().toISOString().split('T')[0],
-    mødt: false
-  };
+  const alle = DB.get('ek_tilm')||[]; alle.push(t); DB.set('ek_tilm', alle);
 
-  // Gem tilmelding
-  const alle = DB.get('lyg_tilmeldinger') || [];
-  alle.push(tilmelding);
-  DB.set('lyg_tilmeldinger', alle);
+  const arrs = DB.get('ek_arr')||[];
+  const idx = arrs.findIndex(a=>a.id===arr.id);
+  if (idx>-1) { arrs[idx].tlm += antal; if (arrs[idx].tlm>=arrs[idx].maks) arrs[idx].status='fuldt'; DB.set('ek_arr', arrs); }
 
-  // Opdater arrangement
-  const arrs = DB.get('lyg_arrangementer') || [];
-  const idx = arrs.findIndex(a => a.id === arrId);
-  if (idx > -1) {
-    arrs[idx].tilmeldte += antal;
-    if (arrs[idx].tilmeldte >= arrs[idx].maks) arrs[idx].status = 'fuldt';
-    DB.set('lyg_arrangementer', arrs);
-  }
-
-  // Vis kvittering
-  f.style.display = 'none';
-  document.getElementById('tilmelding-kvittering').style.display = 'block';
-  document.getElementById('tilmelding-kvittering').innerHTML = `
-    <div class="kvittering">
-      <div class="kvittering-ikon">✅</div>
-      <h2>Tilmelding modtaget!</h2>
-      <p><strong>${tilmelding.navn}</strong> er tilmeldt <strong>${arr.titel}</strong> den ${fmtDato(arr.dato)}.</p>
-      <p class="muted-txt">Kontakt os på ${CONFIG.email} ved spørgsmål.</p>
-      <button class="knap-primaer" onclick="navTil('kalender')">Se kalender</button>
-      <button class="knap-sekundær" onclick="navTil('tilmelding')">Tilmeld endnu en</button>
-    </div>`;
+  f.style.display='none';
+  const kv=document.getElementById('tilm-kv'); kv.style.display='block';
+  kv.innerHTML=`
+<div class="kv">
+  <div class="kv-i">✅</div>
+  <h2>Tilmelding modtaget!</h2>
+  <p><strong>${esc(t.navn)}</strong> er tilmeldt <strong>${esc(arr.titel)}</strong> den ${fmtDato(arr.dato)}.</p>
+  <p class="muted">Kontakt os på ${CONFIG.email} ved spørgsmål.</p>
+  <button class="knap-p" onclick="navTil('kalender')">Se kalender</button>
+  <button class="knap-sek" onclick="navTil('tilmelding')">Tilmeld endnu en</button>
+</div>`;
 }
 
 function venteListe(arrId) {
-  const arr = getArrangementer().find(a => a.id === arrId);
-  if (!arr) return;
-  const navn = prompt('Dit navn (venteliste):');
-  if (!navn) return;
-  const email = prompt('Din email:');
-  if (!email) return;
-  const venteliste = DB.get('lyg_venteliste') || [];
-  venteliste.push({ arrangementId: arrId, arrangementTitel: arr.titel, navn, email, dato: new Date().toISOString() });
-  DB.set('lyg_venteliste', venteliste);
-  alert(`Du er sat på venteliste til "${arr.titel}". Vi kontakter dig, hvis der opstår en ledig plads.`);
+  const arr = getArr().find(a=>a.id===arrId); if (!arr) return;
+  const navn = prompt('Dit navn (venteliste):'); if (!navn) return;
+  const email= prompt('Din email:');            if (!email) return;
+  const vl = DB.get('ek_venteliste')||[];
+  vl.push({arrId, arrTitel:arr.titel, navn, email, dato:new Date().toISOString()});
+  DB.set('ek_venteliste', vl);
+  alert(`Du er sat på venteliste til "${arr.titel}". Vi kontakter dig ved ledige pladser.`);
 }
 
-/* ============================================================
+/* ================================================================
    GOLF ARRANGEMENTER
-   ============================================================ */
-function renderGolfArrangementer() {
-  const pakker = DB.get('lyg_golf_pakker') || CONFIG.golfPakker;
+   ================================================================ */
+function pgGolf() {
+  const pakker = DB.get('ek_pakker')||CONFIG.golfPakker;
   return `
-  <div class="side-header">
-    <h1>Book golfarrangement</h1>
-    <p>Skræddersyede golfoplevelser til din virksomhed</p>
+<div class="ph bg-mork">
+  <h1>Firma-golf ⛳</h1>
+  <p>Skræddersyede golfoplevelser til din virksomhed</p>
+</div>
+
+<section class="sek">
+  <div class="gb-stor" onclick="åbnGolfBox()">
+    <span class="gb-ikon-stor">🏌️</span>
+    <div><strong>Åbn GolfBox</strong><br><small>Book greenfee og se banens tider</small></div>
+    <span class="gb-pil-stor">→</span>
   </div>
-  <section class="sektion">
-    <div class="pakke-grid">
-      ${pakker.map(p => `
-        <div class="pakke-kort">
-          <h3>${p.titel}</h3>
-          <div class="pakke-pris">${p.pris}</div>
-          <p>${p.beskrivelse}</p>
-          <ul class="pakke-liste">
-            ${(p.inkluderer || []).map(i => `<li>✓ ${i}</li>`).join('')}
-          </ul>
-        </div>
-      `).join('')}
-    </div>
-  </section>
+</section>
 
-  <section class="sektion" id="book-golf">
-    <h2 class="sektions-titel">Book nu</h2>
-    <form id="golf-form" onsubmit="indsendGolfBooking(event)">
-      <div class="form-gruppe">
-        <label>Virksomhed *</label>
-        <input type="text" name="virksomhed" required placeholder="Virksomhedens navn">
-      </div>
-      <div class="form-gruppe">
-        <label>Kontaktperson *</label>
-        <input type="text" name="kontaktperson" required>
-      </div>
-      <div class="form-gruppe">
-        <label>Email *</label>
-        <input type="email" name="email" required>
-      </div>
-      <div class="form-gruppe">
-        <label>Telefon</label>
-        <input type="tel" name="telefon">
-      </div>
-      <div class="form-gruppe">
-        <label>Ønsket dato</label>
-        <input type="date" name="dato">
-      </div>
-      <div class="form-gruppe">
-        <label>Antal personer</label>
-        <input type="number" name="antal" min="1" value="4">
-      </div>
-      <div class="form-gruppe">
-        <label>Pakke / besked</label>
-        <textarea name="besked" rows="3" placeholder="Beskriv jeres ønsker…"></textarea>
-      </div>
-      <button type="submit" class="knap-primaer fuld-bredde">Send forespørgsel</button>
-    </form>
-    <div id="golf-kvittering" style="display:none" class="kvittering">
-      <div class="kvittering-ikon">✅</div>
-      <h2>Forespørgsel sendt!</h2>
-      <p>Vi kontakter dig hurtigst muligt på den angivne email.</p>
-      <button class="knap-sekundær" onclick="navTil('forside')">Tilbage til forsiden</button>
-    </div>
-  </section>`;
-}
-
-function indsendGolfBooking(e) {
-  e.preventDefault();
-  const bookinger = DB.get('lyg_golf_bookinger') || [];
-  const f = e.target;
-  bookinger.push({
-    id: 'g' + Date.now(),
-    virksomhed: f.virksomhed.value, kontaktperson: f.kontaktperson.value,
-    email: f.email.value, telefon: f.telefon.value,
-    dato: f.dato.value, antal: f.antal.value, besked: f.besked.value,
-    oprettet: new Date().toISOString()
-  });
-  DB.set('lyg_golf_bookinger', bookinger);
-  f.style.display = 'none';
-  document.getElementById('golf-kvittering').style.display = 'block';
-}
-
-/* ============================================================
-   SPONSOR
-   ============================================================ */
-function renderSponsor() {
-  const sponsorer = DB.get('lyg_sponsorer') || STANDARD_SPONSORER;
-  return `
-  <div class="side-header">
-    <h1>Bliv sponsor</h1>
-    <p>Styrk din virksomhed med synlighed og relationer</p>
+<section class="sek">
+  <h2 class="stitl">Firmaarrangementer</h2>
+  <div class="pk-g">
+    ${pakker.map(p=>`
+    <div class="pk">
+      <h3>${esc(p.titel)}</h3>
+      <div class="pk-pris">${esc(p.pris)}</div>
+      <p>${esc(p.beskrivelse)}</p>
+      <ul class="pk-ul">${(p.inkl||[]).map(i=>`<li>✓ ${esc(i)}</li>`).join('')}</ul>
+    </div>`).join('')}
   </div>
-  <section class="sektion">
-    <div class="sponsor-tekst-boks">
-      <p>"Som sponsor bliver virksomheden en del af et stærkt fællesskab med synlighed, relationer og oplevelser omkring golfen."</p>
+</section>
+
+<section class="sek" id="book-golf">
+  <h2 class="stitl">Send forespørgsel</h2>
+  <form id="gf" onsubmit="submitGolf(event)">
+    <div class="fg"><label>Virksomhed *</label><input name="virk" required></div>
+    <div class="g2f">
+      <div class="fg"><label>Kontaktperson *</label><input name="kp" required></div>
+      <div class="fg"><label>Email *</label><input type="email" name="email" required></div>
     </div>
-    <div class="ikon-grid">
-      ${CONFIG.sponsorFordele.map(f => `
-        <div class="ikon-kort">
-          <span class="ikon-stor">${f.ikon}</span>
-          <strong>${f.titel}</strong>
-          <p>${f.tekst}</p>
-        </div>
-      `).join('')}
+    <div class="g2f">
+      <div class="fg"><label>Telefon</label><input type="tel" name="tlf"></div>
+      <div class="fg"><label>Ønsket dato</label><input type="date" name="dato"></div>
     </div>
-  </section>
-
-  ${sponsorer.length ? `
-  <section class="sektion">
-    <h2 class="sektions-titel">Vores sponsorer</h2>
-    <div class="sponsor-grid">
-      ${sponsorer.map(s => `
-        <a class="sponsor-kort" href="${s.link || '#'}" target="_blank">
-          ${s.logo ? `<img src="${s.logo}" alt="${s.navn}" class="sponsor-logo">` : `<div class="sponsor-navn-stor">${s.navn}</div>`}
-          <div class="sponsor-niveau">${s.niveau || ''}</div>
-        </a>
-      `).join('')}
-    </div>
-  </section>` : ''}
-
-  <section class="sektion">
-    <h2 class="sektions-titel">Kontakt vedr. sponsorat</h2>
-    <div style="text-align:center">
-      <a class="knap-primaer" href="tel:${CONFIG.telefon.replace(/\s/g,'')}">📞 Ring til os</a>
-      <a class="knap-sekundær" href="mailto:${CONFIG.email}?subject=Sponsorat">✉️ Send email</a>
-    </div>
-  </section>`;
-}
-
-/* ============================================================
-   OM ERHVERVSKLUBBEN
-   ============================================================ */
-function renderOm() {
-  return `
-  <div class="side-header">
-    <h1>Erhvervsklubben</h1>
-    <p>${CONFIG.omEK.tekst}</p>
-  </div>
-  <section class="sektion">
-    <div class="ikon-grid">
-      ${CONFIG.omEK.punkter.map(p => `
-        <div class="ikon-kort">
-          <span class="ikon-stor">${p.ikon}</span>
-          <strong>${p.titel}</strong>
-          <p>${p.tekst}</p>
-        </div>
-      `).join('')}
-    </div>
-  </section>
-
-  <section class="sektion">
-    <div class="sponsor-tekst-boks">
-      <p>Interesseret i at blive erhvervsmedlem? Kontakt os og hør mere om mulighederne.</p>
-      <div style="text-align:center;margin-top:1rem">
-        <a class="knap-primaer" href="tel:${CONFIG.telefon.replace(/\s/g,'')}">📞 ${CONFIG.telefon}</a>
-        <a class="knap-sekundær" href="mailto:${CONFIG.email}">✉️ ${CONFIG.email}</a>
-      </div>
-    </div>
-  </section>`;
-}
-
-/* ============================================================
-   KONTAKT
-   ============================================================ */
-function renderKontakt() {
-  return `
-  <div class="side-header">
-    <h1>Kontakt</h1>
-    <p>Vi er klar til at hjælpe dig</p>
-  </div>
-  <section class="sektion">
-    <div class="kontakt-info-boks">
-      <div class="kontakt-linje"><span>📍</span> ${CONFIG.adresse}</div>
-      <div class="kontakt-linje"><a href="tel:${CONFIG.telefon.replace(/\s/g,'')}"><span>📞</span> ${CONFIG.telefon}</a></div>
-      <div class="kontakt-linje"><a href="mailto:${CONFIG.email}"><span>✉️</span> ${CONFIG.email}</a></div>
-    </div>
-    <div class="kontakt-knapper">
-      <a class="knap-primaer" href="tel:${CONFIG.telefon.replace(/\s/g,'')}">📞 Ring til os</a>
-      <a class="knap-sekundær" href="mailto:${CONFIG.email}">✉️ Send email</a>
-    </div>
-  </section>
-  <section class="sektion">
-    <h2 class="sektions-titel">Send en besked</h2>
-    <form id="kontakt-form" onsubmit="indsendKontakt(event)">
-      <div class="form-2kol">
-        <div class="form-gruppe">
-          <label>Fornavn *</label>
-          <input type="text" name="fornavn" required>
-        </div>
-        <div class="form-gruppe">
-          <label>Efternavn *</label>
-          <input type="text" name="efternavn" required>
-        </div>
-      </div>
-      <div class="form-gruppe">
-        <label>Email *</label>
-        <input type="email" name="email" required>
-      </div>
-      <div class="form-gruppe">
-        <label>Telefon</label>
-        <input type="tel" name="telefon">
-      </div>
-      <div class="form-gruppe">
-        <label>Besked *</label>
-        <textarea name="besked" rows="4" required placeholder="Skriv din besked her…"></textarea>
-      </div>
-      <button type="submit" class="knap-primaer fuld-bredde">Send besked</button>
-    </form>
-    <div id="kontakt-kvittering" style="display:none" class="kvittering">
-      <div class="kvittering-ikon">✅</div>
-      <h2>Besked modtaget!</h2>
-      <p>Vi vender tilbage hurtigst muligt.</p>
-      <button class="knap-sekundær" onclick="navTil('forside')">Tilbage til forsiden</button>
-    </div>
-  </section>`;
-}
-
-function indsendKontakt(e) {
-  e.preventDefault();
-  const beskeder = DB.get('lyg_beskeder') || [];
-  const f = e.target;
-  beskeder.push({
-    id: 'b' + Date.now(),
-    fornavn: f.fornavn.value, efternavn: f.efternavn.value,
-    email: f.email.value, telefon: f.telefon.value,
-    besked: f.besked.value, dato: new Date().toISOString()
-  });
-  DB.set('lyg_beskeder', beskeder);
-  f.style.display = 'none';
-  document.getElementById('kontakt-kvittering').style.display = 'block';
-}
-
-/* ============================================================
-   ADMIN — LOGIN + PANEL
-   ============================================================ */
-let adminLoggetInd = false;
-
-function renderAdmin() {
-  if (!adminLoggetInd) return renderAdminLogin();
-  return renderAdminPanel();
-}
-
-function renderAdminLogin() {
-  return `
-  <div class="side-header"><h1>Admin</h1></div>
-  <section class="sektion">
-    <div class="admin-login-boks">
-      <p class="muted-txt" style="text-align:center;margin-bottom:1.5rem">Indtast admin-koden for at logge ind</p>
-      <div class="form-gruppe">
-        <label>Admin-kode</label>
-        <input type="password" id="admin-kode-input" placeholder="••••" maxlength="20">
-      </div>
-      <button class="knap-primaer fuld-bredde" onclick="tjekAdminKode()">Log ind</button>
-      <div id="admin-fejl" class="fejl-boks" style="display:none">Forkert kode. Prøv igen.</div>
-    </div>
-  </section>`;
-}
-
-function tjekAdminKode() {
-  const input = document.getElementById('admin-kode-input').value;
-  if (input === getAdminKode()) {
-    adminLoggetInd = true;
-    navTil('admin');
-  } else {
-    document.getElementById('admin-fejl').style.display = 'block';
-  }
-}
-
-function renderAdminPanel() {
-  const fane = window._adminFane || 'arrangementer';
-  return `
-  <div class="side-header">
-    <h1>Admin</h1>
-    <button class="knap-lille" onclick="adminLogUd()">Log ud</button>
-  </div>
-  <div class="admin-faner">
-    ${[
-      ['arrangementer','Arrangementer'],
-      ['tilmeldinger','Tilmeldinger'],
-      ['sponsorer','Sponsorer'],
-      ['golf','Golf-pakker'],
-      ['indstillinger','Indstillinger'],
-      ['backup','Backup']
-    ].map(([k,l]) => `<button class="admin-fane ${fane===k?'aktiv':''}" onclick="skiftAdminFane('${k}')">${l}</button>`).join('')}
-  </div>
-  <section class="sektion">
-    ${fane === 'arrangementer'   ? renderAdminArr()          : ''}
-    ${fane === 'tilmeldinger'    ? renderAdminTilm()         : ''}
-    ${fane === 'sponsorer'       ? renderAdminSponsor()      : ''}
-    ${fane === 'golf'            ? renderAdminGolf()         : ''}
-    ${fane === 'indstillinger'   ? renderAdminIndstillinger(): ''}
-    ${fane === 'backup'          ? renderAdminBackup()       : ''}
-  </section>`;
-}
-
-function skiftAdminFane(fane) {
-  window._adminFane = fane;
-  navTil('admin');
-}
-
-function adminLogUd() {
-  adminLoggetInd = false;
-  navTil('forside');
-}
-
-/* ── Admin: Arrangementer ── */
-function renderAdminArr() {
-  const arrs = getArrangementer();
-  return `
-  <div class="admin-handlinger">
-    <button class="knap-primaer" onclick="adminOpretArr()">+ Nyt arrangement</button>
-    <button class="knap-sekundær" onclick="kopierTilNytAar()">📋 Kopier til nyt år</button>
-  </div>
-  <div class="admin-arr-liste">
-    ${arrs.length ? arrs.map(a => `
-      <div class="admin-arr-kort">
-        <div class="admin-arr-info">
-          <strong>${a.titel}</strong>
-          <span class="muted-txt">${fmtDato(a.dato)}${a.tid ? ' · ' + a.tid : ''}</span>
-          <span>${a.tilmeldte}/${a.maks} tilmeldte</span>
-        </div>
-        <div class="admin-arr-knapper">
-          <button class="knap-lille" onclick="adminRedigerArr('${a.id}')">✏️</button>
-          <button class="knap-lille" onclick="adminKopierArr('${a.id}')">📋</button>
-          <button class="knap-lille rød" onclick="adminSletArr('${a.id}')">🗑️</button>
-        </div>
-      </div>`).join('') : '<p class="muted-txt">Ingen arrangementer endnu.</p>'}
-  </div>
-  <div id="admin-arr-form-container"></div>`;
-}
-
-function adminOpretArr() {
-  const c = document.getElementById('admin-arr-form-container');
-  c.innerHTML = renderArrForm(null);
-}
-
-function adminRedigerArr(id) {
-  const arr = (DB.get('lyg_arrangementer') || []).find(a => a.id === id);
-  const c = document.getElementById('admin-arr-form-container');
-  c.innerHTML = renderArrForm(arr);
-  c.scrollIntoView({ behavior: 'smooth' });
-}
-
-function renderArrForm(arr) {
-  const er = !!arr;
-  return `
-  <div class="admin-form-boks">
-    <h3>${er ? 'Rediger' : 'Nyt'} arrangement</h3>
-    <form onsubmit="gemArr(event, '${er ? arr.id : ''}')">
-      <div class="form-gruppe"><label>Titel *</label><input name="titel" required value="${er ? arr.titel : ''}"></div>
-      <div class="form-2kol">
-        <div class="form-gruppe"><label>Dato *</label><input type="date" name="dato" required value="${er ? arr.dato : ''}"></div>
-        <div class="form-gruppe"><label>Tid</label><input name="tid" placeholder="16.00-21.00" value="${er ? (arr.tid||'') : ''}"></div>
-      </div>
-      <div class="form-gruppe"><label>Sted</label><input name="sted" value="${er ? (arr.sted||'') : ''}"></div>
-      <div class="form-gruppe"><label>Type</label><input name="type" value="${er ? (arr.type||'') : ''}"></div>
-      <div class="form-gruppe"><label>Beskrivelse</label><textarea name="beskrivelse" rows="3">${er ? (arr.beskrivelse||'') : ''}</textarea></div>
-      <div class="form-2kol">
-        <div class="form-gruppe"><label>Maks pladser</label><input type="number" name="maks" min="1" value="${er ? arr.maks : 40}"></div>
-        <div class="form-gruppe"><label>Tilmeldte</label><input type="number" name="tilmeldte" min="0" value="${er ? arr.tilmeldte : 0}"></div>
-      </div>
-      <div class="form-gruppe">
-        <label>Status</label>
-        <select name="status">
-          <option value="aaben" ${er && arr.status==='aaben' ? 'selected':''}>Åben</option>
-          <option value="lukket" ${er && arr.status==='lukket' ? 'selected':''}>Lukket</option>
+    <div class="g2f">
+      <div class="fg"><label>Antal personer</label><input type="number" name="antal" min="1" value="4"></div>
+      <div class="fg"><label>Pakke</label>
+        <select name="pakke">
+          <option value="">Vælg pakke…</option>
+          ${pakker.map(p=>`<option value="${esc(p.titel)}">${esc(p.titel)}</option>`).join('')}
         </select>
       </div>
-      <div class="form-gruppe">
-        <label>
-          <input type="checkbox" name="tilmeldingAaben" ${!er || arr.tilmeldingAaben ? 'checked' : ''}> Tilmelding åben
-        </label>
-      </div>
-      <div class="form-knapper">
-        <button type="submit" class="knap-primaer">${er ? 'Gem ændringer' : 'Opret arrangement'}</button>
-        <button type="button" class="knap-sekundær" onclick="this.closest('.admin-form-boks').remove()">Annuller</button>
-      </div>
-    </form>
-  </div>`;
+    </div>
+    <div class="fg"><label>Besked</label><textarea name="besk" rows="3" placeholder="Beskriv jeres ønsker…"></textarea></div>
+    <button type="submit" class="knap-p fb">Send forespørgsel</button>
+  </form>
+  <div id="golf-kv" style="display:none" class="kv">
+    <div class="kv-i">✅</div>
+    <h2>Forespørgsel sendt!</h2>
+    <p>Vi kontakter dig hurtigst muligt.</p>
+    <button class="knap-sek" onclick="navTil('forside')">Tilbage til forsiden</button>
+  </div>
+</section>`;
+}
+
+function submitGolf(e) {
+  e.preventDefault();
+  const f=e.target;
+  const bg = DB.get('ek_golf_booking')||[];
+  bg.push({id:'g'+Date.now(),virk:f.virk.value,kp:f.kp.value,email:f.email.value,tlf:f.tlf.value,dato:f.dato.value,antal:f.antal.value,pakke:f.pakke.value,besk:f.besk.value,oprettet:new Date().toISOString()});
+  DB.set('ek_golf_booking', bg);
+  f.style.display='none'; document.getElementById('golf-kv').style.display='block';
+}
+
+/* ================================================================
+   SPONSOR
+   ================================================================ */
+function pgSponsor() {
+  const sponsorer = DB.get('ek_sponsorer')||[];
+  return `
+<div class="ph bg-mork">
+  <h1>Bliv sponsor 🌟</h1>
+  <p>Styrk din virksomhed med synlighed og relationer</p>
+</div>
+
+<section class="sek">
+  <div class="sp-citat">
+    <p>"Som sponsor bliver din virksomhed en del af et stærkt fællesskab med synlighed, relationer og oplevelser — med golf som rammen."</p>
+  </div>
+</section>
+
+<section class="sek">
+  <h2 class="stitl">Hvad får din virksomhed?</h2>
+  <div class="ikg">
+    ${CONFIG.sponsorFordele.map(f=>`
+    <div class="ikb static">
+      <span class="iks">${f.ikon}</span>
+      <strong>${esc(f.titel)}</strong>
+      <p>${esc(f.tekst)}</p>
+    </div>`).join('')}
+  </div>
+</section>
+
+<section class="sek">
+  <h2 class="stitl">Hvorfor Lyngbygaard Erhvervsklub?</h2>
+  <div class="sp-facts">
+    <div class="sp-fact"><strong>100+</strong><span>erhvervsmedlemmer</span></div>
+    <div class="sp-fact"><strong>10+</strong><span>events om året</span></div>
+    <div class="sp-fact"><strong>Aarhus</strong><span>regionens netværk</span></div>
+    <div class="sp-fact"><strong>Golf</strong><span>eksklusiv ramme</span></div>
+  </div>
+</section>
+
+<section class="sek">
+  <h2 class="stitl">Sponsorniveauer</h2>
+  <div class="sp-niv">
+    <div class="sp-n guld-n"><div class="sp-n-titel">🥇 Guld</div><p>Største synlighed. Primær placering på bane, hjemmeside og alle arrangementer. Inkl. VIP-invitationer og greenfee.</p></div>
+    <div class="sp-n"><div class="sp-n-titel">🥈 Sølv</div><p>Logo ved bane og digitalt. Adgang til erhvervsarrangementer og invitationer til udvalgte events.</p></div>
+    <div class="sp-n"><div class="sp-n-titel">🥉 Bronze</div><p>Digital synlighed og omtale. Invitationer til åbne arrangementer.</p></div>
+  </div>
+  <p class="muted tc mt1">Priser og indhold aftales individuelt. Kontakt os for et uforpligtende tilbud.</p>
+</section>
+
+${sponsorer.filter(s=>s.navn&&!s.navn.includes('ledigt')).length?`
+<section class="sek">
+  <h2 class="stitl">Vores sponsorer</h2>
+  <div class="sp-g">
+    ${sponsorer.map(s=>`
+    <a class="sp-k" href="${esc(s.link||'#')}" target="_blank" rel="noopener">
+      ${s.logo?`<img src="${esc(s.logo)}" alt="${esc(s.navn)}" class="sp-logo">`:
+               `<div class="sp-nv">${esc(s.navn)}</div>`}
+      <div class="sp-niv-txt">${esc(s.niveau||'')}</div>
+    </a>`).join('')}
+  </div>
+</section>`:''}
+
+<section class="sek">
+  <h2 class="stitl">Kontakt os om sponsorat</h2>
+  <form id="spf" onsubmit="submitSponsor(event)">
+    <div class="g2f">
+      <div class="fg"><label>Navn *</label><input name="navn" required></div>
+      <div class="fg"><label>Virksomhed *</label><input name="virk" required></div>
+    </div>
+    <div class="g2f">
+      <div class="fg"><label>Email *</label><input type="email" name="email" required></div>
+      <div class="fg"><label>Telefon</label><input type="tel" name="tlf"></div>
+    </div>
+    <div class="fg"><label>Besked</label><textarea name="besk" rows="3" placeholder="Fortæl os om din virksomhed og ønsker…"></textarea></div>
+    <button type="submit" class="knap-p fb">Send forespørgsel</button>
+  </form>
+  <div id="sp-kv" style="display:none" class="kv">
+    <div class="kv-i">✅</div><h2>Tak for din interesse!</h2>
+    <p>Vi vender tilbage hurtigst muligt.</p>
+    <button class="knap-sek" onclick="navTil('forside')">Tilbage</button>
+  </div>
+  <div class="tc mt1">
+    <a class="knap-sek" href="tel:${CONFIG.telefon.replace(/\s/g,'')}">📞 ${CONFIG.telefon}</a>
+    <a class="knap-sek" href="mailto:${CONFIG.email}?subject=Sponsorat LYG Erhvervsklub">✉️ ${CONFIG.email}</a>
+  </div>
+</section>`;
+}
+
+function submitSponsor(e) {
+  e.preventDefault();
+  const f=e.target;
+  const alle=DB.get('ek_sponsor_henvendelser')||[];
+  alle.push({id:'sp'+Date.now(),navn:f.navn.value,virk:f.virk.value,email:f.email.value,tlf:f.tlf.value,besk:f.besk.value,dato:new Date().toISOString()});
+  DB.set('ek_sponsor_henvendelser',alle);
+  f.style.display='none'; document.getElementById('sp-kv').style.display='block';
+}
+
+/* ================================================================
+   OM EK
+   ================================================================ */
+function pgOm() {
+  return `
+<div class="ph bg-mork">
+  <h1>Erhvervsklubben 🤝</h1>
+  <p>${esc(CONFIG.omEK.tekst)}</p>
+</div>
+<section class="sek">
+  <div class="ikg">
+    ${CONFIG.omEK.punkter.map(p=>`
+    <div class="ikb static">
+      <span class="iks">${p.ikon}</span>
+      <strong>${esc(p.titel)}</strong>
+      <p>${esc(p.tekst)}</p>
+    </div>`).join('')}
+  </div>
+</section>
+<section class="sek">
+  <div class="sp-citat">
+    <p>Interesseret i at blive erhvervsmedlem? Kontakt os og hør om mulighederne.</p>
+    <div class="tc mt1">
+      <a class="knap-p" href="tel:${CONFIG.telefon.replace(/\s/g,'')}">📞 ${CONFIG.telefon}</a>
+      <a class="knap-sek" href="mailto:${CONFIG.email}">✉️ ${CONFIG.email}</a>
+    </div>
+  </div>
+</section>
+<section class="sek">
+  <h2 class="stitl">Kalender 2026</h2>
+  <div class="arr-l">${getArr().filter(a=>erFremtidig(a.dato)).slice(0,4).map(a=>arrKort(a,true)).join('')}</div>
+  <div class="tc mt1"><button class="knap-sek" onclick="navTil('kalender')">Se fuld kalender →</button></div>
+</section>`;
+}
+
+/* ================================================================
+   KONTAKT
+   ================================================================ */
+function pgKontakt() {
+  return `
+<div class="ph bg-mork">
+  <h1>Kontakt ✉️</h1>
+  <p>Vi er klar til at hjælpe dig</p>
+</div>
+<section class="sek">
+  <div class="kontakt-boks">
+    <a class="kl" href="tel:${CONFIG.telefon.replace(/\s/g,'')}"><span>📞</span>${CONFIG.telefon}</a>
+    <a class="kl" href="mailto:${CONFIG.email}"><span>✉️</span>${CONFIG.email}</a>
+    <div class="kl"><span>📍</span>${esc(CONFIG.adresse)}</div>
+    <a class="kl" href="${CONFIG.website}" target="_blank" rel="noopener"><span>🌐</span>${CONFIG.website}</a>
+  </div>
+  <div class="kontakt-ctas">
+    <a class="knap-p" href="tel:${CONFIG.telefon.replace(/\s/g,'')}">📞 Ring til os</a>
+    <a class="knap-sek" href="mailto:${CONFIG.email}">✉️ Send email</a>
+  </div>
+</section>
+<section class="sek">
+  <h2 class="stitl">Send en besked</h2>
+  <form id="kf" onsubmit="submitKontakt(event)">
+    <div class="g2f">
+      <div class="fg"><label>Fornavn *</label><input name="fn" required></div>
+      <div class="fg"><label>Efternavn *</label><input name="en" required></div>
+    </div>
+    <div class="fg"><label>Email *</label><input type="email" name="email" required></div>
+    <div class="fg"><label>Telefon</label><input type="tel" name="tlf"></div>
+    <div class="fg"><label>Besked *</label><textarea name="besk" rows="4" required placeholder="Skriv din besked her…"></textarea></div>
+    <button type="submit" class="knap-p fb">Send besked</button>
+  </form>
+  <div id="kont-kv" style="display:none" class="kv">
+    <div class="kv-i">✅</div><h2>Besked modtaget!</h2>
+    <p>Vi vender tilbage hurtigst muligt.</p>
+    <button class="knap-sek" onclick="navTil('forside')">Tilbage til forsiden</button>
+  </div>
+</section>`;
+}
+
+function submitKontakt(e) {
+  e.preventDefault();
+  const f=e.target;
+  const alle=DB.get('ek_beskeder')||[];
+  alle.push({id:'k'+Date.now(),fn:f.fn.value,en:f.en.value,email:f.email.value,tlf:f.tlf.value,besk:f.besk.value,dato:new Date().toISOString()});
+  DB.set('ek_beskeder',alle);
+  f.style.display='none'; document.getElementById('kont-kv').style.display='block';
+}
+
+/* ================================================================
+   ADMIN
+   ================================================================ */
+let adminIN=false;
+let _adFane='arr';
+
+function pgAdmin() {
+  if (!adminIN) return `
+<div class="ph bg-mork"><h1>Admin ⚙️</h1></div>
+<section class="sek">
+  <div class="admin-login">
+    <p class="muted tc mb1">Indtast admin-koden</p>
+    <div class="fg"><label>Kode</label><input type="password" id="ak-inp" maxlength="30" placeholder="••••"></div>
+    <button class="knap-p fb" onclick="tjekKode()">Log ind</button>
+    <div id="ak-fejl" class="fejl-b" style="display:none">Forkert kode.</div>
+  </div>
+</section>`;
+
+  const faner=[['arr','Arrangementer'],['tilm','Tilmeldinger'],['sp','Sponsorer'],['golf','Golf-pakker'],['inst','Indstillinger'],['bk','Backup']];
+  return `
+<div class="ph bg-mork" style="display:flex;justify-content:space-between;align-items:center">
+  <div><h1>Admin ⚙️</h1></div>
+  <button class="knap-sek sm" onclick="adminLogUd()">Log ud</button>
+</div>
+<div class="af-nav">
+  ${faner.map(([k,l])=>`<button class="af ${_adFane===k?'aktiv':''}" onclick="skiftFane('${k}')">${l}</button>`).join('')}
+</div>
+<section class="sek">
+  ${_adFane==='arr'  ? adArr()   : ''}
+  ${_adFane==='tilm' ? adTilm()  : ''}
+  ${_adFane==='sp'   ? adSp()    : ''}
+  ${_adFane==='golf' ? adGolf()  : ''}
+  ${_adFane==='inst' ? adInst()  : ''}
+  ${_adFane==='bk'   ? adBk()    : ''}
+</section>`;
+}
+
+function tjekKode() {
+  const v=document.getElementById('ak-inp').value;
+  if (v===getKode()) { adminIN=true; navTil('admin'); }
+  else { document.getElementById('ak-fejl').style.display='block'; }
+}
+function adminLogUd() { adminIN=false; navTil('forside'); }
+function skiftFane(f) { _adFane=f; navTil('admin'); }
+
+/* ── Admin: Arrangementer ── */
+function adArr() {
+  const arrs=getArr();
+  return `
+<div class="ad-hd">
+  <button class="knap-p" onclick="visArrForm(null)">+ Nyt arrangement</button>
+  <button class="knap-sek" onclick="kopierNytAar()">📋 Kopier til nyt år</button>
+</div>
+<div class="ad-l">
+  ${arrs.map(a=>`
+  <div class="ad-rad">
+    <div class="ad-ri"><strong>${esc(a.titel)}</strong><span>${fmtDato(a.dato)}${a.tid?' · '+esc(a.tid):''}</span><span>${a.tlm}/${a.maks} · ${a.aaben?'Åben':'Lukket'}</span></div>
+    <div class="ad-rk">
+      <button class="knap-i" onclick="visArrForm('${a.id}')">✏️</button>
+      <button class="knap-i" onclick="kopierArr('${a.id}')">📋</button>
+      <button class="knap-i red" onclick="sletArr('${a.id}')">🗑️</button>
+    </div>
+  </div>`).join('')||'<p class="muted">Ingen arrangementer.</p>'}
+</div>
+<div id="arr-form-wrap"></div>`;
+}
+
+function visArrForm(id) {
+  const a = id ? (DB.get('ek_arr')||[]).find(x=>x.id===id) : null;
+  document.getElementById('arr-form-wrap').innerHTML=`
+<div class="ad-form">
+  <h3>${a?'Rediger':'Nyt'} arrangement</h3>
+  <form onsubmit="gemArr(event,'${a?a.id:''}')">
+    <div class="fg"><label>Titel *</label><input name="titel" required value="${a?esc(a.titel):''}"></div>
+    <div class="g2f">
+      <div class="fg"><label>Dato *</label><input type="date" name="dato" required value="${a?a.dato:''}"></div>
+      <div class="fg"><label>Tid</label><input name="tid" placeholder="16.00-21.00" value="${a?esc(a.tid||''):''}"></div>
+    </div>
+    <div class="fg"><label>Sted</label><input name="sted" value="${a?esc(a.sted||''):''}"></div>
+    <div class="fg"><label>Type</label><input name="type" value="${a?esc(a.type||''):''}"></div>
+    <div class="fg"><label>Beskrivelse</label><textarea name="besk" rows="3">${a?esc(a.besk||''):''}</textarea></div>
+    <div class="g2f">
+      <div class="fg"><label>Maks pladser</label><input type="number" name="maks" min="1" value="${a?a.maks:40}"></div>
+      <div class="fg"><label>Tilmeldte</label><input type="number" name="tlm" min="0" value="${a?a.tlm:0}"></div>
+    </div>
+    <div class="fg">
+      <label>Status</label>
+      <select name="status">
+        <option value="aaben" ${a&&a.status==='aaben'?'selected':''}>Åben</option>
+        <option value="lukket" ${a&&a.status==='lukket'?'selected':''}>Lukket</option>
+      </select>
+    </div>
+    <div class="fg"><label class="cb-lbl"><input type="checkbox" name="aaben" ${!a||a.aaben?'checked':''}> Tilmelding åben</label></div>
+    <div class="btn-row">
+      <button type="submit" class="knap-p">${a?'Gem':'Opret'}</button>
+      <button type="button" class="knap-sek" onclick="this.closest('.ad-form').remove()">Annuller</button>
+    </div>
+  </form>
+</div>`;
+  document.getElementById('arr-form-wrap').scrollIntoView({behavior:'smooth'});
 }
 
 function gemArr(e, id) {
-  e.preventDefault();
-  const f = e.target;
-  const arrs = DB.get('lyg_arrangementer') || [];
-  const nytArr = {
-    id: id || 'a' + Date.now(),
-    titel: f.titel.value, dato: f.dato.value, tid: f.tid.value,
-    sted: f.sted.value, type: f.type.value, beskrivelse: f.beskrivelse.value,
-    maks: parseInt(f.maks.value) || 40,
-    tilmeldte: parseInt(f.tilmeldte.value) || 0,
-    status: f.status.value,
-    tilmeldingAaben: f.tilmeldingAaben.checked
-  };
-
-  if (id) {
-    const idx = arrs.findIndex(a => a.id === id);
-    if (idx > -1) arrs[idx] = nytArr;
-  } else {
-    arrs.push(nytArr);
-  }
-  DB.set('lyg_arrangementer', arrs);
-  navTil('admin');
+  e.preventDefault(); const f=e.target;
+  const arrs=DB.get('ek_arr')||[];
+  const n={id:id||'a'+Date.now(), titel:f.titel.value, dato:f.dato.value, tid:f.tid.value, sted:f.sted.value, type:f.type.value, besk:f.besk.value, maks:parseInt(f.maks.value)||40, tlm:parseInt(f.tlm.value)||0, status:f.status.value, aaben:f.aaben.checked};
+  if (id) { const i=arrs.findIndex(a=>a.id===id); if(i>-1) arrs[i]=n; } else arrs.push(n);
+  DB.set('ek_arr',arrs); skiftFane('arr');
 }
 
-function adminSletArr(id) {
-  if (!confirm('Slet dette arrangement?')) return;
-  const arrs = (DB.get('lyg_arrangementer') || []).filter(a => a.id !== id);
-  DB.set('lyg_arrangementer', arrs);
-  navTil('admin');
+function sletArr(id) {
+  if (!confirm('Slet arrangement?')) return;
+  DB.set('ek_arr',(DB.get('ek_arr')||[]).filter(a=>a.id!==id)); skiftFane('arr');
 }
 
-function adminKopierArr(id) {
-  const arr = (DB.get('lyg_arrangementer') || []).find(a => a.id === id);
-  if (!arr) return;
-  const nyt = { ...arr, id: 'a' + Date.now(), titel: arr.titel + ' (kopi)', tilmeldte: 0 };
-  const arrs = DB.get('lyg_arrangementer') || [];
-  arrs.push(nyt);
-  DB.set('lyg_arrangementer', arrs);
-  navTil('admin');
-  alert('Arrangement kopieret.');
+function kopierArr(id) {
+  const a=(DB.get('ek_arr')||[]).find(x=>x.id===id); if(!a) return;
+  const arrs=DB.get('ek_arr')||[];
+  arrs.push({...a, id:'a'+Date.now(), titel:a.titel+' (kopi)', tlm:0});
+  DB.set('ek_arr',arrs); skiftFane('arr'); alert('Kopieret.');
 }
 
-function kopierTilNytAar() {
-  const aar = prompt('Kopier alle arrangementer til hvilket år?', new Date().getFullYear() + 1);
-  if (!aar || isNaN(parseInt(aar))) return;
-  const arrs = DB.get('lyg_arrangementer') || [];
-  const nyeArrs = arrs.map(a => {
-    const gammeltAar = a.dato.split('-')[0];
-    return { ...a, id: 'a' + Date.now() + Math.random().toString(36).substr(2,5), dato: a.dato.replace(gammeltAar, aar), tilmeldte: 0, status: 'aaben', tilmeldingAaben: true };
-  });
-  arrs.push(...nyeArrs);
-  DB.set('lyg_arrangementer', arrs);
-  navTil('admin');
-  alert(`${nyeArrs.length} arrangementer kopieret til ${aar}.`);
+function kopierNytAar() {
+  const y=prompt('Kopier alle arrangementer til år:',new Date().getFullYear()+1); if(!y||isNaN(+y)) return;
+  const arrs=DB.get('ek_arr')||[];
+  const nye=arrs.map(a=>({...a, id:'a'+Date.now()+Math.random().toString(36).substr(2,4), dato:a.dato.replace(/^\d{4}/,y), tlm:0, status:'aaben', aaben:true}));
+  DB.set('ek_arr',[...arrs,...nye]); skiftFane('arr'); alert(`${nye.length} arrangementer kopieret til ${y}.`);
 }
 
 /* ── Admin: Tilmeldinger ── */
-function renderAdminTilm() {
-  const alle = DB.get('lyg_tilmeldinger') || [];
-  const søg = window._tilmSøg || '';
-  const filtrerede = søg ? alle.filter(t =>
-    t.navn.toLowerCase().includes(søg.toLowerCase()) ||
-    t.virksomhed.toLowerCase().includes(søg.toLowerCase())
-  ) : alle;
-
+function adTilm() {
+  const alle=DB.get('ek_tilm')||[];
+  const q=window._tilmQ||'';
+  const vis=q?alle.filter(t=>t.navn?.toLowerCase().includes(q.toLowerCase())||t.virk?.toLowerCase().includes(q.toLowerCase())):alle;
   return `
-  <div class="admin-handlinger">
-    <input type="search" placeholder="Søg navn / virksomhed…" value="${søg}"
-      oninput="window._tilmSøg=this.value;skiftAdminFane('tilmeldinger')" style="flex:1;min-width:0">
-    <button class="knap-sekundær" onclick="exportCSV('')">📥 Eksportér alle</button>
-  </div>
-  ${filtrerede.length ? `
-  <div class="tilm-tabel-wrapper">
-    <table class="tilm-tabel">
-      <thead><tr><th>Arrangement</th><th>Navn</th><th>Virksomhed</th><th>Antal</th><th>Mødt</th><th></th></tr></thead>
-      <tbody>
-        ${filtrerede.map(t => `
-          <tr>
-            <td>${t.arrangementTitel||'–'}</td>
-            <td>${t.navn}</td>
-            <td>${t.virksomhed}</td>
-            <td>${t.antal}</td>
-            <td><input type="checkbox" ${t.mødt?'checked':''} onchange="markerMødt('${t.id}',this.checked)"></td>
-            <td><button class="knap-lille rød" onclick="sletTilmelding('${t.id}')">🗑️</button></td>
-          </tr>`).join('')}
-      </tbody>
-    </table>
-  </div>` : `<p class="muted-txt">Ingen tilmeldinger${søg ? ' matcher søgningen' : ' endnu'}.</p>`}`;
+<div class="ad-hd">
+  <input type="search" placeholder="Søg navn/virksomhed…" value="${esc(q)}" oninput="window._tilmQ=this.value;skiftFane('tilm')" style="flex:1;min-width:0">
+  <button class="knap-sek" onclick="exportCSV()">📥 CSV</button>
+</div>
+${vis.length?`
+<div style="overflow-x:auto">
+<table class="tlm-tbl">
+  <thead><tr><th>Arrangement</th><th>Navn</th><th>Virksomhed</th><th>Antal</th><th>Mødt</th><th></th></tr></thead>
+  <tbody>
+  ${vis.map(t=>`<tr>
+    <td>${esc(t.arrTitel||'–')}</td>
+    <td>${esc(t.navn)}</td>
+    <td>${esc(t.virk)}</td>
+    <td>${t.antal}</td>
+    <td><input type="checkbox" ${t.mødt?'checked':''} onchange="markerMødt('${t.id}',this.checked)"></td>
+    <td><button class="knap-i red" onclick="sletTilm('${t.id}')">🗑️</button></td>
+  </tr>`).join('')}
+  </tbody>
+</table>
+</div>`:'<p class="muted">Ingen tilmeldinger.</p>'}`;
 }
 
-function markerMødt(id, mødt) {
-  const alle = DB.get('lyg_tilmeldinger') || [];
-  const idx = alle.findIndex(t => t.id === id);
-  if (idx > -1) { alle[idx].mødt = mødt; DB.set('lyg_tilmeldinger', alle); }
-}
+function markerMødt(id,v) { const a=DB.get('ek_tilm')||[]; const i=a.findIndex(t=>t.id===id); if(i>-1){a[i].mødt=v;DB.set('ek_tilm',a);} }
+function sletTilm(id) { if(!confirm('Slet tilmelding?')) return; DB.set('ek_tilm',(DB.get('ek_tilm')||[]).filter(t=>t.id!==id)); skiftFane('tilm'); }
 
-function sletTilmelding(id) {
-  if (!confirm('Slet denne tilmelding?')) return;
-  const alle = (DB.get('lyg_tilmeldinger') || []).filter(t => t.id !== id);
-  DB.set('lyg_tilmeldinger', alle);
-  skiftAdminFane('tilmeldinger');
+function exportCSV() {
+  const alle=DB.get('ek_tilm')||[];
+  const hdr=['Arrangement','Navn','Virksomhed','Email','Telefon','Antal','Kommentar','Dato','Mødt'];
+  const rws=alle.map(t=>[t.arrTitel||'',t.navn,t.virk,t.email,t.tlf,t.antal,t.kom||'',t.dato,t.mødt?'Ja':'Nej']);
+  const csv=[hdr,...rws].map(r=>r.map(c=>`"${String(c||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const url=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'}));
+  const a=document.createElement('a'); a.href=url; a.download=`tilmeldinger_${Date.now()}.csv`; a.click(); URL.revokeObjectURL(url);
 }
 
 /* ── Admin: Sponsorer ── */
-function renderAdminSponsor() {
-  const sponsorer = DB.get('lyg_sponsorer') || [];
+function adSp() {
+  const sps=DB.get('ek_sponsorer')||[];
   return `
-  <div class="admin-handlinger">
-    <button class="knap-primaer" onclick="adminTilfoejSponsor()">+ Tilføj sponsor</button>
-  </div>
-  <div class="admin-arr-liste">
-    ${sponsorer.map(s => `
-      <div class="admin-arr-kort">
-        <div class="admin-arr-info"><strong>${s.navn}</strong><span>${s.niveau||''}</span></div>
-        <div class="admin-arr-knapper">
-          <button class="knap-lille" onclick="adminRedigerSponsor('${s.id}')">✏️</button>
-          <button class="knap-lille rød" onclick="adminSletSponsor('${s.id}')">🗑️</button>
-        </div>
-      </div>`).join('')}
-  </div>
-  <div id="admin-sponsor-form"></div>`;
+<div class="ad-hd"><button class="knap-p" onclick="visSponsorForm(null)">+ Tilføj sponsor</button></div>
+<div class="ad-l">
+  ${sps.map(s=>`
+  <div class="ad-rad">
+    <div class="ad-ri"><strong>${esc(s.navn)}</strong><span>${esc(s.niveau||'')}</span></div>
+    <div class="ad-rk">
+      <button class="knap-i" onclick="visSponsorForm('${s.id}')">✏️</button>
+      <button class="knap-i red" onclick="sletSponsor('${s.id}')">🗑️</button>
+    </div>
+  </div>`).join('')||'<p class="muted">Ingen sponsorer.</p>'}
+</div>
+<div id="sp-form-wrap"></div>`;
 }
 
-function adminTilfoejSponsor() {
-  document.getElementById('admin-sponsor-form').innerHTML = renderSponsorForm(null);
+function visSponsorForm(id) {
+  const s=id?(DB.get('ek_sponsorer')||[]).find(x=>x.id===id):null;
+  document.getElementById('sp-form-wrap').innerHTML=`
+<div class="ad-form">
+  <h3>${s?'Rediger':'Ny'} sponsor</h3>
+  <form onsubmit="gemSponsor(event,'${s?s.id:''}')">
+    <div class="fg"><label>Navn *</label><input name="navn" required value="${s?esc(s.navn):''}"></div>
+    <div class="fg"><label>Logo URL</label><input name="logo" value="${s?esc(s.logo||''):''}"></div>
+    <div class="fg"><label>Link URL</label><input name="link" value="${s?esc(s.link||''):''}"></div>
+    <div class="fg"><label>Niveau</label>
+      <select name="niveau">${['guld','sølv','bronze','standard'].map(n=>`<option value="${n}" ${s&&s.niveau===n?'selected':''}>${n}</option>`).join('')}</select>
+    </div>
+    <div class="btn-row">
+      <button type="submit" class="knap-p">Gem</button>
+      <button type="button" class="knap-sek" onclick="this.closest('.ad-form').remove()">Annuller</button>
+    </div>
+  </form>
+</div>`;
 }
 
-function adminRedigerSponsor(id) {
-  const s = (DB.get('lyg_sponsorer') || []).find(x => x.id === id);
-  document.getElementById('admin-sponsor-form').innerHTML = renderSponsorForm(s);
+function gemSponsor(e,id) {
+  e.preventDefault(); const f=e.target;
+  const sps=DB.get('ek_sponsorer')||[];
+  const n={id:id||'s'+Date.now(),navn:f.navn.value,logo:f.logo.value,link:f.link.value,niveau:f.niveau.value};
+  if(id){const i=sps.findIndex(s=>s.id===id);if(i>-1)sps[i]=n;}else sps.push(n);
+  DB.set('ek_sponsorer',sps); skiftFane('sp');
 }
 
-function renderSponsorForm(s) {
-  const er = !!s;
-  return `
-  <div class="admin-form-boks">
-    <h3>${er ? 'Rediger' : 'Ny'} sponsor</h3>
-    <form onsubmit="gemSponsor(event, '${er ? s.id : ''}')">
-      <div class="form-gruppe"><label>Navn *</label><input name="navn" required value="${er ? s.navn : ''}"></div>
-      <div class="form-gruppe"><label>Logo URL</label><input name="logo" value="${er ? (s.logo||'') : ''}"></div>
-      <div class="form-gruppe"><label>Link</label><input name="link" value="${er ? (s.link||'') : ''}"></div>
-      <div class="form-gruppe"><label>Niveau</label>
-        <select name="niveau">
-          ${['guld','sølv','bronze','standard'].map(n => `<option value="${n}" ${er && s.niveau===n?'selected':''}>${n}</option>`).join('')}
-        </select>
-      </div>
-      <div class="form-knapper">
-        <button type="submit" class="knap-primaer">Gem</button>
-        <button type="button" class="knap-sekundær" onclick="this.closest('.admin-form-boks').remove()">Annuller</button>
-      </div>
-    </form>
-  </div>`;
-}
-
-function gemSponsor(e, id) {
-  e.preventDefault();
-  const f = e.target;
-  const sponsorer = DB.get('lyg_sponsorer') || [];
-  const nyS = { id: id || 's' + Date.now(), navn: f.navn.value, logo: f.logo.value, link: f.link.value, niveau: f.niveau.value };
-  if (id) { const idx = sponsorer.findIndex(s => s.id === id); if (idx > -1) sponsorer[idx] = nyS; }
-  else sponsorer.push(nyS);
-  DB.set('lyg_sponsorer', sponsorer);
-  skiftAdminFane('sponsorer');
-}
-
-function adminSletSponsor(id) {
-  if (!confirm('Fjern sponsor?')) return;
-  DB.set('lyg_sponsorer', (DB.get('lyg_sponsorer') || []).filter(s => s.id !== id));
-  skiftAdminFane('sponsorer');
+function sletSponsor(id) {
+  if(!confirm('Fjern sponsor?')) return;
+  DB.set('ek_sponsorer',(DB.get('ek_sponsorer')||[]).filter(s=>s.id!==id)); skiftFane('sp');
 }
 
 /* ── Admin: Golf-pakker ── */
-function renderAdminGolf() {
-  const pakker = DB.get('lyg_golf_pakker') || CONFIG.golfPakker;
+function adGolf() {
+  const pk=DB.get('ek_pakker')||CONFIG.golfPakker;
   return `
-  <p class="muted-txt">Rediger golf-pakkerne nedenfor. Ændringer vises straks på "Book golfarrangement".</p>
-  ${pakker.map((p, i) => `
-    <div class="admin-form-boks" style="margin-bottom:1rem">
-      <form onsubmit="gemGolfPakke(event, ${i})">
-        <div class="form-gruppe"><label>Titel</label><input name="titel" value="${p.titel}"></div>
-        <div class="form-gruppe"><label>Pris</label><input name="pris" value="${p.pris}"></div>
-        <div class="form-gruppe"><label>Beskrivelse</label><textarea name="beskrivelse" rows="2">${p.beskrivelse}</textarea></div>
-        <div class="form-gruppe"><label>Inkluderer (én pr. linje)</label><textarea name="inkluderer" rows="3">${(p.inkluderer||[]).join('\n')}</textarea></div>
-        <button type="submit" class="knap-lille">Gem</button>
-      </form>
-    </div>`).join('')}`;
+<p class="muted mb1">Rediger golf-pakkerne. Ændringer slår straks igennem på Golf-siden.</p>
+${pk.map((p,i)=>`
+<div class="ad-form" style="margin-bottom:.75rem">
+  <form onsubmit="gemPakke(event,${i})">
+    <div class="g2f">
+      <div class="fg"><label>Titel</label><input name="titel" value="${esc(p.titel)}"></div>
+      <div class="fg"><label>Pris</label><input name="pris" value="${esc(p.pris)}"></div>
+    </div>
+    <div class="fg"><label>Beskrivelse</label><textarea name="besk" rows="2">${esc(p.beskrivelse)}</textarea></div>
+    <div class="fg"><label>Inkluderer (én pr. linje)</label><textarea name="inkl" rows="3">${(p.inkl||[]).join('\n')}</textarea></div>
+    <button type="submit" class="knap-i">💾 Gem</button>
+  </form>
+</div>`).join('')}`;
 }
 
-function gemGolfPakke(e, idx) {
-  e.preventDefault();
-  const f = e.target;
-  const pakker = DB.get('lyg_golf_pakker') || CONFIG.golfPakker;
-  pakker[idx] = { ...pakker[idx], titel: f.titel.value, pris: f.pris.value, beskrivelse: f.beskrivelse.value, inkluderer: f.inkluderer.value.split('\n').filter(Boolean) };
-  DB.set('lyg_golf_pakker', pakker);
-  alert('Pakke gemt.');
+function gemPakke(e,i) {
+  e.preventDefault(); const f=e.target;
+  const pk=DB.get('ek_pakker')||CONFIG.golfPakker;
+  pk[i]={...pk[i],titel:f.titel.value,pris:f.pris.value,beskrivelse:f.besk.value,inkl:f.inkl.value.split('\n').filter(Boolean)};
+  DB.set('ek_pakker',pk); alert('Pakke gemt ✓');
 }
 
 /* ── Admin: Indstillinger ── */
-function renderAdminIndstillinger() {
-  const hero = DB.get('lyg_hero') || {};
-  const kontakt = (DB.get('lyg_kontakt') || [{}])[0] || {};
+function adInst() {
+  const hero=DB.get('ek_hero')||{};
   return `
-  <div class="admin-form-boks">
-    <h3>Hero-sektion</h3>
-    <form onsubmit="gemHero(event)">
-      <div class="form-gruppe"><label>Overskrift</label><input name="tekst" value="${hero.tekst||CONFIG.heroTekst}"></div>
-      <div class="form-gruppe"><label>Underoverskrift</label><textarea name="under" rows="2">${hero.under||CONFIG.heroUnder}</textarea></div>
-      <div class="form-gruppe"><label>Hero-billede URL</label><input name="billede" value="${hero.billede||CONFIG.heroBillede}"></div>
-      <button type="submit" class="knap-primaer">Gem hero</button>
-    </form>
-  </div>
-  <div class="admin-form-boks">
-    <h3>Skift admin-kode</h3>
-    <form onsubmit="skiftAdminKode(event)">
-      <div class="form-gruppe"><label>Nuværende kode</label><input type="password" name="gammel" required></div>
-      <div class="form-gruppe"><label>Ny kode</label><input type="password" name="ny" required minlength="4"></div>
-      <div class="form-gruppe"><label>Bekræft ny kode</label><input type="password" name="bekraft" required></div>
-      <button type="submit" class="knap-primaer">Skift kode</button>
-    </form>
-  </div>`;
+<div class="ad-form mb1">
+  <h3>Hero-sektion</h3>
+  <form onsubmit="gemHero(event)">
+    <div class="fg"><label>Overskrift</label><input name="tekst" value="${esc(hero.tekst||CONFIG.heroTekst)}"></div>
+    <div class="fg"><label>Undertekst</label><textarea name="under" rows="2">${esc(hero.under||CONFIG.heroUnder)}</textarea></div>
+    <div class="fg"><label>Baggrundsbillede URL</label><input name="billede" value="${esc(hero.billede||CONFIG.heroBillede)}"></div>
+    <button type="submit" class="knap-p">Gem hero</button>
+  </form>
+</div>
+<div class="ad-form">
+  <h3>Skift admin-kode</h3>
+  <form onsubmit="skiftKode(event)">
+    <div class="fg"><label>Nuværende kode</label><input type="password" name="gammel" required></div>
+    <div class="fg"><label>Ny kode</label><input type="password" name="ny" required minlength="4"></div>
+    <div class="fg"><label>Bekræft ny kode</label><input type="password" name="bk" required></div>
+    <button type="submit" class="knap-p">Skift kode</button>
+  </form>
+</div>`;
 }
 
 function gemHero(e) {
-  e.preventDefault();
-  const f = e.target;
-  DB.set('lyg_hero', { tekst: f.tekst.value, under: f.under.value, billede: f.billede.value });
-  alert('Hero gemt.');
+  e.preventDefault(); const f=e.target;
+  DB.set('ek_hero',{tekst:f.tekst.value,under:f.under.value,billede:f.billede.value});
+  alert('Hero gemt ✓');
 }
 
-function skiftAdminKode(e) {
-  e.preventDefault();
-  const f = e.target;
-  if (f.gammel.value !== getAdminKode()) { alert('Nuværende kode er forkert.'); return; }
-  if (f.ny.value !== f.bekraft.value) { alert('De nye koder matcher ikke.'); return; }
-  DB.set('lyg_admin_kode', f.ny.value);
-  alert('Kode ændret.');
-  f.reset();
+function skiftKode(e) {
+  e.preventDefault(); const f=e.target;
+  if(f.gammel.value!==getKode()){alert('Nuværende kode forkert.');return;}
+  if(f.ny.value!==f.bk.value){alert('Nye koder matcher ikke.');return;}
+  DB.set('ek_kode',f.ny.value); alert('Kode ændret ✓'); f.reset();
 }
 
 /* ── Admin: Backup ── */
-function renderAdminBackup() {
+function adBk() {
   return `
-  <div class="admin-form-boks">
-    <h3>Eksportér backup</h3>
-    <p class="muted-txt">Hent al data som JSON-fil.</p>
-    <button class="knap-primaer" onclick="eksporterBackup()">📥 Download backup</button>
-  </div>
-  <div class="admin-form-boks">
-    <h3>Importér backup</h3>
-    <p class="muted-txt">Indlæs en tidligere backup-fil.</p>
-    <input type="file" id="backup-fil" accept=".json" onchange="importerBackup(this)">
-  </div>
-  <div class="admin-form-boks">
-    <h3>Nulstil testdata</h3>
-    <p class="muted-txt">Slet al data og genstart med standarddata.</p>
-    <button class="knap-rød" onclick="nulstilData()">🗑️ Nulstil alt data</button>
-  </div>`;
+<div class="ad-form mb1">
+  <h3>Eksportér backup</h3>
+  <p class="muted mb1">Hent al data som JSON-fil.</p>
+  <button class="knap-p" onclick="eksporter()">📥 Download backup</button>
+</div>
+<div class="ad-form mb1">
+  <h3>Importér backup</h3>
+  <p class="muted mb1">Genindlæs fra en tidligere backup.</p>
+  <input type="file" id="bk-fil" accept=".json" onchange="importer(this)">
+</div>
+<div class="ad-form">
+  <h3>Nulstil data</h3>
+  <p class="muted mb1">Sletter alt og genindlæser standarddata.</p>
+  <button class="knap-rød" onclick="nulstil()">🗑️ Nulstil alt</button>
+</div>`;
 }
 
-function eksporterBackup() {
-  const data = {
-    arrangementer: DB.get('lyg_arrangementer'),
-    tilmeldinger: DB.get('lyg_tilmeldinger'),
-    sponsorer: DB.get('lyg_sponsorer'),
-    golfPakker: DB.get('lyg_golf_pakker'),
-    hero: DB.get('lyg_hero'),
-    kontakt: DB.get('lyg_kontakt'),
-    venteliste: DB.get('lyg_venteliste'),
-    beskeder: DB.get('lyg_beskeder'),
-    golfBookinger: DB.get('lyg_golf_bookinger'),
-    eksportDato: new Date().toISOString()
-  };
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url;
-  a.download = `lyg-erhverv-backup-${Date.now()}.json`;
-  a.click(); URL.revokeObjectURL(url);
+function eksporter() {
+  const d={arr:DB.get('ek_arr'),tilm:DB.get('ek_tilm'),sp:DB.get('ek_sponsorer'),pk:DB.get('ek_pakker'),hero:DB.get('ek_hero'),dato:new Date().toISOString()};
+  const url=URL.createObjectURL(new Blob([JSON.stringify(d,null,2)],{type:'application/json'}));
+  const a=document.createElement('a'); a.href=url; a.download=`lyg-ek-backup-${Date.now()}.json`; a.click(); URL.revokeObjectURL(url);
 }
 
-function importerBackup(input) {
-  const fil = input.files[0];
-  if (!fil) return;
-  const reader = new FileReader();
-  reader.onload = ev => {
+function importer(inp) {
+  const fil=inp.files[0]; if(!fil) return;
+  const r=new FileReader();
+  r.onload=ev=>{
     try {
-      const data = JSON.parse(ev.target.result);
-      if (!confirm('Dette vil overskrive al nuværende data. Fortsæt?')) return;
-      if (data.arrangementer) DB.set('lyg_arrangementer', data.arrangementer);
-      if (data.tilmeldinger)  DB.set('lyg_tilmeldinger', data.tilmeldinger);
-      if (data.sponsorer)     DB.set('lyg_sponsorer', data.sponsorer);
-      if (data.golfPakker)    DB.set('lyg_golf_pakker', data.golfPakker);
-      if (data.hero)          DB.set('lyg_hero', data.hero);
-      alert('Backup importeret!');
-      navTil('forside');
+      const d=JSON.parse(ev.target.result);
+      if(!confirm('Overskriver al nuværende data. Fortsæt?')) return;
+      if(d.arr)  DB.set('ek_arr',d.arr);
+      if(d.tilm) DB.set('ek_tilm',d.tilm);
+      if(d.sp)   DB.set('ek_sponsorer',d.sp);
+      if(d.pk)   DB.set('ek_pakker',d.pk);
+      if(d.hero) DB.set('ek_hero',d.hero);
+      alert('Backup importeret ✓'); navTil('forside');
     } catch { alert('Ugyldig backup-fil.'); }
   };
-  reader.readAsText(fil);
+  r.readAsText(fil);
 }
 
-function nulstilData() {
-  if (!confirm('Er du sikker? Al data slettes og standarddata genindlæses.')) return;
-  DB.del('lyg_init');
-  ['lyg_arrangementer','lyg_tilmeldinger','lyg_sponsorer','lyg_golf_pakker','lyg_hero','lyg_kontakt','lyg_venteliste','lyg_beskeder','lyg_golf_bookinger','lyg_paamindelser','lyg_paam_vist','lyg_admin_kode'].forEach(k => DB.del(k));
-  initData();
-  navTil('forside');
-  alert('Data nulstillet til standarddata.');
+function nulstil() {
+  if(!confirm('Slet al data og genindlæs standarddata?')) return;
+  ['ek_arr','ek_tilm','ek_sponsorer','ek_pakker','ek_hero','ek_kode','ek_venteliste','ek_beskeder','ek_golf_booking','ek_sponsor_henvendelser','ek_paam','ek_paam_vist','ek_init'].forEach(k=>DB.del(k));
+  init(); navTil('forside'); alert('Data nulstillet ✓');
 }
 
-/* ============================================================
-   KALENDER + PÅMINDELSER
-   ============================================================ */
-function tilfoejKalender(id) {
-  const arr = getArrangementer().find(a => a.id === id);
-  if (!arr) return;
-  const start = arr.dato.replace(/-/g, '');
-  const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(arr.titel)}&dates=${start}/${start}&details=${encodeURIComponent(arr.beskrivelse||'')}${arr.sted ? '&location=' + encodeURIComponent(arr.sted) : ''}`;
-  window.open(url, '_blank');
+/* ================================================================
+   KALENDER / PÅMINDELSER
+   ================================================================ */
+function tilfoejKal(id) {
+  const a=getArr().find(x=>x.id===id); if(!a) return;
+  const d=a.dato.replace(/-/g,'');
+  window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(a.titel)}&dates=${d}/${d}${a.sted?'&location='+encodeURIComponent(a.sted):''}${a.besk?'&details='+encodeURIComponent(a.besk):''}`, '_blank','noopener');
 }
 
-async function aktiverPaamindelse(id) {
-  const arr = getArrangementer().find(a => a.id === id);
-  if (!arr) return;
-  const tilladelse = await anmodNotifikationer();
-  if (tilladelse === 'granted' || tilladelse === 'default') {
-    gemPåmindelser(id, arr.dato, arr.titel);
-    alert(`Påmindelser aktiveret for "${arr.titel}".\nDu får besked 14, 7 og 3 dage før.`);
-  } else if (tilladelse === 'denied') {
-    alert('Notifikationer er blokeret. Tillad dem i dine browserindstillinger for at modtage påmindelser.');
+async function aktPaam(id) {
+  const a=getArr().find(x=>x.id===id); if(!a) return;
+
+  // iOS Safari og mange mobile browsere understøtter ikke Notification API
+  if (!('Notification' in window)) {
+    // Tilbyd kalender i stedet
+    const ok = confirm(`Din browser understøtter ikke push-notifikationer.\n\nVil du i stedet tilføje "${a.titel}" til din kalender som påmindelse?`);
+    if (ok) tilfoejKal(id);
+    return;
+  }
+
+  if (Notification.permission === 'denied') {
+    const ok = confirm(`Notifikationer er blokeret i din browser.\n\nVil du i stedet tilføje "${a.titel}" til din kalender som påmindelse?`);
+    if (ok) tilfoejKal(id);
+    return;
+  }
+
+  let perm = Notification.permission;
+  if (perm === 'default') {
+    try { perm = await Notification.requestPermission(); }
+    catch { perm = 'denied'; }
+  }
+
+  if (perm === 'granted') {
+    // Gem påmindelser lokalt
+    const pm=DB.get('ek_paam')||{};
+    pm[id]={dato:a.dato,titel:a.titel,tider:[14,7,3]};
+    DB.set('ek_paam',pm);
+    alert(`✅ Påmindelser aktiveret for "${a.titel}".\nDu får besked 14, 7 og 3 dage før.`);
   } else {
-    alert('Din browser understøtter ikke notifikationer. Brug "Tilføj til kalender" i stedet.');
+    const ok = confirm(`Notifikationer er ikke tilladt.\n\nVil du i stedet tilføje "${a.titel}" til din kalender som påmindelse?`);
+    if (ok) tilfoejKal(id);
   }
 }
 
-/* ============================================================
-   BIND EVENTS (called after each render)
-   ============================================================ */
-function bindEvents() {
-  // Admin kode enter-tast
-  const kodeInput = document.getElementById('admin-kode-input');
-  if (kodeInput) {
-    kodeInput.addEventListener('keydown', e => { if (e.key === 'Enter') tjekAdminKode(); });
-    kodeInput.focus();
-  }
+function tjekPaam() {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  const pm=DB.get('ek_paam')||{};
+  const vist=DB.get('ek_paam_vist')||{};
+  const nu=new Date();
+  Object.entries(pm).forEach(([id,p])=>{
+    (p.tider||[]).forEach(dage=>{
+      const nøgle=`${id}_${dage}`;
+      if(vist[nøgle]) return;
+      const grænse=new Date(p.dato+'T00:00:00');
+      grænse.setDate(grænse.getDate()-dage);
+      if(nu>=grænse){
+        try { new Notification(`Husk: ${p.titel}`,{body:`Om ${dage} dag${dage>1?'e':''}`,icon:'./icons/icon-192.png'}); }
+        catch {}
+        vist[nøgle]=true;
+      }
+    });
+  });
+  DB.set('ek_paam_vist',vist);
 }
 
-/* ============================================================
+/* ================================================================
+   BIND EVENTS
+   ================================================================ */
+function bindAll() {
+  const ak=document.getElementById('ak-inp');
+  if (ak) { ak.addEventListener('keydown',e=>{ if(e.key==='Enter') tjekKode(); }); ak.focus(); }
+}
+
+/* ================================================================
    INSTALL PROMPT
-   ============================================================ */
-let installPrompt = null;
-window.addEventListener('beforeinstallprompt', e => {
-  e.preventDefault();
-  installPrompt = e;
-  const banner = document.getElementById('install-banner');
-  if (banner) banner.style.display = 'flex';
-});
+   ================================================================ */
+let installEvt=null;
+window.addEventListener('beforeinstallprompt',e=>{ e.preventDefault(); installEvt=e; const b=document.getElementById('install-banner'); if(b) b.style.display='flex'; });
 
 function installApp() {
-  if (!installPrompt) return;
-  installPrompt.prompt();
-  installPrompt.userChoice.then(() => {
-    installPrompt = null;
-    const banner = document.getElementById('install-banner');
-    if (banner) banner.style.display = 'none';
-  });
+  if (!installEvt) return;
+  installEvt.prompt();
+  installEvt.userChoice.then(()=>{ installEvt=null; const b=document.getElementById('install-banner'); if(b) b.style.display='none'; });
 }
 
-/* ============================================================
+/* ================================================================
    BOOT
-   ============================================================ */
+   ================================================================ */
 document.addEventListener('DOMContentLoaded', () => {
-  initData();
-  tjekPåmindelser();
+  init();
+  tjekPaam();
 
+  // Register service worker — bruger relativ sti, virker i enhver undermappe
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/service-worker.js').catch(() => {});
+    navigator.serviceWorker.register('./service-worker.js')
+      .then(r => console.log('SW registered:', r.scope))
+      .catch(e => console.warn('SW registration failed:', e));
   }
 
-  renderApp();
+  // Initial render
+  navTil('forside');
 
-  // Nav klik
+  // Navigation
   document.getElementById('bottom-nav').addEventListener('click', e => {
     const btn = e.target.closest('.nav-item');
-    if (btn) navTil(btn.dataset.side);
+    if (btn && btn.dataset.side) navTil(btn.dataset.side);
   });
+
+  // Splash screen
+  const sp = document.getElementById('splash');
+  if (sp) { setTimeout(() => { sp.style.opacity='0'; setTimeout(()=>sp.remove(), 400); }, 600); }
 });
