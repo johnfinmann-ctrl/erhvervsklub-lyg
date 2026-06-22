@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="Erhverv, netværk og golfoplevelser i Lyngbygaard Golf. Tilmeld arrangementer, book golfarrangement og bliv sponsor.">
+  <meta name="theme-color" content="#0d2b1a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="LYG Erhverv">
+  <meta name="mobile-web-app-capable" content="yes">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="Lyngbygaard Erhvervsklub">
+  <meta property="og:description" content="Erhverv, netværk og golfoplevelser i Lyngbygaard Golf">
+  <meta property="og:type" content="website">
+
+  <title>Lyngbygaard Erhvervsklub</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="style.css">
+
+  <!-- Apple touch icon fallback (inline SVG icon) -->
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+</head>
+<body>
+
+<div id="app">
+
+  <!-- Install banner (Android/Chrome) -->
+  <div id="install-banner">
+    <span>Installér appen på din enhed</span>
+    <button onclick="installApp()">Installér</button>
+  </div>
+
+  <!-- Page content -->
+  <main id="main-content" role="main" aria-live="polite"></main>
+
+  <!-- Bottom navigation -->
+  <nav id="bottom-nav" role="navigation" aria-label="Hovedmenu">
+    <button class="nav-item" data-side="forside" aria-label="Forside">
+      <span class="nav-ikon">🏠</span>
+      <span>Forside</span>
+    </button>
+    <button class="nav-item" data-side="kalender" aria-label="Kalender">
+      <span class="nav-ikon">📅</span>
+      <span>Kalender</span>
+    </button>
+    <button class="nav-item" data-side="tilmelding" aria-label="Tilmelding">
+      <span class="nav-ikon">✅</span>
+      <span>Tilmeld</span>
+    </button>
+    <button class="nav-item" data-side="golfarr" aria-label="Golf">
+      <span class="nav-ikon">⛳</span>
+      <span>Golf</span>
+    </button>
+    <button class="nav-item" data-side="sponsor" aria-label="Sponsor">
+      <span class="nav-ikon">🌟</span>
+      <span>Sponsor</span>
+    </button>
+    <button class="nav-item" data-side="om" aria-label="Erhvervsklubben">
+      <span class="nav-ikon">🤝</span>
+      <span>EK</span>
+    </button>
+    <button class="nav-item" data-side="kontakt" aria-label="Kontakt">
+      <span class="nav-ikon">✉️</span>
+      <span>Kontakt</span>
+    </button>
+    <button class="nav-item admin-nav" data-side="admin" aria-label="Admin">
+      <span class="nav-ikon">⚙️</span>
+      <span>Admin</span>
+    </button>
+  </nav>
+
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

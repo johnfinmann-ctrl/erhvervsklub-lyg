@@ -1,0 +1,779 @@
+/* ============================================================
+   LYNGBYGAARD ERHVERVSKLUB — STYLE.CSS
+   Mobil-først · Grøn/Guld/Hvid
+   ============================================================ */
+
+/* ── Reset & Base ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --primaer:  #0d2b1a;
+  --primaer2: #163d25;
+  --accent:   #b8973a;
+  --accent2:  #d4aa45;
+  --lys:      #f5f0e8;
+  --hvid:     #ffffff;
+  --tekst:    #1a1a1a;
+  --muted:    #6b7280;
+  --border:   #e5e7eb;
+  --fejl:     #dc2626;
+  --nav-h:    64px;
+  --radius:   12px;
+  --radius-sm: 8px;
+  --shadow:   0 2px 12px rgba(0,0,0,.10);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,.15);
+  font-size: 16px;
+}
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  font-family: -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background: #f9f9f7;
+  color: var(--tekst);
+  line-height: 1.55;
+  overscroll-behavior-y: contain;
+}
+
+/* ── App wrapper ── */
+#app {
+  max-width: 640px;
+  margin: 0 auto;
+  min-height: 100dvh;
+  position: relative;
+  background: #f9f9f7;
+}
+
+/* ── Main content ── */
+#main-content {
+  padding-bottom: calc(var(--nav-h) + 16px);
+}
+
+/* ── Install banner ── */
+#install-banner {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  background: var(--primaer);
+  color: var(--hvid);
+  padding: .75rem 1rem;
+  font-size: .875rem;
+}
+
+#install-banner button {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: .4rem .85rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* ── Hero ── */
+.hero {
+  position: relative;
+  min-height: 52vw;
+  max-height: 340px;
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: flex-end;
+}
+
+.hero-overlay {
+  width: 100%;
+  background: linear-gradient(to top, rgba(10,30,18,.92) 0%, rgba(10,30,18,.45) 70%, transparent 100%);
+  padding: 2rem 1.25rem 1.5rem;
+  color: #fff;
+}
+
+.hero-logo {
+  font-size: .8rem;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: .5rem;
+}
+
+.hero-titel {
+  font-size: clamp(1.2rem, 5vw, 1.75rem);
+  font-weight: 800;
+  line-height: 1.2;
+  margin-bottom: .5rem;
+}
+
+.hero-under {
+  font-size: .875rem;
+  opacity: .85;
+  max-width: 36ch;
+}
+
+/* ── Side header ── */
+.side-header {
+  background: var(--primaer);
+  color: #fff;
+  padding: 1.5rem 1.25rem 1.25rem;
+}
+
+.side-header h1 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin-bottom: .25rem;
+}
+
+.side-header p {
+  font-size: .9rem;
+  opacity: .8;
+}
+
+/* ── Sektioner ── */
+.sektion {
+  padding: 1.25rem 1rem;
+}
+
+.sektions-titel {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  color: var(--primaer);
+}
+
+.sektions-titel.muted { color: var(--muted); font-size: 1rem; }
+
+/* ── Grid helpers ── */
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .75rem;
+}
+
+/* ── Store knapper ── */
+.stor-knap {
+  background: var(--primaer);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  padding: 1rem .75rem;
+  font-size: .9rem;
+  font-weight: 700;
+  cursor: pointer;
+  line-height: 1.3;
+  transition: transform .1s, background .15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.stor-knap:active { transform: scale(.97); }
+.stor-knap.guld { background: var(--accent); }
+.stor-knap.guld:hover { background: var(--accent2); }
+.stor-knap:hover:not(.guld) { background: var(--primaer2); }
+
+@media (hover: hover) {
+  .stor-knap { transition: transform .15s, background .15s, box-shadow .15s; }
+  .stor-knap:hover { box-shadow: var(--shadow-lg); }
+}
+
+/* ── Ikon grid ── */
+.ikon-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .75rem;
+}
+
+.ikon-kort {
+  background: #fff;
+  border-radius: var(--radius);
+  padding: 1.1rem .9rem;
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+
+.ikon-stor {
+  font-size: 1.75rem;
+  display: block;
+  margin-bottom: .4rem;
+}
+
+.ikon-kort strong {
+  font-size: .85rem;
+  font-weight: 700;
+  display: block;
+  margin-bottom: .25rem;
+  color: var(--primaer);
+}
+
+.ikon-kort p {
+  font-size: .78rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+/* ── Arrangement kort ── */
+.arr-liste { display: flex; flex-direction: column; gap: .85rem; }
+
+.arr-kort {
+  background: #fff;
+  border-radius: var(--radius);
+  padding: 1.1rem 1rem;
+  box-shadow: var(--shadow);
+  border-left: 4px solid var(--accent);
+}
+
+.arr-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: .5rem;
+  margin-bottom: .6rem;
+}
+
+.arr-dato {
+  font-size: .78rem;
+  color: var(--accent);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  margin-bottom: .2rem;
+}
+
+.arr-titel {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--primaer);
+  margin-bottom: .15rem;
+}
+
+.arr-sted { font-size: .82rem; color: var(--muted); }
+.arr-type { font-size: .78rem; color: var(--muted); margin-top: .1rem; }
+.arr-besk { font-size: .875rem; color: var(--tekst); margin-bottom: .75rem; line-height: 1.5; }
+
+/* status badges */
+.status-badge {
+  font-size: .72rem;
+  font-weight: 700;
+  padding: .25rem .6rem;
+  border-radius: 99px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.status-aaben  { background: #dcfce7; color: #166534; }
+.status-faa    { background: #fef3c7; color: #92400e; }
+.status-lukket { background: #fee2e2; color: #991b1b; }
+
+/* info grid */
+.arr-info-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: .5rem;
+  margin-bottom: .6rem;
+}
+
+.arr-info-felt {
+  text-align: center;
+  background: var(--lys);
+  border-radius: var(--radius-sm);
+  padding: .5rem .4rem;
+}
+
+.arr-info-label {
+  display: block;
+  font-size: .7rem;
+  color: var(--muted);
+  margin-bottom: .1rem;
+}
+
+.arr-info-felt strong { font-size: 1rem; color: var(--primaer); }
+
+/* progress */
+.progress-bar {
+  height: 6px;
+  background: var(--border);
+  border-radius: 99px;
+  margin-bottom: .8rem;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primaer), var(--accent));
+  border-radius: 99px;
+  transition: width .4s;
+}
+
+/* arr knapper */
+.arr-knapper { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; }
+
+/* ── Knapper ── */
+.knap-primaer {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .4rem;
+  background: var(--primaer);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: .7rem 1.25rem;
+  font-size: .9rem;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: background .15s, transform .1s;
+}
+
+.knap-primaer:active { transform: scale(.97); }
+.knap-primaer:hover  { background: var(--primaer2); }
+
+.knap-sekundær {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .4rem;
+  background: transparent;
+  color: var(--primaer);
+  border: 2px solid var(--primaer);
+  border-radius: var(--radius-sm);
+  padding: .65rem 1.1rem;
+  font-size: .9rem;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: background .15s, color .15s, transform .1s;
+}
+
+.knap-sekundær:active { transform: scale(.97); }
+.knap-sekundær:hover  { background: var(--primaer); color: #fff; }
+
+.knap-ikon {
+  background: var(--lys);
+  border: none;
+  border-radius: var(--radius-sm);
+  width: 40px;
+  height: 40px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.knap-ikon:active { transform: scale(.9); }
+
+.knap-lille {
+  background: var(--lys);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: .3rem .65rem;
+  font-size: .8rem;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.knap-lille.rød { background: #fee2e2; color: var(--fejl); border-color: #fecaca; }
+.knap-lille:active { transform: scale(.95); }
+
+.knap-rød {
+  background: var(--fejl);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: .7rem 1.25rem;
+  font-size: .9rem;
+  font-weight: 700;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.fuld-bredde { width: 100%; }
+
+/* ── Formularer ── */
+.form-gruppe {
+  margin-bottom: 1rem;
+}
+
+.form-gruppe label {
+  display: block;
+  font-size: .85rem;
+  font-weight: 600;
+  color: var(--primaer);
+  margin-bottom: .35rem;
+}
+
+.form-gruppe input,
+.form-gruppe select,
+.form-gruppe textarea {
+  width: 100%;
+  padding: .75rem .85rem;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: .95rem;
+  font-family: inherit;
+  background: #fff;
+  color: var(--tekst);
+  transition: border-color .15s;
+  -webkit-appearance: none;
+}
+
+.form-gruppe input:focus,
+.form-gruppe select:focus,
+.form-gruppe textarea:focus {
+  outline: none;
+  border-color: var(--primaer);
+  box-shadow: 0 0 0 3px rgba(13,43,26,.1);
+}
+
+.form-2kol {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .75rem;
+}
+
+.form-knapper {
+  display: flex;
+  gap: .75rem;
+  flex-wrap: wrap;
+  margin-top: .5rem;
+}
+
+/* ── Kvittering ── */
+.kvittering {
+  text-align: center;
+  padding: 2rem 1rem;
+  background: #fff;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.kvittering-ikon { font-size: 3rem; margin-bottom: 1rem; }
+.kvittering h2 { color: var(--primaer); margin-bottom: .5rem; }
+.kvittering p  { color: var(--muted); margin-bottom: 1rem; font-size: .9rem; }
+.kvittering .knap-primaer,
+.kvittering .knap-sekundær { margin: .25rem; }
+
+/* ── Golf pakker ── */
+.pakke-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.pakke-kort {
+  background: #fff;
+  border-radius: var(--radius);
+  padding: 1.25rem 1rem;
+  box-shadow: var(--shadow);
+  border-top: 4px solid var(--accent);
+}
+
+.pakke-kort h3 {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--primaer);
+  margin-bottom: .25rem;
+}
+
+.pakke-pris {
+  font-size: .85rem;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: .6rem;
+}
+
+.pakke-kort p {
+  font-size: .875rem;
+  color: var(--muted);
+  margin-bottom: .75rem;
+  line-height: 1.5;
+}
+
+.pakke-liste {
+  list-style: none;
+  padding: 0;
+}
+
+.pakke-liste li {
+  font-size: .82rem;
+  color: #166534;
+  padding: .15rem 0;
+}
+
+/* ── Sponsor ── */
+.sponsor-tekst-boks {
+  background: var(--primaer);
+  color: #fff;
+  border-radius: var(--radius);
+  padding: 1.5rem 1.25rem;
+  font-size: 1rem;
+  font-style: italic;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.sponsor-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .75rem;
+}
+
+.sponsor-kort {
+  background: #fff;
+  border-radius: var(--radius);
+  padding: 1rem;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 80px;
+  text-decoration: none;
+  border: 2px solid var(--border);
+  transition: border-color .15s;
+}
+
+.sponsor-kort:hover { border-color: var(--accent); }
+.sponsor-logo { max-width: 100%; max-height: 60px; object-fit: contain; }
+.sponsor-navn-stor { font-weight: 700; color: var(--primaer); font-size: .85rem; text-align: center; }
+.sponsor-niveau { font-size: .7rem; color: var(--muted); margin-top: .25rem; text-transform: capitalize; }
+
+/* ── Kontakt ── */
+.kontakt-info-boks {
+  background: #fff;
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  box-shadow: var(--shadow);
+  margin-bottom: 1.25rem;
+}
+
+.kontakt-linje {
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+  padding: .5rem 0;
+  font-size: .9rem;
+  color: var(--tekst);
+  border-bottom: 1px solid var(--border);
+}
+
+.kontakt-linje:last-child { border-bottom: none; }
+.kontakt-linje a { color: var(--tekst); text-decoration: none; }
+.kontakt-linje span { font-size: 1.1rem; }
+
+.kontakt-knapper {
+  display: flex;
+  gap: .75rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+
+/* ── Admin ── */
+.admin-login-boks {
+  max-width: 340px;
+  margin: 0 auto;
+  background: #fff;
+  border-radius: var(--radius);
+  padding: 2rem 1.5rem;
+  box-shadow: var(--shadow);
+}
+
+.admin-faner {
+  display: flex;
+  overflow-x: auto;
+  gap: .25rem;
+  padding: .75rem .75rem 0;
+  background: var(--primaer);
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.admin-faner::-webkit-scrollbar { display: none; }
+
+.admin-fane {
+  background: transparent;
+  border: none;
+  color: rgba(255,255,255,.65);
+  font-size: .82rem;
+  font-weight: 600;
+  padding: .5rem .85rem;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .15s, color .15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.admin-fane.aktiv { background: #f9f9f7; color: var(--primaer); }
+
+.admin-handlinger {
+  display: flex;
+  gap: .75rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+  align-items: center;
+}
+
+.admin-arr-liste { display: flex; flex-direction: column; gap: .6rem; }
+
+.admin-arr-kort {
+  background: #fff;
+  border-radius: var(--radius-sm);
+  padding: .85rem 1rem;
+  box-shadow: var(--shadow);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: .75rem;
+}
+
+.admin-arr-info {
+  display: flex;
+  flex-direction: column;
+  gap: .1rem;
+  min-width: 0;
+}
+
+.admin-arr-info strong { font-size: .9rem; }
+.admin-arr-info span   { font-size: .78rem; color: var(--muted); }
+
+.admin-arr-knapper { display: flex; gap: .35rem; flex-shrink: 0; }
+
+.admin-form-boks {
+  background: #fff;
+  border-radius: var(--radius);
+  padding: 1.25rem 1rem;
+  box-shadow: var(--shadow);
+  margin-top: 1rem;
+}
+
+.admin-form-boks h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--primaer);
+  margin-bottom: 1rem;
+}
+
+/* ── Tilmeldings-tabel ── */
+.tilm-tabel-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+.tilm-tabel {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .82rem;
+  white-space: nowrap;
+}
+
+.tilm-tabel th {
+  background: var(--primaer);
+  color: #fff;
+  padding: .5rem .75rem;
+  text-align: left;
+  font-weight: 700;
+}
+
+.tilm-tabel td {
+  padding: .5rem .75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.tilm-tabel tr:nth-child(even) td { background: #fafafa; }
+
+/* ── Fejl boks ── */
+.fejl-boks {
+  background: #fee2e2;
+  color: #991b1b;
+  border-radius: var(--radius-sm);
+  padding: .65rem .85rem;
+  font-size: .875rem;
+  margin-top: .75rem;
+}
+
+/* ── Muted tekst ── */
+.muted-txt { color: var(--muted); font-size: .875rem; }
+
+/* ── Bottom navigation ── */
+#bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 640px;
+  height: var(--nav-h);
+  background: var(--primaer);
+  display: flex;
+  align-items: stretch;
+  box-shadow: 0 -2px 16px rgba(0,0,0,.18);
+  z-index: 100;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+#bottom-nav::-webkit-scrollbar { display: none; }
+
+.nav-item {
+  flex: 1;
+  min-width: 52px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  color: rgba(255,255,255,.55);
+  font-size: .62rem;
+  font-weight: 600;
+  letter-spacing: .02em;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  padding: 0 2px;
+  -webkit-tap-highlight-color: transparent;
+  transition: color .15s, background .15s;
+  text-transform: uppercase;
+}
+
+.nav-item .nav-ikon { font-size: 1.2rem; line-height: 1; }
+
+.nav-item.active,
+.nav-item:active { color: var(--accent); background: rgba(255,255,255,.05); }
+
+.nav-item.admin-nav {
+  color: var(--accent);
+  border-left: 1px solid rgba(255,255,255,.1);
+}
+
+/* ── Pakke grid desktop ── */
+@media (min-width: 480px) {
+  .pakke-grid { grid-template-columns: 1fr 1fr; }
+}
+
+/* ── Desktop / tablet refinements ── */
+@media (min-width: 600px) {
+  .hero { max-height: 420px; }
+  .hero-titel { font-size: 2rem; }
+  .ikon-grid { grid-template-columns: repeat(4, 1fr); }
+  .pakke-grid { grid-template-columns: repeat(3, 1fr); }
+  .sektion { padding: 1.5rem 1.25rem; }
+  .arr-kort:hover { box-shadow: var(--shadow-lg); }
+}
+
+/* ── Safe area (iPhone notch / home indicator) ── */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  #bottom-nav { height: calc(var(--nav-h) + env(safe-area-inset-bottom)); padding-bottom: env(safe-area-inset-bottom); }
+  #main-content { padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom) + 16px); }
+}
+
+/* ── Accessibility ── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
