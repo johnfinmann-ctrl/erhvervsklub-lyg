@@ -1,5 +1,5 @@
 /* ================================================================
-   LYNGBYGAARD ERHVERVSKLUB — app.js v2
+   LYNGBYGAARD ERHVERVSKLUB — app.js v4
    Al konfiguration samlet øverst. Ret her – ingen andre steder.
    ================================================================ */
 
@@ -11,7 +11,9 @@ const CONFIG = {
   telefon:   '87 44 10 70',
   email:     'info@lyg.dk',
   website:   'https://lyg.dk',
-  golfboxUrl:'https://www.golfbox.dk',
+
+  /* GolfBox — direkte login-link */
+  golfboxUrl: 'https://www.golfbox.dk/site/login/loginform.asp',
 
   /* Hero */
   heroTekst:   'Erhverv, netværk og golfoplevelser',
@@ -21,58 +23,69 @@ const CONFIG = {
   /* Admin */
   adminKode: '1234',
 
-  /* Golf-pakker */
+  /* Firmaarrangement-pakker */
   golfPakker: [
-    { id:'gp1', titel:'Company Day',        pris:'Fra 4.500 kr./hold',       beskrivelse:'En hel dag på banen med morgenmad, frokost og 18 huller. Perfekt til teambuilding og kundepleje.',         inkl:['18 huller golf','Morgenmad & frokost','Golfvogn inkl.','Priser & diplomer'] },
-    { id:'gp2', titel:'Kundearrangement',   pris:'Fra 2.800 kr./hold',       beskrivelse:'Eksklusiv golfoplevelse til jeres vigtigste kunder med VIP-service og middag efter runden.',             inkl:['9 eller 18 huller','VIP-velkomst','Middag på klubhuset','Fotoservice'] },
-    { id:'gp3', titel:'Medarbejderdag',     pris:'Fra 1.900 kr./person',     beskrivelse:'Giv dine medarbejdere en dag de husker — med golf, samvær og god stemning.',                              inkl:['9 huller golf','Forfriskninger undervejs','Afslutningsfest','Overraskelser'] },
-    { id:'gp4', titel:'FirmaGolf',          pris:'Fra 950 kr./person',       beskrivelse:'Hurtig og social golfoplevelse — perfekt til firmaets eftermiddag. Ingen golferfaring nødvendig.',        inkl:['Driving range','9 huller golf','Sandwich & øl','Konkurrencer'] },
-    { id:'gp5', titel:'Konference + Golf',  pris:'Fra 6.500 kr./hold',       beskrivelse:'Kombinér jeres næste strategidag med en runde golf. Vi sørger for lokaler og forplejning.',              inkl:['Mødelokale hele dagen','18 huller golf','Fuld forplejning','Overnatning v/aftale'] },
-    { id:'gp6', titel:'VIP-arrangement',    pris:'Tilbud på forespørgsel',   beskrivelse:'Skræddersyet VIP-oplevelse til særlige gæster eller eksklusive anledninger.',                            inkl:['Fuld personlig service','Gourmetmiddag','Eksklusivt program','Caddie inkl.'] }
+    { id:'gp1', titel:'Kundearrangement',     pris:'Fra 2.800 kr./hold',     beskrivelse:'Eksklusiv oplevelse til jeres vigtigste kunder. Golf, VIP-service og middag i professionelle rammer.',   inkl:['9 eller 18 huller golf','VIP-velkomst','Middag på klubhuset','Fotoservice'] },
+    { id:'gp2', titel:'Medarbejderdag',        pris:'Fra 1.900 kr./person',   beskrivelse:'Giv dine medarbejdere en dag de husker — med golf, samvær og god stemning.',                             inkl:['9 huller golf','Forfriskninger undervejs','Afslutningsfest','Overraskelser'] },
+    { id:'gp3', titel:'Netværksdag',           pris:'Fra 1.500 kr./person',   beskrivelse:'Bring dine samarbejdspartnere sammen i uformelle, professionelle rammer.',                                inkl:['Golf eller aktivitet','Frokost/middag','Netværksøvelser','Opfølgningsmuligheder'] },
+    { id:'gp4', titel:'Møde + Golf',           pris:'Fra 2.200 kr./hold',     beskrivelse:'Kombinér et kort strategimøde med en runde golf. Ideelt til bestyrelsesdage og ledergrupper.',            inkl:['Mødelokale 2 timer','9 huller golf','Forplejning','Fleksibel dagorden'] },
+    { id:'gp5', titel:'Company Day',           pris:'Fra 4.500 kr./hold',     beskrivelse:'En hel dag på banen med morgenmad, frokost og 18 huller. Perfekt til teambuilding og kundepleje.',       inkl:['18 huller golf','Morgenmad & frokost','Golfvogn inkl.','Priser & diplomer'] },
+    { id:'gp6', titel:'VIP-arrangement',       pris:'Tilbud på forespørgsel', beskrivelse:'Skræddersyet VIP-oplevelse til særlige gæster, jubilæer eller eksklusive anledninger.',                 inkl:['Fuld personlig service','Gourmetmiddag','Eksklusivt program','Caddie inkl.'] }
   ],
 
   /* Sponsor */
   sponsorFordele: [
-    { ikon:'📢', titel:'Synlighed',    tekst:'Logo på bane, hjemmeside, app og ved alle arrangementer.' },
-    { ikon:'🤝', titel:'Netværk',      tekst:'Adgang til eksklusive erhvervsarrangementer og sponsor-lounge.' },
-    { ikon:'⛳', titel:'Golf',          tekst:'Greenfee-invitationer, turneringer og golfrejser.' },
-    { ikon:'📣', titel:'PR & omtale',  tekst:'Omtale i nyhedsbrev, sociale medier og lokal presse.' },
-    { ikon:'🎯', titel:'Målgruppe',    tekst:'Direkte adgang til beslutningstagere i Aarhus-regionen.' },
-    { ikon:'🏆', titel:'Prestige',     tekst:'Associering med Lyngbygaard Golf — en stærk lokal brand.' }
+    { ikon:'📢', titel:'Synlighed',       tekst:'Logo på bane, hjemmeside, app og ved alle arrangementer.' },
+    { ikon:'🤝', titel:'Netværk',         tekst:'Adgang til eksklusive erhvervsarrangementer og sponsor-lounge.' },
+    { ikon:'⛳', titel:'Golf & events',   tekst:'Greenfee-invitationer, turneringer og firmaarrangementer.' },
+    { ikon:'📣', titel:'PR & omtale',    tekst:'Omtale i nyhedsbrev, sociale medier og lokal presse.' },
+    { ikon:'🎯', titel:'Direkte adgang', tekst:'Mød beslutningstagere fra 100+ virksomheder i Aarhus-regionen.' },
+    { ikon:'🏆', titel:'Prestige',        tekst:'Stærk associering med Lyngbygaard Golf og lokalt erhvervsliv.' }
   ],
 
   /* Om EK */
   omEK: {
-    tekst: 'Erhvervsklubben samler virksomheder og beslutningstagere om relationer, netværk og golf i professionelle, uformelle rammer.',
+    tagline: 'Professionelle rammer. Uformelt fællesskab.',
+    tekst: 'Erhvervsklubben samler virksomheder og beslutningstagere om relationer, netværk og golf.',
     punkter: [
-      { ikon:'🤝', titel:'Netværk',          tekst:'Mød 100+ virksomheder fra Aarhus-regionen.' },
-      { ikon:'⛳', titel:'Golf',              tekst:'Turneringer, EK-mesterskaber og golfrejser.' },
-      { ikon:'🌍', titel:'Udlandsoplevelser', tekst:'Skotland, Tyskland, Jylland og meget mere.' },
-      { ikon:'📢', titel:'Sponsorværdi',     tekst:'Synlighed og associering med Lyngbygaard Golf.' },
-      { ikon:'🏆', titel:'EK-mesterskabet',  tekst:'Årets sportslige højdepunkt for erhvervsmedlemmer.' },
-      { ikon:'📅', titel:'10+ events/år',    tekst:'Fra SIM Golf til julefrokost — altid noget i kalenderen.' }
+      { ikon:'🤝', titel:'Netværk',           tekst:'Mød 100+ virksomheder fra Aarhus-regionen.' },
+      { ikon:'💼', titel:'Relationer',         tekst:'Byg stærke forretningsrelationer i afslappede rammer.' },
+      { ikon:'⛳', titel:'Golf & oplevelser',  tekst:'Turneringer, EK-mesterskaber og udlandsrejser.' },
+      { ikon:'📢', titel:'Sponsorværdi',       tekst:'Synlighed og associering med Lyngbygaard Golf.' },
+      { ikon:'🏆', titel:'EK-mesterskabet',    tekst:'Årets sportslige højdepunkt for erhvervsmedlemmer.' },
+      { ikon:'📅', titel:'10+ events/år',      tekst:'Fra SIM Golf til julefrokost og udlandsrejser.' }
     ]
+  },
+
+  /* Billeder — skift URL her for at opdatere billeder på tværs af appen */
+  billeder: {
+    hero:     'https://images.unsplash.com/photo-1535131749006-b7f58c99034b?w=1400&q=80',
+    golf1:    'https://images.unsplash.com/photo-1587174486073-ae5e5cff23aa?w=800&q=75',
+    golf2:    'https://images.unsplash.com/photo-1593111774240-d529f12cf4bb?w=800&q=75',
+    netvaerk: 'https://images.unsplash.com/photo-1556761175-4b46a572b786?w=800&q=75',
+    sponsor:  'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=800&q=75',
+    kontakt:  'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=800&q=75'
   }
 };
 
 /* ── Standard arrangementer ── */
 const STD_ARR = [
-  { id:'a1',  dato:'2026-02-04', tid:'',           titel:'Høj Sol over Aarhus',               sted:'Hermans, Tivoli Friheden',                 type:'Koncert / netværk',   besk:'Årets første store erhvervsarrangement med musik og netværk.', maks:80,  tlm:0, status:'aaben', aaben:true },
-  { id:'a2',  dato:'2026-03-04', tid:'16.00-21.00', titel:'SIM Golf',                          sted:'Golfarena Aarhus',                          type:'Golf / netværk',      besk:'Netværk og konkurrence på indoor simulator-bane.',             maks:24,  tlm:0, status:'aaben', aaben:true },
-  { id:'a3',  dato:'2026-03-18', tid:'16.00-21.00', titel:'SIM Golf',                          sted:'Golfarena Aarhus',                          type:'Golf / netværk',      besk:'Netværk og konkurrence på indoor simulator-bane.',             maks:24,  tlm:0, status:'aaben', aaben:true },
-  { id:'a4',  dato:'2026-03-24', tid:'',           titel:'Byudvikling & Bajere',               sted:'Aarhus',                                    type:'Netværksarrangement', besk:'Uformel debat og netværk om byudvikling i Aarhus.',            maks:50,  tlm:0, status:'aaben', aaben:true },
-  { id:'a5',  dato:'2026-04-22', tid:'',           titel:'Hjemmekamp mod Himmerland BC',       sted:'Lyngbygaard Golf',                          type:'Golf / netværk',      besk:'Venlighedskamp og netværk med Himmerland Business Club.',      maks:40,  tlm:0, status:'aaben', aaben:true },
-  { id:'a6',  dato:'2026-05-01', tid:'',           titel:'Udlandsrejse — Skotland',            sted:'Skotland',                                  type:'Golfrejse',           besk:'Golfrejse til Skotland 1.–4. maj 2026.',                       maks:20,  tlm:0, status:'aaben', aaben:true },
-  { id:'a7',  dato:'2026-06-02', tid:'',           titel:'Tysklandstur',                       sted:'Timmendorfer Strand',                       type:'Golfrejse',           besk:'Golfrejse til Timmendorfer Strand 2.–3. juni 2026.',           maks:20,  tlm:0, status:'aaben', aaben:true },
-  { id:'a8',  dato:'2026-08-14', tid:'',           titel:'Danish Golf Championship',           sted:'Great Northern',                            type:'Golfoplevelse',       besk:'Se årets store golfchampionship med erhvervsklubben.',         maks:30,  tlm:0, status:'aaben', aaben:true },
-  { id:'a9',  dato:'2026-09-01', tid:'',           titel:'Jyllandstur',                        sted:'Nordvestjysk & Holstebro Golfklub',         type:'Golfrejse',           besk:'Jyllandstur 1.–2. september med golf på to baner.',            maks:24,  tlm:0, status:'aaben', aaben:true },
-  { id:'a10', dato:'2026-10-09', tid:'',           titel:'EK-Mesterskaberne',                  sted:'Silkeborg Ry Golfklub',                     type:'Mesterskab',          besk:'Erhvervsklubbens eget mesterskab — hvem vinder EK-trofæet?', maks:48,  tlm:0, status:'aaben', aaben:true },
-  { id:'a11', dato:'2026-11-20', tid:'',           titel:'Julefrokost & Gokart',               sted:'Racehall Aarhus',                           type:'Socialt arrangement', besk:'Julefrokost med gokart — årets hyggeligste erhvervsarrangement.', maks:60, tlm:0, status:'aaben', aaben:true }
+  { id:'a1',  dato:'2026-02-04', tid:'',           titel:'Høj Sol over Aarhus',         sted:'Hermans, Tivoli Friheden',          type:'Koncert / netværk',   besk:'Årets første erhvervsarrangement med musik og netværk.', maks:80,  tlm:0, status:'aaben', aaben:true },
+  { id:'a2',  dato:'2026-03-04', tid:'16.00-21.00', titel:'SIM Golf',                   sted:'Golfarena Aarhus',                   type:'Golf / netværk',      besk:'Netværk og konkurrence på indoor simulator-bane.',       maks:24,  tlm:0, status:'aaben', aaben:true },
+  { id:'a3',  dato:'2026-03-18', tid:'16.00-21.00', titel:'SIM Golf',                   sted:'Golfarena Aarhus',                   type:'Golf / netværk',      besk:'Netværk og konkurrence på indoor simulator-bane.',       maks:24,  tlm:0, status:'aaben', aaben:true },
+  { id:'a4',  dato:'2026-03-24', tid:'',           titel:'Byudvikling & Bajere',         sted:'Aarhus',                             type:'Netværksarrangement', besk:'Uformel debat og netværk om byudvikling i Aarhus.',      maks:50,  tlm:0, status:'aaben', aaben:true },
+  { id:'a5',  dato:'2026-04-22', tid:'',           titel:'Hjemmekamp mod Himmerland BC', sted:'Lyngbygaard Golf',                   type:'Golf / netværk',      besk:'Venlighedskamp og netværk med Himmerland Business Club.', maks:40,  tlm:0, status:'aaben', aaben:true },
+  { id:'a6',  dato:'2026-05-01', tid:'',           titel:'Udlandsrejse — Skotland',      sted:'Skotland',                           type:'Golfrejse',           besk:'Golfrejse til Skotland 1.–4. maj 2026.',                 maks:20,  tlm:0, status:'aaben', aaben:true },
+  { id:'a7',  dato:'2026-06-02', tid:'',           titel:'Tysklandstur',                 sted:'Timmendorfer Strand',                type:'Golfrejse',           besk:'Golfrejse til Timmendorfer Strand 2.–3. juni 2026.',     maks:20,  tlm:0, status:'aaben', aaben:true },
+  { id:'a8',  dato:'2026-08-14', tid:'',           titel:'Danish Golf Championship',     sted:'Great Northern',                     type:'Golfoplevelse',       besk:'Se årets store golfchampionship med erhvervsklubben.',   maks:30,  tlm:0, status:'aaben', aaben:true },
+  { id:'a9',  dato:'2026-09-01', tid:'',           titel:'Jyllandstur',                  sted:'Nordvestjysk & Holstebro Golfklub',  type:'Golfrejse',           besk:'Jyllandstur 1.–2. september med golf på to baner.',      maks:24,  tlm:0, status:'aaben', aaben:true },
+  { id:'a10', dato:'2026-10-09', tid:'',           titel:'EK-Mesterskaberne',             sted:'Silkeborg Ry Golfklub',              type:'Mesterskab',          besk:'Erhvervsklubbens eget mesterskab — hvem vinder?',        maks:48,  tlm:0, status:'aaben', aaben:true },
+  { id:'a11', dato:'2026-11-20', tid:'',           titel:'Julefrokost & Gokart',          sted:'Racehall Aarhus',                    type:'Socialt arrangement', besk:'Julefrokost med gokart — årets hyggeligste event.',       maks:60,  tlm:0, status:'aaben', aaben:true }
 ];
 
 const STD_SPONSORER = [
-  { id:'s1', navn:'Hovedsponsor — ledigt',  logo:'', link:'#', niveau:'guld' },
-  { id:'s2', navn:'Partner — ledigt',       logo:'', link:'#', niveau:'sølv' }
+  { id:'s1', navn:'Hovedsponsor — ledigt', logo:'', link:'#', niveau:'guld' },
+  { id:'s2', navn:'Partner — ledigt',      logo:'', link:'#', niveau:'sølv' }
 ];
 
 /* ================================================================
@@ -80,7 +93,7 @@ const STD_SPONSORER = [
    ================================================================ */
 const DB = {
   get: k => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
-  set: (k,v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch(e) { console.warn('localStorage full', e); } },
+  set: (k,v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch(e) { console.warn('localStorage fejl', e); } },
   del: k => localStorage.removeItem(k)
 };
 
@@ -90,8 +103,9 @@ function init() {
     DB.set('ek_sponsorer', STD_SPONSORER);
     DB.set('ek_tilm',      []);
     DB.set('ek_kode',      CONFIG.adminKode);
-    DB.set('ek_hero',      { tekst: CONFIG.heroTekst, under: CONFIG.heroUnder, billede: CONFIG.heroBillede });
+    DB.set('ek_hero',      { tekst:CONFIG.heroTekst, under:CONFIG.heroUnder, billede:CONFIG.heroBillede });
     DB.set('ek_pakker',    CONFIG.golfPakker);
+    DB.set('ek_golfbox',   CONFIG.golfboxUrl);
     DB.set('ek_init',      true);
   }
 }
@@ -99,18 +113,23 @@ function init() {
 /* ================================================================
    HELPERS
    ================================================================ */
-function getArr()   { return (DB.get('ek_arr') || []).sort((a,b) => a.dato.localeCompare(b.dato)); }
-function getKode()  { return DB.get('ek_kode') || CONFIG.adminKode; }
+function getArr()  { return (DB.get('ek_arr')||[]).sort((a,b)=>a.dato.localeCompare(b.dato)); }
+function getKode() { return DB.get('ek_kode')||CONFIG.adminKode; }
+function getGolfboxUrl() { return DB.get('ek_golfbox')||CONFIG.golfboxUrl; }
 
 function fmtDato(iso) {
   if (!iso) return '';
-  return new Date(iso + 'T12:00:00').toLocaleDateString('da-DK', { day:'numeric', month:'long', year:'numeric' });
+  return new Date(iso+'T12:00:00').toLocaleDateString('da-DK',{day:'numeric',month:'long',year:'numeric'});
 }
-function erFremtidig(iso) { return new Date(iso + 'T23:59:59') >= new Date(); }
+
+/* Et arrangement er fremtidigt hvis slutdatoen er i fremtiden */
+function erFremtidig(iso) { return new Date(iso+'T23:59:59') >= new Date(); }
 function ledigePladser(a) { return Math.max(0, a.maks - a.tlm); }
 
 function esc(str) {
-  return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  return String(str||'')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
 /* ================================================================
@@ -142,8 +161,10 @@ function navTil(s, data) {
 function pgForside() {
   const hero = DB.get('ek_hero') || {};
   const næste = getArr().filter(a => erFremtidig(a.dato)).slice(0,3);
+  const bil = CONFIG.billeder;
+
   return `
-<div class="hero" style="background-image:url('${esc(hero.billede||CONFIG.heroBillede)}')">
+<div class="hero" style="background-image:url('${esc(hero.billede||bil.hero)}')">
   <div class="hero-lag">
     <div class="hero-logo">⛳ LYG Erhvervsklub</div>
     <h1 class="hero-h1">${esc(hero.tekst||CONFIG.heroTekst)}</h1>
@@ -155,7 +176,7 @@ function pgForside() {
   <div class="g2">
     <button class="sknap" onclick="navTil('kalender')">📅<span>Se kalender</span></button>
     <button class="sknap" onclick="navTil('tilmelding')">✅<span>Tilmeld dig</span></button>
-    <button class="sknap gold" onclick="navTil('golfarr')">⛳<span>Book firma-golf</span></button>
+    <button class="sknap gold" onclick="navTil('golfarr')">💼<span>Book firmaarrangement</span></button>
     <button class="sknap gold" onclick="åbnGolfBox()">🔗<span>GolfBox login</span></button>
   </div>
 </section>
@@ -163,7 +184,7 @@ function pgForside() {
 <section class="sek">
   <div class="ikg">
     <button class="ikb" onclick="navTil('om')"><span class="iks">🤝</span><strong>Netværk</strong><p>Relationer & fællesskab</p></button>
-    <button class="ikb" onclick="navTil('golfarr')"><span class="iks">⛳</span><strong>Golf</strong><p>Events & rejser</p></button>
+    <button class="ikb" onclick="navTil('golfarr')"><span class="iks">⛳</span><strong>Firmaevent</strong><p>Golf & oplevelser</p></button>
     <button class="ikb" onclick="navTil('sponsor')"><span class="iks">📢</span><strong>Sponsor</strong><p>Synlighed & brand</p></button>
     <button class="ikb" onclick="navTil('kalender')"><span class="iks">📅</span><strong>Kalender</strong><p>10+ events/år</p></button>
   </div>
@@ -176,10 +197,10 @@ ${næste.length ? `
   <div class="tc mt1"><button class="knap-sek" onclick="navTil('kalender')">Se alle arrangementer →</button></div>
 </section>` : ''}
 
-<section class="sek golfbox-banner" onclick="åbnGolfBox()">
-  <div class="gb-inner">
+<section class="sek bi-sek" onclick="åbnGolfBox()">
+  <div class="gb-banner">
     <span class="gb-ikon">🏌️</span>
-    <div><strong>Book tid i GolfBox</strong><br><small>Log ind og book direkte på banen</small></div>
+    <div><strong>GolfBox login</strong><small>Book tid eller log ind i GolfBox</small></div>
     <span class="gb-pil">→</span>
   </div>
 </section>
@@ -192,24 +213,34 @@ ${næste.length ? `
 }
 
 function åbnGolfBox() {
-  window.open(CONFIG.golfboxUrl, '_blank', 'noopener');
+  window.open(getGolfboxUrl(), '_blank', 'noopener');
 }
 
 /* ================================================================
    ARRANGEMENT KORT
+   - Tidligere arrangementer: status altid "Afholdt", ingen handlingsknapper
    ================================================================ */
 function arrKort(a, kompakt=false) {
-  const ledig = ledigePladser(a);
-  const pct   = Math.min(100, Math.round((a.tlm / a.maks) * 100));
-  const fuldt = ledig <= 0;
-  const faa   = !fuldt && ledig <= 3;
-  const lukket= !a.aaben || a.status === 'lukket';
-  let sbKls = lukket||fuldt ? 'sb-lukket' : faa ? 'sb-faa' : 'sb-aaben';
-  let sbTxt = lukket ? 'Lukket' : fuldt ? 'Fuldt' : faa ? 'Få pladser' : 'Åben';
-  const frem = erFremtidig(a.dato);
+  const frem   = erFremtidig(a.dato);
+  const ledig  = ledigePladser(a);
+  const pct    = Math.min(100, Math.round((a.tlm / a.maks) * 100));
+
+  /* Badge: tidligere arrangementer vises altid som "Afholdt" */
+  let sbKls, sbTxt;
+  if (!frem) {
+    sbKls = 'sb-afholdt'; sbTxt = 'Afholdt';
+  } else if (!a.aaben || a.status === 'lukket') {
+    sbKls = 'sb-lukket'; sbTxt = 'Lukket';
+  } else if (ledig <= 0) {
+    sbKls = 'sb-lukket'; sbTxt = 'Fuldt';
+  } else if (ledig <= 3) {
+    sbKls = 'sb-faa'; sbTxt = 'Få pladser';
+  } else {
+    sbKls = 'sb-aaben'; sbTxt = 'Åben';
+  }
 
   return `
-<div class="akort${kompakt?' akort-k':''}">
+<div class="akort${kompakt?' akort-k':''}${!frem?' akort-past':''}">
   <div class="ak-top">
     <div>
       <div class="ak-dato">${fmtDato(a.dato)}${a.tid?' · '+esc(a.tid):''}</div>
@@ -220,7 +251,7 @@ function arrKort(a, kompakt=false) {
     <span class="sb ${sbKls}">${sbTxt}</span>
   </div>
   ${!kompakt&&a.besk?`<p class="ak-besk">${esc(a.besk)}</p>`:''}
-  ${!kompakt?`
+  ${!kompakt&&frem?`
   <div class="ak-tal">
     <div class="ak-tf"><span>Maks</span><strong>${a.maks}</strong></div>
     <div class="ak-tf"><span>Tilmeldte</span><strong>${a.tlm}</strong></div>
@@ -230,7 +261,7 @@ function arrKort(a, kompakt=false) {
   ${frem?`
   <div class="ak-kn">
     ${a.aaben&&ledig>0?`<button class="knap-p" onclick="navTil('tilmelding',{id:'${a.id}'})">Tilmeld</button>`:''}
-    ${a.aaben&&ledig<=0&&!lukket?`<button class="knap-sek" onclick="venteListe('${a.id}')">Venteliste</button>`:''}
+    ${a.aaben&&ledig<=0&&a.status!=='lukket'?`<button class="knap-sek" onclick="venteListe('${a.id}')">Venteliste</button>`:''}
     <button class="knap-i" onclick="tilfoejKal('${a.id}')" title="Tilføj til kalender">📆</button>
     <button class="knap-i" onclick="aktPaam('${a.id}')" title="Aktivér påmindelser">🔔</button>
   </div>`:'' }
@@ -242,7 +273,7 @@ function arrKort(a, kompakt=false) {
    ================================================================ */
 function pgKalender() {
   const alle = getArr();
-  const frem = alle.filter(a => erFremtidig(a.dato));
+  const frem = alle.filter(a =>  erFremtidig(a.dato));
   const tidl = alle.filter(a => !erFremtidig(a.dato)).reverse();
   return `
 <div class="ph bg-mork">
@@ -250,12 +281,16 @@ function pgKalender() {
   <p>Alle arrangementer i Erhvervsklubben</p>
 </div>
 <section class="sek">
-  ${frem.length ? `<div class="arr-l">${frem.map(a=>arrKort(a)).join('')}</div>` : '<p class="muted">Ingen kommende arrangementer.</p>'}
+  ${frem.length
+    ? `<div class="arr-l">${frem.map(a=>arrKort(a)).join('')}</div>`
+    : `<div class="tom-kal"><p>Ingen kommende arrangementer.</p><button class="knap-sek" onclick="navTil('kontakt')">Kontakt os →</button></div>`}
 </section>
 ${tidl.length?`
 <section class="sek">
-  <h2 class="stitl muted">Tidligere arrangementer</h2>
-  <div class="arr-l">${tidl.map(a=>arrKort(a)).join('')}</div>
+  <details class="tidl-details">
+    <summary>Tidligere arrangementer (${tidl.length})</summary>
+    <div class="arr-l mt1">${tidl.map(a=>arrKort(a)).join('')}</div>
+  </details>
 </section>`:''}`;
 }
 
@@ -268,9 +303,10 @@ function pgTilm(data) {
   return `
 <div class="ph bg-mork">
   <h1>Tilmeld dig ✅</h1>
-  <p>Udfyld formularen nedenfor</p>
+  <p>Udfyld formularen — vi bekræfter via email</p>
 </div>
 <section class="sek">
+  ${åbne.length===0?`<div class="tom-kal"><p>Ingen åbne arrangementer i øjeblikket.</p><button class="knap-sek" onclick="navTil('kalender')">Se kalender →</button></div>`:`
   <form id="tf" onsubmit="submitTilm(event)">
     <div class="fg">
       <label>Arrangement *</label>
@@ -281,12 +317,14 @@ function pgTilm(data) {
     </div>
     <div class="fg"><label>Navn *</label><input name="navn" required placeholder="Dit fulde navn"></div>
     <div class="fg"><label>Virksomhed *</label><input name="virk" required placeholder="Virksomhedens navn"></div>
-    <div class="fg"><label>Email *</label><input type="email" name="email" required placeholder="din@email.dk"></div>
-    <div class="fg"><label>Telefon</label><input type="tel" name="tlf" placeholder="12 34 56 78"></div>
+    <div class="g2f">
+      <div class="fg"><label>Email *</label><input type="email" name="email" required placeholder="din@email.dk"></div>
+      <div class="fg"><label>Telefon</label><input type="tel" name="tlf" placeholder="12 34 56 78"></div>
+    </div>
     <div class="fg"><label>Antal deltagere *</label><input type="number" name="antal" min="1" max="10" value="1" required></div>
     <div class="fg"><label>Kommentar</label><textarea name="kom" rows="3" placeholder="Særlige ønsker, allergier…"></textarea></div>
     <button type="submit" class="knap-p fb">Send tilmelding</button>
-  </form>
+  </form>`}
   <div id="tilm-kv" style="display:none"></div>
 </section>`;
 }
@@ -335,33 +373,43 @@ function venteListe(arrId) {
 }
 
 /* ================================================================
-   GOLF ARRANGEMENTER
+   GOLF / FIRMAARRANGEMENT
    ================================================================ */
 function pgGolf() {
   const pakker = DB.get('ek_pakker')||CONFIG.golfPakker;
+  const bil = CONFIG.billeder;
   return `
 <div class="ph bg-mork">
-  <h1>Firma-golf ⛳</h1>
-  <p>Skræddersyede golfoplevelser til din virksomhed</p>
+  <h1>Book firmaarrangement 💼</h1>
+  <p>Skræddersyede oplevelser til kunder, medarbejdere og netværk</p>
 </div>
 
 <section class="sek">
-  <div class="gb-stor" onclick="åbnGolfBox()">
-    <span class="gb-ikon-stor">🏌️</span>
-    <div><strong>Åbn GolfBox</strong><br><small>Book greenfee og se banens tider</small></div>
-    <span class="gb-pil-stor">→</span>
+  <div class="bi-kort hover-kort" style="background-image:url('${bil.golf1}')">
+    <div class="bi-tekst-lag">
+      <p>Golf er det perfekte scenarie for stærke relationer, kundepleje og teambuilding.</p>
+    </div>
   </div>
 </section>
 
 <section class="sek">
-  <h2 class="stitl">Firmaarrangementer</h2>
+  <button class="gb-banner-knap" onclick="åbnGolfBox()">
+    <span class="gb-ikon">🏌️</span>
+    <div><strong>GolfBox login</strong><small>Book tid eller log ind i GolfBox</small></div>
+    <span class="gb-pil">→</span>
+  </button>
+</section>
+
+<section class="sek">
+  <h2 class="stitl">Vælg arrangement</h2>
   <div class="pk-g">
     ${pakker.map(p=>`
-    <div class="pk">
+    <div class="pk hover-kort">
       <h3>${esc(p.titel)}</h3>
       <div class="pk-pris">${esc(p.pris)}</div>
       <p>${esc(p.beskrivelse)}</p>
       <ul class="pk-ul">${(p.inkl||[]).map(i=>`<li>✓ ${esc(i)}</li>`).join('')}</ul>
+      <button class="knap-sek mt1 fb" onclick="document.getElementById('book-golf').scrollIntoView({behavior:'smooth'})">Send forespørgsel</button>
     </div>`).join('')}
   </div>
 </section>
@@ -369,7 +417,7 @@ function pgGolf() {
 <section class="sek" id="book-golf">
   <h2 class="stitl">Send forespørgsel</h2>
   <form id="gf" onsubmit="submitGolf(event)">
-    <div class="fg"><label>Virksomhed *</label><input name="virk" required></div>
+    <div class="fg"><label>Virksomhed *</label><input name="virk" required placeholder="Virksomhedens navn"></div>
     <div class="g2f">
       <div class="fg"><label>Kontaktperson *</label><input name="kp" required></div>
       <div class="fg"><label>Email *</label><input type="email" name="email" required></div>
@@ -380,20 +428,20 @@ function pgGolf() {
     </div>
     <div class="g2f">
       <div class="fg"><label>Antal personer</label><input type="number" name="antal" min="1" value="4"></div>
-      <div class="fg"><label>Pakke</label>
+      <div class="fg"><label>Pakke / type</label>
         <select name="pakke">
-          <option value="">Vælg pakke…</option>
+          <option value="">Vælg arrangement…</option>
           ${pakker.map(p=>`<option value="${esc(p.titel)}">${esc(p.titel)}</option>`).join('')}
         </select>
       </div>
     </div>
-    <div class="fg"><label>Besked</label><textarea name="besk" rows="3" placeholder="Beskriv jeres ønsker…"></textarea></div>
+    <div class="fg"><label>Besked / ønsker</label><textarea name="besk" rows="3" placeholder="Beskriv jeres ønsker og forventninger…"></textarea></div>
     <button type="submit" class="knap-p fb">Send forespørgsel</button>
   </form>
   <div id="golf-kv" style="display:none" class="kv">
     <div class="kv-i">✅</div>
     <h2>Forespørgsel sendt!</h2>
-    <p>Vi kontakter dig hurtigst muligt.</p>
+    <p>Vi kontakter dig hurtigst muligt for at lægge programmet.</p>
     <button class="knap-sek" onclick="navTil('forside')">Tilbage til forsiden</button>
   </div>
 </section>`;
@@ -413,15 +461,18 @@ function submitGolf(e) {
    ================================================================ */
 function pgSponsor() {
   const sponsorer = DB.get('ek_sponsorer')||[];
+  const bil = CONFIG.billeder;
   return `
 <div class="ph bg-mork">
   <h1>Bliv sponsor 🌟</h1>
-  <p>Styrk din virksomhed med synlighed og relationer</p>
+  <p>Synlighed, netværk og relationer i Aarhus-regionens erhvervsliv</p>
 </div>
 
 <section class="sek">
-  <div class="sp-citat">
-    <p>"Som sponsor bliver din virksomhed en del af et stærkt fællesskab med synlighed, relationer og oplevelser — med golf som rammen."</p>
+  <div class="bi-kort hover-kort" style="background-image:url('${bil.sponsor}')">
+    <div class="bi-tekst-lag">
+      <p>"Som sponsor bliver din virksomhed en del af et stærkt fællesskab med golf som rammen og netværk som resultatet."</p>
+    </div>
   </div>
 </section>
 
@@ -438,7 +489,6 @@ function pgSponsor() {
 </section>
 
 <section class="sek">
-  <h2 class="stitl">Hvorfor Lyngbygaard Erhvervsklub?</h2>
   <div class="sp-facts">
     <div class="sp-fact"><strong>100+</strong><span>erhvervsmedlemmer</span></div>
     <div class="sp-fact"><strong>10+</strong><span>events om året</span></div>
@@ -450,11 +500,11 @@ function pgSponsor() {
 <section class="sek">
   <h2 class="stitl">Sponsorniveauer</h2>
   <div class="sp-niv">
-    <div class="sp-n guld-n"><div class="sp-n-titel">🥇 Guld</div><p>Største synlighed. Primær placering på bane, hjemmeside og alle arrangementer. Inkl. VIP-invitationer og greenfee.</p></div>
+    <div class="sp-n guld-n"><div class="sp-n-titel">🥇 Guld</div><p>Primær placering på bane, hjemmeside og alle arrangementer. VIP-invitationer, greenfee og eksklusive events.</p></div>
     <div class="sp-n"><div class="sp-n-titel">🥈 Sølv</div><p>Logo ved bane og digitalt. Adgang til erhvervsarrangementer og invitationer til udvalgte events.</p></div>
-    <div class="sp-n"><div class="sp-n-titel">🥉 Bronze</div><p>Digital synlighed og omtale. Invitationer til åbne arrangementer.</p></div>
+    <div class="sp-n"><div class="sp-n-titel">🥉 Bronze</div><p>Digital synlighed, omtale i nyhedsbrev og invitationer til åbne arrangementer.</p></div>
   </div>
-  <p class="muted tc mt1">Priser og indhold aftales individuelt. Kontakt os for et uforpligtende tilbud.</p>
+  <p class="muted tc mt1">Priser aftales individuelt. Kontakt os for et uforpligtende tilbud.</p>
 </section>
 
 ${sponsorer.filter(s=>s.navn&&!s.navn.includes('ledigt')).length?`
@@ -462,7 +512,7 @@ ${sponsorer.filter(s=>s.navn&&!s.navn.includes('ledigt')).length?`
   <h2 class="stitl">Vores sponsorer</h2>
   <div class="sp-g">
     ${sponsorer.map(s=>`
-    <a class="sp-k" href="${esc(s.link||'#')}" target="_blank" rel="noopener">
+    <a class="sp-k hover-kort" href="${esc(s.link||'#')}" target="_blank" rel="noopener">
       ${s.logo?`<img src="${esc(s.logo)}" alt="${esc(s.navn)}" class="sp-logo">`:
                `<div class="sp-nv">${esc(s.navn)}</div>`}
       <div class="sp-niv-txt">${esc(s.niveau||'')}</div>
@@ -506,14 +556,24 @@ function submitSponsor(e) {
 }
 
 /* ================================================================
-   OM EK
+   OM ERHVERVSKLUBBEN
    ================================================================ */
 function pgOm() {
+  const bil = CONFIG.billeder;
   return `
 <div class="ph bg-mork">
   <h1>Erhvervsklubben 🤝</h1>
-  <p>${esc(CONFIG.omEK.tekst)}</p>
+  <p>${esc(CONFIG.omEK.tagline)}</p>
 </div>
+
+<section class="sek">
+  <div class="bi-kort hover-kort" style="background-image:url('${bil.netvaerk}')">
+    <div class="bi-tekst-lag">
+      <p>${esc(CONFIG.omEK.tekst)}</p>
+    </div>
+  </div>
+</section>
+
 <section class="sek">
   <div class="ikg">
     ${CONFIG.omEK.punkter.map(p=>`
@@ -524,19 +584,16 @@ function pgOm() {
     </div>`).join('')}
   </div>
 </section>
+
 <section class="sek">
-  <div class="sp-citat">
-    <p>Interesseret i at blive erhvervsmedlem? Kontakt os og hør om mulighederne.</p>
-    <div class="tc mt1">
-      <a class="knap-p" href="tel:${CONFIG.telefon.replace(/\s/g,'')}">📞 ${CONFIG.telefon}</a>
-      <a class="knap-sek" href="mailto:${CONFIG.email}">✉️ ${CONFIG.email}</a>
+  <div class="om-cta">
+    <h3>Interesseret i erhvervsmedlemskab?</h3>
+    <p>Kontakt os og hør om mulighederne.</p>
+    <div class="btn-row jc">
+      <a class="knap-p" href="tel:${CONFIG.telefon.replace(/\s/g,'')}">📞 Ring til os</a>
+      <a class="knap-sek" href="mailto:${CONFIG.email}">✉️ Skriv til os</a>
     </div>
   </div>
-</section>
-<section class="sek">
-  <h2 class="stitl">Kalender 2026</h2>
-  <div class="arr-l">${getArr().filter(a=>erFremtidig(a.dato)).slice(0,4).map(a=>arrKort(a,true)).join('')}</div>
-  <div class="tc mt1"><button class="knap-sek" onclick="navTil('kalender')">Se fuld kalender →</button></div>
 </section>`;
 }
 
@@ -544,23 +601,26 @@ function pgOm() {
    KONTAKT
    ================================================================ */
 function pgKontakt() {
+  const bil = CONFIG.billeder;
   return `
 <div class="ph bg-mork">
   <h1>Kontakt ✉️</h1>
   <p>Vi er klar til at hjælpe dig</p>
 </div>
+
 <section class="sek">
   <div class="kontakt-boks">
-    <a class="kl" href="tel:${CONFIG.telefon.replace(/\s/g,'')}"><span>📞</span>${CONFIG.telefon}</a>
-    <a class="kl" href="mailto:${CONFIG.email}"><span>✉️</span>${CONFIG.email}</a>
-    <div class="kl"><span>📍</span>${esc(CONFIG.adresse)}</div>
-    <a class="kl" href="${CONFIG.website}" target="_blank" rel="noopener"><span>🌐</span>${CONFIG.website}</a>
+    <a class="kl" href="tel:${CONFIG.telefon.replace(/\s/g,'')}"><span>📞</span><span>${CONFIG.telefon}</span></a>
+    <a class="kl" href="mailto:${CONFIG.email}"><span>✉️</span><span>${CONFIG.email}</span></a>
+    <div class="kl"><span>📍</span><span>${esc(CONFIG.adresse)}</span></div>
+    <a class="kl" href="${CONFIG.website}" target="_blank" rel="noopener"><span>🌐</span><span>${CONFIG.website}</span></a>
   </div>
   <div class="kontakt-ctas">
     <a class="knap-p" href="tel:${CONFIG.telefon.replace(/\s/g,'')}">📞 Ring til os</a>
     <a class="knap-sek" href="mailto:${CONFIG.email}">✉️ Send email</a>
   </div>
 </section>
+
 <section class="sek">
   <h2 class="stitl">Send en besked</h2>
   <form id="kf" onsubmit="submitKontakt(event)">
@@ -593,8 +653,8 @@ function submitKontakt(e) {
 /* ================================================================
    ADMIN
    ================================================================ */
-let adminIN=false;
-let _adFane='arr';
+let adminIN  = false;
+let _adFane  = 'arr';
 
 function pgAdmin() {
   if (!adminIN) return `
@@ -608,7 +668,7 @@ function pgAdmin() {
   </div>
 </section>`;
 
-  const faner=[['arr','Arrangementer'],['tilm','Tilmeldinger'],['sp','Sponsorer'],['golf','Golf-pakker'],['inst','Indstillinger'],['bk','Backup']];
+  const faner=[['arr','Arrangementer'],['tilm','Tilmeldinger'],['sp','Sponsorer'],['golf','Firmapakker'],['inst','Indstillinger'],['bk','Backup']];
   return `
 <div class="ph bg-mork" style="display:flex;justify-content:space-between;align-items:center">
   <div><h1>Admin ⚙️</h1></div>
@@ -645,8 +705,12 @@ function adArr() {
 </div>
 <div class="ad-l">
   ${arrs.map(a=>`
-  <div class="ad-rad">
-    <div class="ad-ri"><strong>${esc(a.titel)}</strong><span>${fmtDato(a.dato)}${a.tid?' · '+esc(a.tid):''}</span><span>${a.tlm}/${a.maks} · ${a.aaben?'Åben':'Lukket'}</span></div>
+  <div class="ad-rad${!erFremtidig(a.dato)?' ad-past':''}">
+    <div class="ad-ri">
+      <strong>${esc(a.titel)}</strong>
+      <span>${fmtDato(a.dato)}${a.tid?' · '+esc(a.tid):''}</span>
+      <span>${a.tlm}/${a.maks} · ${erFremtidig(a.dato)?(a.aaben?'Åben':'Lukket'):'Afholdt'}</span>
+    </div>
     <div class="ad-rk">
       <button class="knap-i" onclick="visArrForm('${a.id}')">✏️</button>
       <button class="knap-i" onclick="kopierArr('${a.id}')">📋</button>
@@ -678,13 +742,13 @@ function visArrForm(id) {
     <div class="fg">
       <label>Status</label>
       <select name="status">
-        <option value="aaben" ${a&&a.status==='aaben'?'selected':''}>Åben</option>
+        <option value="aaben" ${!a||a.status==='aaben'?'selected':''}>Åben</option>
         <option value="lukket" ${a&&a.status==='lukket'?'selected':''}>Lukket</option>
       </select>
     </div>
     <div class="fg"><label class="cb-lbl"><input type="checkbox" name="aaben" ${!a||a.aaben?'checked':''}> Tilmelding åben</label></div>
     <div class="btn-row">
-      <button type="submit" class="knap-p">${a?'Gem':'Opret'}</button>
+      <button type="submit" class="knap-p">${a?'Gem ændringer':'Opret arrangement'}</button>
       <button type="button" class="knap-sek" onclick="this.closest('.ad-form').remove()">Annuller</button>
     </div>
   </form>
@@ -709,14 +773,14 @@ function kopierArr(id) {
   const a=(DB.get('ek_arr')||[]).find(x=>x.id===id); if(!a) return;
   const arrs=DB.get('ek_arr')||[];
   arrs.push({...a, id:'a'+Date.now(), titel:a.titel+' (kopi)', tlm:0});
-  DB.set('ek_arr',arrs); skiftFane('arr'); alert('Kopieret.');
+  DB.set('ek_arr',arrs); skiftFane('arr'); alert('Kopieret ✓');
 }
 
 function kopierNytAar() {
   const y=prompt('Kopier alle arrangementer til år:',new Date().getFullYear()+1); if(!y||isNaN(+y)) return;
   const arrs=DB.get('ek_arr')||[];
   const nye=arrs.map(a=>({...a, id:'a'+Date.now()+Math.random().toString(36).substr(2,4), dato:a.dato.replace(/^\d{4}/,y), tlm:0, status:'aaben', aaben:true}));
-  DB.set('ek_arr',[...arrs,...nye]); skiftFane('arr'); alert(`${nye.length} arrangementer kopieret til ${y}.`);
+  DB.set('ek_arr',[...arrs,...nye]); skiftFane('arr'); alert(`${nye.length} arrangementer kopieret til ${y} ✓`);
 }
 
 /* ── Admin: Tilmeldinger ── */
@@ -744,7 +808,7 @@ ${vis.length?`
   </tr>`).join('')}
   </tbody>
 </table>
-</div>`:'<p class="muted">Ingen tilmeldinger.</p>'}`;
+</div>`:`<p class="muted">Ingen tilmeldinger${q?' matcher søgningen':' endnu'}.</p>`}`;
 }
 
 function markerMødt(id,v) { const a=DB.get('ek_tilm')||[]; const i=a.findIndex(t=>t.id===id); if(i>-1){a[i].mødt=v;DB.set('ek_tilm',a);} }
@@ -784,8 +848,8 @@ function visSponsorForm(id) {
   <h3>${s?'Rediger':'Ny'} sponsor</h3>
   <form onsubmit="gemSponsor(event,'${s?s.id:''}')">
     <div class="fg"><label>Navn *</label><input name="navn" required value="${s?esc(s.navn):''}"></div>
-    <div class="fg"><label>Logo URL</label><input name="logo" value="${s?esc(s.logo||''):''}"></div>
-    <div class="fg"><label>Link URL</label><input name="link" value="${s?esc(s.link||''):''}"></div>
+    <div class="fg"><label>Logo URL</label><input name="logo" placeholder="https://..." value="${s?esc(s.logo||''):''}"></div>
+    <div class="fg"><label>Link URL</label><input name="link" placeholder="https://..." value="${s?esc(s.link||''):''}"></div>
     <div class="fg"><label>Niveau</label>
       <select name="niveau">${['guld','sølv','bronze','standard'].map(n=>`<option value="${n}" ${s&&s.niveau===n?'selected':''}>${n}</option>`).join('')}</select>
     </div>
@@ -810,11 +874,11 @@ function sletSponsor(id) {
   DB.set('ek_sponsorer',(DB.get('ek_sponsorer')||[]).filter(s=>s.id!==id)); skiftFane('sp');
 }
 
-/* ── Admin: Golf-pakker ── */
+/* ── Admin: Firmapakker ── */
 function adGolf() {
   const pk=DB.get('ek_pakker')||CONFIG.golfPakker;
   return `
-<p class="muted mb1">Rediger golf-pakkerne. Ændringer slår straks igennem på Golf-siden.</p>
+<p class="muted mb1">Rediger firmapakkerne. Ændringer slår straks igennem på firmaarrangement-siden.</p>
 ${pk.map((p,i)=>`
 <div class="ad-form" style="margin-bottom:.75rem">
   <form onsubmit="gemPakke(event,${i})">
@@ -839,14 +903,25 @@ function gemPakke(e,i) {
 /* ── Admin: Indstillinger ── */
 function adInst() {
   const hero=DB.get('ek_hero')||{};
+  const gb=getGolfboxUrl();
   return `
 <div class="ad-form mb1">
-  <h3>Hero-sektion</h3>
+  <h3>Hero-sektion (forside)</h3>
   <form onsubmit="gemHero(event)">
     <div class="fg"><label>Overskrift</label><input name="tekst" value="${esc(hero.tekst||CONFIG.heroTekst)}"></div>
     <div class="fg"><label>Undertekst</label><textarea name="under" rows="2">${esc(hero.under||CONFIG.heroUnder)}</textarea></div>
-    <div class="fg"><label>Baggrundsbillede URL</label><input name="billede" value="${esc(hero.billede||CONFIG.heroBillede)}"></div>
+    <div class="fg"><label>Hero-billede URL</label><input name="billede" value="${esc(hero.billede||CONFIG.heroBillede)}"></div>
     <button type="submit" class="knap-p">Gem hero</button>
+  </form>
+</div>
+<div class="ad-form mb1">
+  <h3>GolfBox-link</h3>
+  <form onsubmit="gemGolfbox(event)">
+    <div class="fg">
+      <label>GolfBox login URL</label>
+      <input name="url" value="${esc(gb)}" placeholder="https://www.golfbox.dk/...">
+    </div>
+    <button type="submit" class="knap-p">Gem link</button>
   </form>
 </div>
 <div class="ad-form">
@@ -866,6 +941,12 @@ function gemHero(e) {
   alert('Hero gemt ✓');
 }
 
+function gemGolfbox(e) {
+  e.preventDefault();
+  DB.set('ek_golfbox', e.target.url.value);
+  alert('GolfBox-link gemt ✓');
+}
+
 function skiftKode(e) {
   e.preventDefault(); const f=e.target;
   if(f.gammel.value!==getKode()){alert('Nuværende kode forkert.');return;}
@@ -878,25 +959,25 @@ function adBk() {
   return `
 <div class="ad-form mb1">
   <h3>Eksportér backup</h3>
-  <p class="muted mb1">Hent al data som JSON-fil.</p>
+  <p class="muted mb1">Hent al data som JSON-fil til lokal sikkerhedskopiering.</p>
   <button class="knap-p" onclick="eksporter()">📥 Download backup</button>
 </div>
 <div class="ad-form mb1">
   <h3>Importér backup</h3>
-  <p class="muted mb1">Genindlæs fra en tidligere backup.</p>
+  <p class="muted mb1">Genindlæs fra en tidligere backup-fil.</p>
   <input type="file" id="bk-fil" accept=".json" onchange="importer(this)">
 </div>
 <div class="ad-form">
-  <h3>Nulstil data</h3>
-  <p class="muted mb1">Sletter alt og genindlæser standarddata.</p>
+  <h3>Nulstil til standarddata</h3>
+  <p class="muted mb1">Sletter alt og genindlæser standardarrangementerne.</p>
   <button class="knap-rød" onclick="nulstil()">🗑️ Nulstil alt</button>
 </div>`;
 }
 
 function eksporter() {
-  const d={arr:DB.get('ek_arr'),tilm:DB.get('ek_tilm'),sp:DB.get('ek_sponsorer'),pk:DB.get('ek_pakker'),hero:DB.get('ek_hero'),dato:new Date().toISOString()};
+  const d={arr:DB.get('ek_arr'),tilm:DB.get('ek_tilm'),sp:DB.get('ek_sponsorer'),pk:DB.get('ek_pakker'),hero:DB.get('ek_hero'),golfbox:DB.get('ek_golfbox'),dato:new Date().toISOString()};
   const url=URL.createObjectURL(new Blob([JSON.stringify(d,null,2)],{type:'application/json'}));
-  const a=document.createElement('a'); a.href=url; a.download=`lyg-ek-backup-${Date.now()}.json`; a.click(); URL.revokeObjectURL(url);
+  const a=document.createElement('a'); a.href=url; a.download=`lyg-ek-backup-${new Date().toISOString().split('T')[0]}.json`; a.click(); URL.revokeObjectURL(url);
 }
 
 function importer(inp) {
@@ -906,11 +987,12 @@ function importer(inp) {
     try {
       const d=JSON.parse(ev.target.result);
       if(!confirm('Overskriver al nuværende data. Fortsæt?')) return;
-      if(d.arr)  DB.set('ek_arr',d.arr);
-      if(d.tilm) DB.set('ek_tilm',d.tilm);
-      if(d.sp)   DB.set('ek_sponsorer',d.sp);
-      if(d.pk)   DB.set('ek_pakker',d.pk);
-      if(d.hero) DB.set('ek_hero',d.hero);
+      if(d.arr)     DB.set('ek_arr',d.arr);
+      if(d.tilm)    DB.set('ek_tilm',d.tilm);
+      if(d.sp)      DB.set('ek_sponsorer',d.sp);
+      if(d.pk)      DB.set('ek_pakker',d.pk);
+      if(d.hero)    DB.set('ek_hero',d.hero);
+      if(d.golfbox) DB.set('ek_golfbox',d.golfbox);
       alert('Backup importeret ✓'); navTil('forside');
     } catch { alert('Ugyldig backup-fil.'); }
   };
@@ -919,7 +1001,7 @@ function importer(inp) {
 
 function nulstil() {
   if(!confirm('Slet al data og genindlæs standarddata?')) return;
-  ['ek_arr','ek_tilm','ek_sponsorer','ek_pakker','ek_hero','ek_kode','ek_venteliste','ek_beskeder','ek_golf_booking','ek_sponsor_henvendelser','ek_paam','ek_paam_vist','ek_init'].forEach(k=>DB.del(k));
+  ['ek_arr','ek_tilm','ek_sponsorer','ek_pakker','ek_hero','ek_kode','ek_golfbox','ek_venteliste','ek_beskeder','ek_golf_booking','ek_sponsor_henvendelser','ek_paam','ek_paam_vist','ek_init'].forEach(k=>DB.del(k));
   init(); navTil('forside'); alert('Data nulstillet ✓');
 }
 
@@ -935,40 +1017,35 @@ function tilfoejKal(id) {
 async function aktPaam(id) {
   const a=getArr().find(x=>x.id===id); if(!a) return;
 
-  // iOS Safari og mange mobile browsere understøtter ikke Notification API
   if (!('Notification' in window)) {
-    // Tilbyd kalender i stedet
-    const ok = confirm(`Din browser understøtter ikke push-notifikationer.\n\nVil du i stedet tilføje "${a.titel}" til din kalender som påmindelse?`);
+    const ok=confirm(`Din browser understøtter ikke push-notifikationer.\n\nVil du tilføje "${a.titel}" til din kalender som påmindelse?`);
     if (ok) tilfoejKal(id);
     return;
   }
-
   if (Notification.permission === 'denied') {
-    const ok = confirm(`Notifikationer er blokeret i din browser.\n\nVil du i stedet tilføje "${a.titel}" til din kalender som påmindelse?`);
+    const ok=confirm(`Notifikationer er blokeret.\n\nVil du tilføje "${a.titel}" til din kalender i stedet?`);
     if (ok) tilfoejKal(id);
     return;
   }
 
-  let perm = Notification.permission;
-  if (perm === 'default') {
-    try { perm = await Notification.requestPermission(); }
-    catch { perm = 'denied'; }
+  let perm=Notification.permission;
+  if (perm==='default') {
+    try { perm=await Notification.requestPermission(); } catch { perm='denied'; }
   }
 
-  if (perm === 'granted') {
-    // Gem påmindelser lokalt
+  if (perm==='granted') {
     const pm=DB.get('ek_paam')||{};
     pm[id]={dato:a.dato,titel:a.titel,tider:[14,7,3]};
     DB.set('ek_paam',pm);
     alert(`✅ Påmindelser aktiveret for "${a.titel}".\nDu får besked 14, 7 og 3 dage før.`);
   } else {
-    const ok = confirm(`Notifikationer er ikke tilladt.\n\nVil du i stedet tilføje "${a.titel}" til din kalender som påmindelse?`);
+    const ok=confirm(`Notifikationer ikke tilladt.\n\nVil du tilføje "${a.titel}" til din kalender?`);
     if (ok) tilfoejKal(id);
   }
 }
 
 function tjekPaam() {
-  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  if (!('Notification' in window)||Notification.permission!=='granted') return;
   const pm=DB.get('ek_paam')||{};
   const vist=DB.get('ek_paam_vist')||{};
   const nu=new Date();
@@ -976,62 +1053,47 @@ function tjekPaam() {
     (p.tider||[]).forEach(dage=>{
       const nøgle=`${id}_${dage}`;
       if(vist[nøgle]) return;
-      const grænse=new Date(p.dato+'T00:00:00');
-      grænse.setDate(grænse.getDate()-dage);
-      if(nu>=grænse){
-        try { new Notification(`Husk: ${p.titel}`,{body:`Om ${dage} dag${dage>1?'e':''}`,icon:'./icons/icon-192.png'}); }
-        catch {}
-        vist[nøgle]=true;
-      }
+      const gr=new Date(p.dato+'T00:00:00'); gr.setDate(gr.getDate()-dage);
+      if(nu>=gr){ try { new Notification(`Husk: ${p.titel}`,{body:`Om ${dage} dag${dage>1?'e':''}`,icon:'./icons/icon-192.png'}); } catch{} vist[nøgle]=true; }
     });
   });
   DB.set('ek_paam_vist',vist);
 }
 
 /* ================================================================
-   BIND EVENTS
+   BIND / BOOT
    ================================================================ */
 function bindAll() {
   const ak=document.getElementById('ak-inp');
-  if (ak) { ak.addEventListener('keydown',e=>{ if(e.key==='Enter') tjekKode(); }); ak.focus(); }
+  if(ak){ ak.addEventListener('keydown',e=>{ if(e.key==='Enter') tjekKode(); }); ak.focus(); }
 }
 
-/* ================================================================
-   INSTALL PROMPT
-   ================================================================ */
 let installEvt=null;
 window.addEventListener('beforeinstallprompt',e=>{ e.preventDefault(); installEvt=e; const b=document.getElementById('install-banner'); if(b) b.style.display='flex'; });
 
 function installApp() {
-  if (!installEvt) return;
+  if(!installEvt) return;
   installEvt.prompt();
   installEvt.userChoice.then(()=>{ installEvt=null; const b=document.getElementById('install-banner'); if(b) b.style.display='none'; });
 }
 
-/* ================================================================
-   BOOT
-   ================================================================ */
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded',()=>{
   init();
   tjekPaam();
 
-  // Register service worker — bruger relativ sti, virker i enhver undermappe
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./service-worker.js', { scope: './' })
-      .then(r => console.log('SW registered:', r.scope))
-      .catch(e => console.warn('SW registration failed:', e));
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.register('./service-worker.js',{scope:'./'})
+      .then(r=>console.log('[SW] scope:',r.scope))
+      .catch(e=>console.warn('[SW] fejl:',e));
   }
 
-  // Initial render
   navTil('forside');
 
-  // Navigation
-  document.getElementById('bottom-nav').addEventListener('click', e => {
-    const btn = e.target.closest('.nav-item');
-    if (btn && btn.dataset.side) navTil(btn.dataset.side);
+  document.getElementById('bottom-nav').addEventListener('click',e=>{
+    const btn=e.target.closest('.nav-item');
+    if(btn&&btn.dataset.side) navTil(btn.dataset.side);
   });
 
-  // Splash screen
-  const sp = document.getElementById('splash');
-  if (sp) { setTimeout(() => { sp.style.opacity='0'; setTimeout(()=>sp.remove(), 400); }, 600); }
+  const sp=document.getElementById('splash');
+  if(sp){ setTimeout(()=>{ sp.style.opacity='0'; setTimeout(()=>sp.remove(),400); },600); }
 });

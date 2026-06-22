@@ -496,3 +496,137 @@ input,select,textarea{font-family:inherit}
   *,*::before,*::after{animation-duration:.01ms !important;transition-duration:.01ms !important}
 }
 :focus-visible{outline:3px solid var(--g);outline-offset:2px}
+
+/* ================================================================
+   V4 TILFØJELSER
+   ================================================================ */
+
+/* ── Billede-sektioner med hover-zoom ── */
+.bi-kort {
+  width: 100%;
+  height: 180px;
+  background-size: cover;
+  background-position: center;
+  border-radius: var(--r);
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  cursor: default;
+  transition: transform .35s ease, box-shadow .35s ease;
+}
+
+.bi-tekst-lag {
+  width: 100%;
+  background: linear-gradient(to top, rgba(8,24,14,.85) 0%, transparent 100%);
+  padding: 1.5rem 1rem .9rem;
+  color: #fff;
+  font-size: .88rem;
+  font-style: italic;
+  line-height: 1.55;
+}
+
+.hover-kort {
+  transition: transform .28s ease, box-shadow .28s ease;
+}
+.hover-kort:active { transform: scale(.985); }
+
+@media(hover:hover) {
+  .hover-kort:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 14px 34px rgba(0,0,0,.17);
+  }
+  /* Zoom baggrundsbillede på bi-kort */
+  .bi-kort.hover-kort:hover {
+    background-size: 105%;
+  }
+}
+
+/* ── GolfBox banner (knap-variant der virker overalt) ── */
+.gb-banner-knap {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  background: linear-gradient(135deg, var(--p) 0%, var(--p3) 100%);
+  color: #fff;
+  border: none;
+  border-radius: var(--r);
+  padding: 1.1rem 1.25rem;
+  cursor: pointer;
+  text-align: left;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform .18s, box-shadow .18s;
+}
+.gb-banner-knap:active { transform: scale(.98); }
+@media(hover:hover) {
+  .gb-banner-knap:hover { transform: translateY(-2px); box-shadow: var(--shd2); }
+}
+.gb-banner-knap div { flex: 1; }
+.gb-banner-knap strong { display: block; font-size: .95rem; font-weight: 800; }
+.gb-banner-knap small { display: block; font-size: .78rem; opacity: .75; margin-top: .15rem; }
+
+/* GolfBox banner i sektion (klikbar sektion) */
+.bi-sek { padding: .5rem 1rem; cursor: pointer; }
+.gb-banner {
+  display: flex; align-items: center; gap: 1rem;
+  background: linear-gradient(135deg, var(--p) 0%, var(--p3) 100%);
+  color: #fff; border-radius: var(--r); padding: 1.1rem 1.25rem;
+  transition: transform .18s, box-shadow .18s;
+}
+.bi-sek:active .gb-banner { transform: scale(.98); }
+@media(hover:hover) {
+  .bi-sek:hover .gb-banner { transform: translateY(-2px); box-shadow: var(--shd2); }
+}
+.gb-ikon { font-size: 1.5rem; flex-shrink: 0; }
+.gb-banner div { flex: 1; }
+.gb-banner strong { display: block; font-size: .95rem; font-weight: 800; }
+.gb-banner small { display: block; font-size: .78rem; opacity: .75; margin-top: .1rem; }
+.gb-pil { font-size: 1.3rem; color: var(--g); font-weight: 700; flex-shrink: 0; }
+
+/* ── Tidligere arrangementer: dæmpet look ── */
+.akort.akort-past {
+  opacity: .72;
+  border-left-color: var(--mut);
+}
+.akort.akort-past .ak-dato { color: var(--mut); }
+.akort.akort-past .ak-titel { color: #444; }
+
+/* Afholdt badge */
+.sb-afholdt { background: #f1f5f9; color: var(--mut); }
+
+/* Admin: dæmpet tidligere-rad */
+.ad-rad.ad-past { opacity: .65; }
+
+/* ── Kalender: tom og details ── */
+.tom-kal { text-align: center; padding: 2.5rem 1rem; }
+.tom-kal p { color: var(--mut); margin-bottom: 1rem; }
+
+details.tidl-details { }
+details.tidl-details summary {
+  font-size: .88rem; font-weight: 700; color: var(--mut);
+  cursor: pointer; padding: .5rem 0;
+  list-style: none;
+}
+details.tidl-details summary::-webkit-details-marker { display: none; }
+details.tidl-details summary::before { content: '▸ '; }
+details.tidl-details[open] summary::before { content: '▾ '; }
+
+/* ── Om EK: CTA-boks ── */
+.om-cta {
+  background: var(--p);
+  color: #fff;
+  border-radius: var(--r);
+  padding: 1.5rem 1.25rem;
+  text-align: center;
+}
+.om-cta h3 { font-size: 1rem; font-weight: 800; margin-bottom: .35rem; }
+.om-cta p  { font-size: .88rem; opacity: .8; margin-bottom: 1rem; }
+.btn-row.jc { justify-content: center; }
+
+/* ── Pakker: mt1 tilføjelse ── */
+.mt1.fb { margin-top: .75rem; }
+
+/* ── Kontakt kl: flex fix ── */
+.kl { cursor: default; }
+.kl a { color: var(--txt); }
