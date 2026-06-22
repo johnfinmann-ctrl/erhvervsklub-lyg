@@ -1017,7 +1017,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Register service worker — bruger relativ sti, virker i enhver undermappe
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./service-worker.js')
+    navigator.serviceWorker.register('./service-worker.js', { scope: './' })
       .then(r => console.log('SW registered:', r.scope))
       .catch(e => console.warn('SW registration failed:', e));
   }

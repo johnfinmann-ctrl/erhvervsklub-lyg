@@ -6,14 +6,19 @@
   <meta name="description" content="Erhverv, netværk og golfoplevelser i Lyngbygaard Golf">
   <meta name="theme-color" content="#0d2b1a">
 
-  <!-- iOS PWA -->
+  <!-- iOS PWA — disse tags er kritiske for korrekt installation på iPhone/iPad -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="LYG Erhverv">
-  <link rel="apple-touch-icon" href="./icons/icon-192.png">
+  <!-- apple-touch-icon: relativ sti, virker i enhver GitHub Pages undermappe -->
+  <link rel="apple-touch-icon" sizes="192x192" href="./icons/icon-192.png">
+  <link rel="apple-touch-icon" sizes="512x512" href="./icons/icon-512.png">
+  <!-- Startup image placeholder (iOS bruger dette til splash) -->
+  <link rel="apple-touch-startup-image" href="./icons/icon-512.png">
 
   <!-- Android/Chrome PWA -->
   <meta name="mobile-web-app-capable" content="yes">
+  <meta name="application-name" content="LYG Erhverv">
 
   <title>Lyngbygaard Erhvervsklub</title>
 
