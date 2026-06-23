@@ -215,7 +215,7 @@ ${næste.length?`
   <p>Lyngbygaard Golf · Lyngbygårdsvej 29, 8220 Brabrand</p>
   <p>📞 <a href="tel:87441070">87 44 10 70</a></p>
   <p class="foot-credit">Bygget af Nordic Operations · nordicoperations.dk</p>
-  <p class="foot-version">LYG Erhvervsklub v4.2b</p>
+  <p class="foot-version">LYG Erhvervsklub v4.3</p>
 </footer>`;
 }
 
@@ -1063,38 +1063,153 @@ function bindAll(){
   if(ak){ak.addEventListener('keydown',e=>{if(e.key==='Enter')tjekKode();});ak.focus();}
 }
 
-let installEvt=null;
-window.addEventListener('beforeinstallprompt',e=>{
-  e.preventDefault(); installEvt=e;
-  const b=document.getElementById('install-banner'); if(b) b.style.display='flex';
+/* ================================================================
+   INSTALL PROMPT — Android/Chrome (beforeinstallprompt)
+   ================================================================ */
+const INSTALL_KEY = 'ek_install_afvist';
+let installEvt = null;
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  installEvt = e;
+  /* Vis kun hvis brugeren ikke har afvist */
+  if (!DB.get(INSTALL_KEY)) {
+    const b = document.getElementById('install-banner');
+    if (b) b.style.display = 'flex';
+  }
 });
 
-function installApp(){
-  if(!installEvt) return;
+function installApp() {
+  if (!installEvt) return;
   installEvt.prompt();
-  installEvt.userChoice.then(()=>{installEvt=null;const b=document.getElementById('install-banner');if(b)b.style.display='none';});
+  installEvt.userChoice.then(choice => {
+    installEvt = null;
+    const b = document.getElementById('install-banner');
+    if (b) b.style.display = 'none';
+    if (choice.outcome === 'dismissed') DB.set(INSTALL_KEY, true);
+  });
+}
+
+function afvisInstall() {
+  DB.set(INSTALL_KEY, true);
+  const b = document.getElementById('install-banner');
+  if (b) b.style.display = 'none';
+}
+
+/* iOS install guide — vises én gang i Safari på iPhone/iPad */
+function visIosInstallGuide() {
+  const erIos    = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const erSafari = /safari/i.test(navigator.userAgent) && !/chrome|crios|fxios/i.test(navigator.userAgent);
+  const erInstalleret = window.navigator.standalone === true;
+  const harSetGuide   = DB.get('ek_ios_guide_vist');
+  if (erIos && erSafari && !erInstalleret && !harSetGuide) {
+    setTimeout(() => {
+      const m = document.getElementById('ios-install-modal');
+      if (m) m.style.display = 'flex';
+    }, 3000); /* vent 3 sek efter load */
+  }
+}
+
+function afvisIosInstall() {
+  DB.set('ek_ios_guide_vist', true);
+  const m = document.getElementById('ios-install-modal');
+  if (m) m.style.display = 'none';
+}
+
+/* ================================================================
+   APP-OPDATERING — vises når SW finder ny version
+   ================================================================ */
+let nySwVenter = null;
+
+function opdaterApp() {
+  const b = document.getElementById('update-banner');
+  if (b) b.style.display = 'none';
+  if (nySwVenter) {
+    nySwVenter.postMessage({ type: 'SKIP_WAITING' });
+  }
+  /* Ryd caches og reload — henter alt frisk fra netværket */
+  if ('caches' in window) {
+    caches.keys().then(keys => {
+      Promise.all(keys.map(k => caches.delete(k))).then(() => location.reload(true));
+    });
+  } else {
+    location.reload(true);
+  }
+}
+
+/* ================================================================
+   GOLFBOX — migrér gammelt forkert link i localStorage
+   ================================================================ */
+function migrérGolfbox() {
+  const gammelt = DB.get('ek_golfbox');
+  const dårligeLinks = [
+    'https://www.golfbox.dk/site/login/loginform.asp',
+    'https://golf.dk',
+    'https://www.golf.dk',
+  ];
+  if (gammelt && dårligeLinks.some(d => gammelt.startsWith(d))) {
+    DB.set('ek_golfbox', CONFIG.golfboxUrl);
+    console.log('[GB] Gammelt GolfBox-link overskrevet med:', CONFIG.golfboxUrl);
+  }
 }
 
 /* ================================================================
    BOOT
    ================================================================ */
-document.addEventListener('DOMContentLoaded',()=>{
+document.addEventListener('DOMContentLoaded', () => {
   init();
+  migrérGolfbox();   // ret evt. gammelt GolfBox-link i localStorage
   tjekPaam();
 
-  if('serviceWorker' in navigator){
-    navigator.serviceWorker.register('./service-worker.js',{scope:'./'})
-      .then(r=>console.log('[SW] scope:',r.scope))
-      .catch(e=>console.warn('[SW] fejl:',e));
+  /* Service Worker */
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./service-worker.js', { scope: './' })
+      .then(reg => {
+        console.log('[SW] Scope:', reg.scope);
+
+        /* Lyt efter ny SW der venter */
+        reg.addEventListener('updatefound', () => {
+          const nyWorker = reg.installing;
+          if (!nyWorker) return;
+          nyWorker.addEventListener('statechange', () => {
+            if (nyWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              /* Ny version klar — vis opdateringsknap */
+              nySwVenter = nyWorker;
+              const b = document.getElementById('update-banner');
+              if (b) b.style.display = 'flex';
+            }
+          });
+        });
+      })
+      .catch(e => console.warn('[SW] Fejl:', e));
+
+    /* Besked fra SW om at ny version er tilgængelig via network-first */
+    navigator.serviceWorker.addEventListener('message', event => {
+      if (event.data && event.data.type === 'SW_UPDATED') {
+        /* SW har hentet ny version fra netværket — vis knap */
+        const b = document.getElementById('update-banner');
+        if (b && b.style.display === 'none') b.style.display = 'flex';
+      }
+    });
+
+    /* Reload automatisk når ny SW overtager */
+    let opdateret = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!opdateret) { opdateret = true; location.reload(); }
+    });
   }
 
   navTil('forside');
 
-  document.getElementById('bottom-nav').addEventListener('click',e=>{
-    const btn=e.target.closest('.nav-item');
-    if(btn&&btn.dataset.side) navTil(btn.dataset.side);
+  document.getElementById('bottom-nav').addEventListener('click', e => {
+    const btn = e.target.closest('.nav-item');
+    if (btn && btn.dataset.side) navTil(btn.dataset.side);
   });
 
-  const sp=document.getElementById('splash');
-  if(sp){setTimeout(()=>{sp.style.opacity='0';setTimeout(()=>sp.remove(),400);},600);}
+  /* Splash */
+  const sp = document.getElementById('splash');
+  if (sp) { setTimeout(() => { sp.style.opacity = '0'; setTimeout(() => sp.remove(), 400); }, 600); }
+
+  /* iOS installér-guide */
+  visIosInstallGuide();
 });

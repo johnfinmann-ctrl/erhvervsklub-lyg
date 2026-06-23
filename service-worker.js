@@ -1,116 +1,117 @@
 /* ================================================================
-   Lyngbygaard Erhvervsklub — Service Worker v4.2
+   Lyngbygaard Erhvervsklub — Service Worker v4.3
+
+   VERSIONSSTYRING:
+   Skift CACHE_VERSION ved hver GitHub-upload for at tvinge
+   opdatering på alle installerede apps (iPhone, iPad, Android).
 
    Strategi:
-   - Network-first for app-filer (index.html, app.js, style.css,
-     manifest.json) → brugeren får altid den nyeste version.
-   - Cache-first for statiske assets (icons, billeder) → hurtig load.
-   - Offline fallback til cached index.html ved navigation.
+   · Network-first  → index.html, app.js, style.css, manifest.json
+   · Cache-first    → icons og billeder (statiske assets)
+   · Offline fallback → cached index.html
    ================================================================ */
 
-const CACHE_NAME = 'lyg-ek-v4-2';
-const BASE       = self.registration.scope;
+const CACHE_VERSION = 'lyg-erhverv-v4.3';
+const BASE          = self.registration.scope;
 
-/* Filer der caches ved install (til offline-support) */
-const PRECACHE = [
+const PRECACHE_URLS = [
   BASE + 'index.html',
-  BASE + 'style.css?v=4.2',
-  BASE + 'app.js?v=4.2',
-  BASE + 'manifest.json?v=4.2',
+  BASE + 'style.css?v=4.3',
+  BASE + 'app.js?v=4.3',
+  BASE + 'manifest.json?v=4.3',
   BASE + 'icons/icon-192.png',
   BASE + 'icons/icon-512.png',
 ];
 
-/* Disse URL-mønstre bruger cache-first (statiske assets) */
-const CACHE_FIRST_PATTERNS = [
-  /\/icons\//,
-  /\.(png|jpg|jpeg|webp|gif|svg|ico|woff2?)$/,
-  /unsplash\.com/,
-];
+const CACHE_FIRST_RE = /\/icons\/|unsplash\.com|\.(png|jpg|jpeg|webp|gif|svg|ico|woff2?)$/;
 
-function erCacheFirst(url) {
-  return CACHE_FIRST_PATTERNS.some(p => p.test(url));
-}
-
-/* ── Install: precache + skipWaiting ── */
+/* ── INSTALL ─────────────────────────────────────────────────── */
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(PRECACHE))
-      .catch(err => console.warn('[SW] Precache fejlede (offline install):', err))
+    caches.open(CACHE_VERSION)
+      .then(c => c.addAll(PRECACHE_URLS))
+      .catch(err => console.warn('[SW] Precache fejl:', err))
   );
-  self.skipWaiting(); // aktivér med det samme
+  self.skipWaiting();           // aktivér SW med det samme
 });
 
-/* ── Activate: slet alle gamle caches + claim ── */
+/* ── ACTIVATE ────────────────────────────────────────────────── */
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys()
       .then(keys => Promise.all(
         keys
-          .filter(key => key !== CACHE_NAME)
-          .map(key => {
-            console.log('[SW] Sletter gammel cache:', key);
-            return caches.delete(key);
-          })
+          .filter(k => k !== CACHE_VERSION)
+          .map(k => { console.log('[SW] Slet gammel cache:', k); return caches.delete(k); })
       ))
-      .then(() => self.clients.claim()) // overtag åbne faner med det samme
+      .then(() => self.clients.claim())   // overtag ALLE åbne faner
   );
 });
 
-/* ── Fetch ── */
+/* ── FETCH ───────────────────────────────────────────────────── */
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
-  if (!event.request.url.startsWith(self.location.origin) &&
-      !event.request.url.includes('unsplash.com')) return;
 
   const url = event.request.url;
+  const sameOrigin = url.startsWith(self.location.origin);
+  const unsplash   = url.includes('unsplash.com');
+  if (!sameOrigin && !unsplash) return;
 
-  if (erCacheFirst(url)) {
-    /* Cache-first: icons og billeder */
+  /* Cache-first: icons og billeder */
+  if (CACHE_FIRST_RE.test(url)) {
     event.respondWith(
-      caches.match(event.request).then(cached => {
-        if (cached) return cached;
-        return fetch(event.request).then(response => {
-          if (response && response.status === 200) {
-            const toCache = response.clone();
-            caches.open(CACHE_NAME).then(c => c.put(event.request, toCache));
+      caches.match(event.request).then(hit => {
+        if (hit) return hit;
+        return fetch(event.request).then(res => {
+          if (res && res.status === 200) {
+            caches.open(CACHE_VERSION).then(c => c.put(event.request, res.clone()));
           }
-          return response;
+          return res;
         });
       })
     );
-  } else {
-    /* Network-first: app-filer (index.html, app.js, style.css, manifest.json) */
-    event.respondWith(
-      fetch(event.request)
-        .then(response => {
-          if (response && response.status === 200 && response.type === 'basic') {
-            const toCache = response.clone();
-            caches.open(CACHE_NAME).then(c => c.put(event.request, toCache));
-          }
-          return response;
-        })
-        .catch(() => {
-          /* Offline fallback */
-          return caches.match(event.request).then(cached => {
-            if (cached) return cached;
-            if (event.request.mode === 'navigate') {
-              return caches.match(BASE + 'index.html');
-            }
+    return;
+  }
+
+  /* Network-first: alle app-filer */
+  event.respondWith(
+    fetch(event.request)
+      .then(res => {
+        if (res && res.status === 200 && res.type === 'basic') {
+          caches.open(CACHE_VERSION).then(c => c.put(event.request, res.clone()));
+        }
+        /* Fortæl siden at en ny version er tilgængelig */
+        if (event.request.mode === 'navigate') {
+          self.clients.matchAll().then(clients => {
+            clients.forEach(client => client.postMessage({ type: 'SW_UPDATED' }));
           });
+        }
+        return res;
+      })
+      .catch(() =>
+        caches.match(event.request).then(hit => {
+          if (hit) return hit;
+          if (event.request.mode === 'navigate')
+            return caches.match(BASE + 'index.html');
         })
-    );
+      )
+  );
+});
+
+/* ── SKIP_WAITING besked fra siden ──────────────────────────── */
+self.addEventListener('message', event => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
   }
 });
 
-/* ── Notification click ── */
+/* ── NOTIFICATION CLICK ─────────────────────────────────────── */
 self.addEventListener('notificationclick', event => {
   event.notification.close();
   event.waitUntil(
-    clients.matchAll({ type: 'window' }).then(clientList => {
-      for (const client of clientList) {
-        if (client.url.startsWith(BASE) && 'focus' in client) return client.focus();
+    clients.matchAll({ type: 'window' }).then(list => {
+      for (const c of list) {
+        if (c.url.startsWith(BASE) && 'focus' in c) return c.focus();
       }
       return clients.openWindow(BASE + 'index.html');
     })
