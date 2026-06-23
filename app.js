@@ -12,7 +12,7 @@ const CONFIG = {
   website:   'https://lyg.dk',
 
   /* GolfBox direkte login — redigeres i Admin → Indstillinger */
-  golfboxUrl: 'https://www.golfbox.dk/site/login/loginform.asp',
+  golfboxUrl: 'https://golfbox.golf/',
 
   heroTekst:   'Erhverv, netværk og golfoplevelser',
   heroUnder:   'Lyngbygaard Erhvervsklub samler virksomheder i Aarhus-regionen om golf, relationer og fællesskab.',
@@ -215,7 +215,7 @@ ${næste.length?`
   <p>Lyngbygaard Golf · Lyngbygårdsvej 29, 8220 Brabrand</p>
   <p>📞 <a href="tel:87441070">87 44 10 70</a></p>
   <p class="foot-credit">Bygget af Nordic Operations · nordicoperations.dk</p>
-  <p class="foot-version">LYG Erhvervsklub v4.2</p>
+  <p class="foot-version">LYG Erhvervsklub v4.2b</p>
 </footer>`;
 }
 
@@ -921,7 +921,7 @@ function adInst() {
   <h3>GolfBox login-link</h3>
   <p class="muted mb1">Link til direkte GolfBox-login. Alle GolfBox-knapper i appen bruger dette link.</p>
   <form onsubmit="gemGolfbox(event)">
-    <div class="fg"><label>URL</label><input name="url" value="${esc(gb)}" placeholder="https://www.golfbox.dk/site/login/loginform.asp"></div>
+    <div class="fg"><label>URL</label><input name="url" value="${esc(gb)}" placeholder="https://golfbox.golf/"></div>
     <button type="submit" class="knap-p">Gem GolfBox-link</button>
   </form>
 </div>
