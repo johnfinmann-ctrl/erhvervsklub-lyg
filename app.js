@@ -215,6 +215,7 @@ ${næste.length?`
   <p>Lyngbygaard Golf · Lyngbygårdsvej 29, 8220 Brabrand</p>
   <p>📞 <a href="tel:87441070">87 44 10 70</a></p>
   <p class="foot-credit">Bygget af Nordic Operations · nordicoperations.dk</p>
+  <p class="foot-version">LYG Erhvervsklub v4.2</p>
 </footer>`;
 }
 

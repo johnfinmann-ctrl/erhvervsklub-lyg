@@ -504,3 +504,6 @@ details.tidl-details[open] summary::before{content:'▾  '}
   *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
 }
 :focus-visible{outline:3px solid var(--g);outline-offset:2px}
+
+/* ── Version ── */
+.foot-version{color:rgba(255,255,255,.2);font-size:.65rem;margin-top:.15rem;letter-spacing:.05em}
