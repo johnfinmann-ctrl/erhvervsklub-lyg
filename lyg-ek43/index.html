@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="Erhverv, netværk og golfoplevelser i Lyngbygaard Golf">
+  <meta name="theme-color" content="#0d2b1a">
+
+  <!-- iOS PWA -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="LYG Erhverv">
+  <link rel="apple-touch-icon" sizes="192x192" href="./icons/icon-192.png">
+  <link rel="apple-touch-icon" sizes="512x512" href="./icons/icon-512.png">
+  <link rel="apple-touch-startup-image" href="./icons/icon-512.png">
+
+  <!-- Android/Chrome PWA -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="application-name" content="LYG Erhverv">
+
+  <title>Lyngbygaard Erhvervsklub</title>
+
+  <!-- v4.4 — skift versionsnummer her og i service-worker.js ved opdatering -->
+  <link rel="manifest"   href="./manifest.json?v=4.4">
+  <link rel="stylesheet" href="./style.css?v=4.4">
+
+  <!-- Preload golfer-frames til animation -->
+  <link rel="preload" as="image" href="./images/golfer-1-address.png">
+  <link rel="preload" as="image" href="./images/golfer-2-backswing.png">
+  <link rel="preload" as="image" href="./images/golfer-3-impact.png">
+  <link rel="preload" as="image" href="./images/golfer-4-finish.png">
+
+  <style>
+    body { background: #0d2b1a; }
+    #splash {
+      position: fixed; inset: 0; background: #0d2b1a;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      z-index: 9999; transition: opacity .4s;
+    }
+    #splash .s-logo { font-size: 3rem; margin-bottom: 1rem; }
+    #splash .s-navn { color: #b8973a; font-size: 1.1rem; font-weight: 800;
+      font-family: -apple-system,sans-serif; letter-spacing: .04em; }
+    #splash .s-sub  { color: rgba(255,255,255,.5); font-size: .8rem;
+      font-family: -apple-system,sans-serif; margin-top: .3rem; }
+  </style>
+</head>
+<body>
+
+<div id="splash">
+  <div class="s-logo">⛳</div>
+  <div class="s-navn">LYG Erhvervsklub</div>
+  <div class="s-sub">Lyngbygaard Golf</div>
+</div>
+
+<div id="app">
+
+  <!-- Opdateringsbesked (vises når SW registrerer ny version) -->
+  <div id="update-banner" style="display:none" role="alert">
+    <span>🔄 Ny version tilgængelig</span>
+    <button onclick="opdaterApp()">Opdater app</button>
+    <button class="luk-banner" onclick="document.getElementById('update-banner').style.display='none'" aria-label="Luk">✕</button>
+  </div>
+
+  <!-- Installér-banner (Android/Chrome via beforeinstallprompt) -->
+  <div id="install-banner" style="display:none" role="banner">
+    <span>📲 Installér appen på din enhed</span>
+    <button onclick="installApp()">Installér</button>
+    <button class="luk-banner" onclick="afvisInstall()" aria-label="Luk">✕</button>
+  </div>
+
+  <!-- iOS installér-guide (vises én gang på iPhone/iPad i Safari) -->
+  <div id="ios-install-modal" style="display:none" role="dialog" aria-modal="true">
+    <div class="ios-modal-boks">
+      <div class="ios-modal-ikon">⛳</div>
+      <h2>Installer som app</h2>
+      <p><strong>Lyngbygaard Erhvervsklub</strong></p>
+      <p>Få hurtig adgang til kalender, tilmelding, GolfBox og erhvervsarrangementer.</p>
+      <div class="ios-guide">
+        <div class="ios-trin"><span>1</span><p>Tryk på <strong>del-knappen</strong> <span class="ios-ikon">⬆️</span> nederst i Safari</p></div>
+        <div class="ios-trin"><span>2</span><p>Vælg <strong>»Føj til hjemmeskærm«</strong></p></div>
+        <div class="ios-trin"><span>3</span><p>Tryk <strong>»Tilføj«</strong></p></div>
+      </div>
+      <button class="knap-p ios-luk" onclick="afvisIosInstall()">Forstået</button>
+      <button class="ios-senere" onclick="afvisIosInstall()">Ikke nu</button>
+    </div>
+  </div>
+
+  <!-- Push-notifikation dialog — vises første gang -->
+  <div id="push-modal" style="display:none" role="dialog" aria-modal="true" aria-labelledby="push-modal-titel">
+    <div class="push-modal-boks">
+      <div class="push-modal-ikon">🔔</div>
+      <h2 id="push-modal-titel">Vil du modtage påmindelser?</h2>
+      <p>Få besked 14, 7 og 3 dage før kommende arrangementer i Erhvervsklubben.</p>
+      <div class="push-modal-knapper">
+        <button class="knap-p" onclick="accepterPush()">Ja, tak</button>
+        <button class="ios-senere" onclick="afvisPush()">Nej tak</button>
+      </div>
+    </div>
+  </div>
+
+  <main id="main-content" role="main" aria-live="polite" aria-atomic="false"></main>
+
+  <nav id="bottom-nav" role="navigation" aria-label="Hovedmenu">
+    <button class="nav-item active" data-side="forside"    aria-label="Forside">  <span class="nav-ikon">🏠</span><span class="nav-lbl">Forside</span>  </button>
+    <button class="nav-item"        data-side="kalender"   aria-label="Kalender"> <span class="nav-ikon">📅</span><span class="nav-lbl">Kalender</span> </button>
+    <button class="nav-item"        data-side="tilmelding" aria-label="Tilmeld">  <span class="nav-ikon">✅</span><span class="nav-lbl">Tilmeld</span>  </button>
+    <button class="nav-item"        data-side="golfarr"    aria-label="Golf">     <span class="nav-ikon">⛳</span><span class="nav-lbl">Golf</span>     </button>
+    <button class="nav-item"        data-side="sponsor"    aria-label="Sponsor">  <span class="nav-ikon">🌟</span><span class="nav-lbl">Sponsor</span>  </button>
+    <button class="nav-item"        data-side="om"         aria-label="EK">       <span class="nav-ikon">🤝</span><span class="nav-lbl">EK</span>       </button>
+    <button class="nav-item"        data-side="kontakt"    aria-label="Kontakt">  <span class="nav-ikon">✉️</span><span class="nav-lbl">Kontakt</span>  </button>
+    <button class="nav-item nav-admin" data-side="admin"   aria-label="Admin">    <span class="nav-ikon">⚙️</span><span class="nav-lbl">Admin</span>    </button>
+  </nav>
+
+</div>
+
+<script src="./app.js?v=4.4"></script>
+</body>
+</html>
