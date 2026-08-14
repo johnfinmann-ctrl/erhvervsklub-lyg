@@ -688,3 +688,557 @@ details.tidl-details[open] summary::before{content:'▾  '}
   width: calc(100% - 2rem);
   box-sizing: border-box;
 }
+
+/* ================================================================
+   V4.4 — GOLF HERO-ANIMATION
+   ================================================================ */
+
+/* Hero: gør plads til golfspiller i højre side */
+.hero-anim {
+  position: relative;
+  overflow: hidden;
+  /* Lidt mere højde til at rumme spilleren */
+  min-height: 62vw;
+  max-height: 420px;
+}
+
+/* Golfspiller-container: højre side af hero */
+.golfer-scene {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 48%;
+  max-width: 280px;
+  height: 100%;
+  pointer-events: none;
+  /* Forhindre overflow af billeder */
+  overflow: hidden;
+}
+
+/* Alle frames stables ovenpå hinanden */
+.golfer-frame {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: bottom right;
+  opacity: 0;
+  will-change: opacity;
+  /* Forhindre tekst-overlap på mobil */
+  max-width: 100%;
+}
+
+/* ── SLUTPOSITION (ingen animation — standard og efter anim) ── */
+/* Før animation starter: vis frame 1 stille */
+.golfer-scene:not(.anim-running):not(.anim-done) .gf-1 { opacity: 1; }
+
+/* After animation: vis kun finish-frame */
+.golfer-scene.anim-done .gf-4 { opacity: 1; }
+
+/* Boldbane: skjult som standard */
+.ball-trail {
+  position: absolute;
+  bottom: 22%;
+  left: 5%;
+  width: 55%;
+  height: 3px;
+  background: linear-gradient(90deg,
+    rgba(255,255,255,0) 0%,
+    rgba(255,220,120,0.9) 40%,
+    rgba(255,255,255,0.6) 70%,
+    rgba(255,255,255,0) 100%);
+  border-radius: 2px;
+  opacity: 0;
+  transform: scaleX(0);
+  transform-origin: left center;
+  will-change: opacity, transform;
+}
+
+/* ── KEYFRAMES ── */
+
+/* Frame 1: Address (0–15% af 4s = 0–0.6s) */
+@keyframes gf1-anim {
+  0%   { opacity: 1; }
+  14%  { opacity: 1; }
+  20%  { opacity: 0; }
+  100% { opacity: 0; }
+}
+
+/* Frame 2: Backswing (15–35% = 0.6–1.4s) */
+@keyframes gf2-anim {
+  0%   { opacity: 0; }
+  14%  { opacity: 0; }
+  18%  { opacity: 1; }
+  33%  { opacity: 1; }
+  38%  { opacity: 0; }
+  100% { opacity: 0; }
+}
+
+/* Frame 3: Impact (35–65% = 1.4–2.6s) */
+@keyframes gf3-anim {
+  0%   { opacity: 0; }
+  33%  { opacity: 0; }
+  37%  { opacity: 1; }
+  63%  { opacity: 1; }
+  68%  { opacity: 0; }
+  100% { opacity: 0; }
+}
+
+/* Boldbane: vises ved impact */
+@keyframes ball-trail-anim {
+  0%   { opacity: 0; transform: scaleX(0); }
+  37%  { opacity: 0; transform: scaleX(0); }
+  44%  { opacity: 1; transform: scaleX(1); }
+  60%  { opacity: 0.8; transform: scaleX(1); }
+  70%  { opacity: 0; transform: scaleX(1); }
+  100% { opacity: 0; }
+}
+
+/* Frame 4: Finish (65–100% = 2.6–4.0s) — holder slutposition */
+@keyframes gf4-anim {
+  0%   { opacity: 0; }
+  63%  { opacity: 0; }
+  68%  { opacity: 1; }
+  100% { opacity: 1; } /* holder slutposition */
+}
+
+/* ── ANIMATION AKTIV ── */
+.golfer-scene.anim-running .gf-1 {
+  animation: gf1-anim 4s cubic-bezier(.4,0,.2,1) forwards;
+}
+.golfer-scene.anim-running .gf-2 {
+  animation: gf2-anim 4s cubic-bezier(.4,0,.2,1) forwards;
+}
+.golfer-scene.anim-running .gf-3 {
+  animation: gf3-anim 4s cubic-bezier(.4,0,.2,1) forwards;
+}
+.golfer-scene.anim-running .ball-trail {
+  animation: ball-trail-anim 4s ease forwards;
+}
+.golfer-scene.anim-running .gf-4 {
+  animation: gf4-anim 4s cubic-bezier(.4,0,.2,1) forwards;
+}
+
+/* ── MOBIL: tekst må ikke dækkes ── */
+@media (max-width: 420px) {
+  .golfer-scene {
+    width: 42%;
+    max-width: 160px;
+    opacity: 0.85;
+  }
+  .hero-lag {
+    /* Giv plads til golfspilleren i højre side */
+    padding-right: 44%;
+  }
+}
+
+@media (min-width: 421px) and (max-width: 600px) {
+  .golfer-scene {
+    width: 44%;
+    max-width: 210px;
+  }
+  .hero-lag { padding-right: 40%; }
+}
+
+/* ── DESKTOP: tekst venstre, spiller højre ── */
+@media (min-width: 600px) {
+  .hero-anim { min-height: 340px; max-height: 480px; }
+  .golfer-scene {
+    width: 42%;
+    max-width: 300px;
+  }
+  .hero-lag {
+    max-width: 55%;
+    padding-right: 0;
+  }
+}
+
+/* ── REDUCED MOTION: vis kun slutbillede, ingen animation ── */
+@media (prefers-reduced-motion: reduce) {
+  .golfer-scene { }
+  .golfer-scene .gf-1,
+  .golfer-scene .gf-2,
+  .golfer-scene .gf-3,
+  .golfer-scene .ball-trail { opacity: 0 !important; }
+  .golfer-scene .gf-4 { opacity: 1 !important; }
+  .golfer-scene.anim-running .gf-1,
+  .golfer-scene.anim-running .gf-2,
+  .golfer-scene.anim-running .gf-3,
+  .golfer-scene.anim-running .ball-trail { animation: none !important; opacity: 0 !important; }
+  .golfer-scene.anim-running .gf-4 { animation: none !important; opacity: 1 !important; }
+}
+
+/* ================================================================
+   V4.4 — PUSH NOTIFICATION MODAL
+   ================================================================ */
+#push-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.55);
+  z-index: 1100;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+.push-modal-boks {
+  background: #fff;
+  border-radius: var(--r) var(--r) 0 0;
+  padding: 2rem 1.5rem 2.25rem;
+  max-width: 480px;
+  width: 100%;
+  text-align: center;
+}
+
+.push-modal-ikon { font-size: 2.5rem; margin-bottom: .75rem; }
+
+.push-modal-boks h2 {
+  font-size: 1.15rem;
+  font-weight: 900;
+  color: var(--p);
+  margin-bottom: .5rem;
+}
+
+.push-modal-boks p {
+  font-size: .875rem;
+  color: var(--mut);
+  line-height: 1.55;
+  margin-bottom: 1.5rem;
+}
+
+.push-modal-knapper {
+  display: flex;
+  flex-direction: column;
+  gap: .75rem;
+  align-items: center;
+}
+
+.push-modal-knapper .knap-p { width: 100%; max-width: 280px; }
+
+/* ================================================================
+   V4.5 — PROFESSIONEL FORSIDE
+   ================================================================ */
+
+/* ── Primær CTA — næste arrangement ── */
+.fs-cta-sek { padding: 1rem 1rem .75rem; }
+
+.fs-hoved-cta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: .25rem;
+  width: 100%;
+  background: var(--p);
+  color: #fff;
+  border: none;
+  border-radius: var(--r);
+  padding: 1.25rem 1.4rem 1.1rem;
+  text-align: left;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 250ms ease, box-shadow 250ms ease;
+}
+
+.fs-hoved-cta::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(184,151,58,.18) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.fs-hoved-cta:active { transform: scale(.985); }
+
+@media (hover: hover) {
+  .fs-hoved-cta:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 32px rgba(13,43,26,.28);
+  }
+}
+
+.fs-cta-label {
+  font-size: .68rem;
+  font-weight: 800;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--g);
+  display: block;
+}
+
+.fs-cta-titel {
+  font-size: 1.15rem;
+  font-weight: 900;
+  line-height: 1.15;
+  display: block;
+  margin-top: .15rem;
+}
+
+.fs-cta-meta {
+  font-size: .8rem;
+  opacity: .75;
+  display: block;
+  margin-top: .15rem;
+}
+
+.fs-cta-pil {
+  font-size: .82rem;
+  font-weight: 700;
+  color: var(--g);
+  display: block;
+  margin-top: .65rem;
+}
+
+/* ── Professionelt budskab ── */
+.fs-budskab-sek {
+  padding: 1.75rem 1.25rem 1.25rem;
+  text-align: center;
+}
+
+.fs-over {
+  font-size: .68rem;
+  font-weight: 800;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--g);
+  margin-bottom: .5rem;
+}
+
+.fs-h2 {
+  font-size: clamp(1.5rem, 5.5vw, 2rem);
+  font-weight: 900;
+  color: var(--p);
+  line-height: 1.1;
+  margin-bottom: .65rem;
+  letter-spacing: -.01em;
+}
+
+.fs-intro {
+  font-size: .9rem;
+  color: var(--mut);
+  line-height: 1.6;
+  max-width: 38ch;
+  margin: 0 auto;
+}
+
+/* ── Tre værdier — linje-ikoner, ingen emojis ── */
+.fs-vaerdi-sek { padding: .5rem 1rem 1.25rem; }
+
+.fs-vaerdi-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: .65rem;
+}
+
+@media (min-width: 480px) {
+  .fs-vaerdi-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+.fs-vaerdi-kort {
+  background: #fff;
+  border: none;
+  border-radius: var(--r);
+  padding: 1.25rem 1rem 1.1rem;
+  text-align: left;
+  box-shadow: var(--s1);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: .4rem;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 250ms ease, box-shadow 250ms ease;
+  border-bottom: 3px solid transparent;
+}
+
+.fs-vaerdi-kort:active { transform: scale(.98); }
+
+@media (hover: hover) {
+  .fs-vaerdi-kort:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--s2);
+    border-bottom-color: var(--g);
+  }
+}
+
+.fs-vaerdi-ikon {
+  width: 2rem;
+  height: 2rem;
+  color: var(--g);
+  margin-bottom: .2rem;
+  flex-shrink: 0;
+}
+
+.fs-vaerdi-ikon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.fs-vaerdi-kort strong {
+  font-size: .88rem;
+  font-weight: 800;
+  color: var(--p);
+  display: block;
+  line-height: 1.2;
+}
+
+.fs-vaerdi-kort p {
+  font-size: .78rem;
+  color: var(--mut);
+  line-height: 1.45;
+  margin: 0;
+}
+
+/* Mobil: vandret layout for kort */
+@media (max-width: 479px) {
+  .fs-vaerdi-kort {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: .85rem;
+    padding: 1rem;
+  }
+  .fs-vaerdi-ikon { flex-shrink: 0; margin-bottom: 0; margin-top: .1rem; }
+}
+
+/* ── Sekundære knapper — mindre, roligere ── */
+.fs-sek-knapper-sek { padding: .25rem 1rem 1rem; }
+
+.fs-sek-knapper {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .55rem;
+}
+
+.fs-sek-k {
+  background: #fff;
+  color: var(--p);
+  border: 1.5px solid var(--bdr);
+  border-radius: var(--rs);
+  padding: .72rem .75rem;
+  font-size: .8rem;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: center;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 250ms ease, border-color 250ms ease,
+              transform 250ms ease, box-shadow 250ms ease;
+  line-height: 1.25;
+}
+
+.fs-sek-k:active { transform: scale(.97); }
+
+@media (hover: hover) {
+  .fs-sek-k:hover {
+    background: var(--lys);
+    border-color: var(--p);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(13,43,26,.1);
+  }
+  .fs-sek-k.gold:hover {
+    background: var(--g);
+    border-color: var(--g);
+    color: #fff;
+  }
+}
+
+.fs-sek-k.gold {
+  border-color: var(--g);
+  color: var(--g);
+}
+
+/* ── Nøgletal ── */
+.fs-fakta-sek { padding: 1rem 1rem 1.25rem; }
+
+.fs-fakta-linje {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem;
+  background: var(--p);
+  border-radius: var(--r);
+  padding: 1.1rem 1.25rem;
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
+
+.fs-fakta-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  flex: 1;
+  min-width: 0;
+}
+
+.fs-fakta-item strong {
+  font-size: clamp(.95rem, 3vw, 1.25rem);
+  font-weight: 900;
+  color: var(--g);
+  display: block;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.fs-fakta-item span {
+  font-size: clamp(.6rem, 1.8vw, .72rem);
+  color: rgba(255,255,255,.65);
+  display: block;
+  margin-top: .15rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.fs-fakta-sep {
+  width: 1px;
+  height: 2rem;
+  background: rgba(255,255,255,.15);
+  flex-shrink: 0;
+}
+
+/* ── Safe-area: page headers (ph) ── */
+/* Globalt: læg safe-area-inset-top til .ph.bg-mork */
+.ph.bg-mork {
+  padding-top: calc(1.5rem + env(safe-area-inset-top, 0px));
+}
+
+/* ── Juster hover-effekter globalt — blødere ── */
+/* Overskriv eventuelle for aggressive transitions fra tidligere versioner */
+.akort, .ikb, .pk, .sp-k, .bi-kort, .fs-vaerdi-kort, .fs-sek-k, .fs-hoved-cta,
+.sknap, .knap-p, .knap-sek, .gb-banner-knap {
+  transition-duration: 250ms;
+  transition-timing-function: ease;
+}
+
+/* Max løft: translateY -2px (aldrig mere) */
+@media (hover: hover) {
+  .akort:hover        { transform: translateY(-2px); box-shadow: var(--s2); }
+  .ikb:hover:not(.static) { transform: translateY(-2px); box-shadow: var(--s2); }
+  .pk:hover           { transform: translateY(-2px); box-shadow: var(--s2); }
+  .sp-k:hover         { transform: translateY(-2px); box-shadow: var(--s1); border-color: var(--g); }
+  .sknap:hover        { transform: translateY(-2px); box-shadow: var(--s2); }
+  .gb-banner-knap:hover { transform: translateY(-2px); box-shadow: var(--s2); }
+}
+
+/* Desktop: mere luft og bredde på forsiden */
+@media (min-width: 600px) {
+  .fs-budskab-sek { padding: 2.5rem 1.5rem 1.75rem; }
+  .fs-h2          { font-size: 2.1rem; }
+  .fs-intro       { font-size: .95rem; }
+  .fs-cta-sek     { padding: 1.25rem 1.25rem .75rem; }
+  .fs-hoved-cta   { padding: 1.5rem 1.75rem 1.3rem; }
+  .fs-cta-titel   { font-size: 1.3rem; }
+  .fs-vaerdi-sek  { padding: .5rem 1.25rem 1.5rem; }
+  .fs-vaerdi-kort { padding: 1.5rem 1.25rem 1.3rem; }
+  .fs-sek-knapper-sek { padding: .25rem 1.25rem 1.25rem; }
+  .fs-sek-knapper { grid-template-columns: repeat(4, 1fr); gap: .65rem; }
+  .fs-fakta-sek   { padding: 1rem 1.25rem 1.5rem; }
+  .fs-fakta-linje { padding: 1.25rem 1.75rem; }
+}
+
+
+@media(hover:hover){.pk:hover{transform:translateY(-2px) !important;}}

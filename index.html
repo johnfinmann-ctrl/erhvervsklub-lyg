@@ -20,9 +20,15 @@
 
   <title>Lyngbygaard Erhvervsklub</title>
 
-  <!-- v4.3 — skift versionsnummer her og i service-worker.js ved opdatering -->
-  <link rel="manifest"   href="./manifest.json?v=4.3">
-  <link rel="stylesheet" href="./style.css?v=4.3">
+  <!-- v4.4 — skift versionsnummer her og i service-worker.js ved opdatering -->
+  <link rel="manifest"   href="./manifest.json?v=1.0">
+  <link rel="stylesheet" href="./style.css?v=1.0">
+
+  <!-- Preload golfer-frames til animation -->
+  <link rel="preload" as="image" href="./images/golfer-1-address.png">
+  <link rel="preload" as="image" href="./images/golfer-2-backswing.png">
+  <link rel="preload" as="image" href="./images/golfer-3-impact.png">
+  <link rel="preload" as="image" href="./images/golfer-4-finish.png">
 
   <style>
     body { background: #0d2b1a; }
@@ -80,6 +86,19 @@
     </div>
   </div>
 
+  <!-- Push-notifikation dialog — vises første gang -->
+  <div id="push-modal" style="display:none" role="dialog" aria-modal="true" aria-labelledby="push-modal-titel">
+    <div class="push-modal-boks">
+      <div class="push-modal-ikon">🔔</div>
+      <h2 id="push-modal-titel">Vil du modtage påmindelser?</h2>
+      <p>Få besked 14, 7 og 3 dage før kommende arrangementer i Erhvervsklubben.</p>
+      <div class="push-modal-knapper">
+        <button class="knap-p" onclick="accepterPush()">Ja, tak</button>
+        <button class="ios-senere" onclick="afvisPush()">Nej tak</button>
+      </div>
+    </div>
+  </div>
+
   <main id="main-content" role="main" aria-live="polite" aria-atomic="false"></main>
 
   <nav id="bottom-nav" role="navigation" aria-label="Hovedmenu">
@@ -95,6 +114,6 @@
 
 </div>
 
-<script src="./app.js?v=4.3"></script>
+<script src="./app.js?v=1.0"></script>
 </body>
 </html>

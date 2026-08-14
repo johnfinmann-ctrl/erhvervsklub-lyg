@@ -20,6 +20,15 @@ const CONFIG = {
 
   adminKode: '1234',
 
+  /* ── Supabase (Web Push) ──────────────────────────────────────
+     Udfyld disse efter Supabase-opsætning (se supabase/OPSAETNING.md).
+     Behold tomme strenge indtil Supabase er konfigureret.
+     App fungerer fuldt uden Supabase — push-fallback bruges.
+     ─────────────────────────────────────────────────────────── */
+  supabaseUrl:  'INDSÆT_DIN_SUPABASE_URL',   // fx https://abc.supabase.co
+  supabaseAnon: 'INDSÆT_DIN_ANON_KEY',
+  vapidPublic:  'INDSÆT_DIN_VAPID_PUBLIC_KEY',
+
   golfPakker: [
     { id:'gp1', titel:'Kundearrangement',   pris:'Fra 2.800 kr./hold',     beskrivelse:'Eksklusiv oplevelse til jeres vigtigste kunder. Golf, VIP-service og middag i professionelle rammer.',  inkl:['9 eller 18 huller golf','VIP-velkomst','Middag på klubhuset','Fotoservice'] },
     { id:'gp2', titel:'Medarbejderdag',     pris:'Fra 1.900 kr./person',   beskrivelse:'Giv dine medarbejdere en dag de husker — med golf, samvær og god stemning.',                            inkl:['9 huller golf','Forfriskninger undervejs','Afslutningsfest','Overraskelser'] },
@@ -156,6 +165,7 @@ function navTil(s, data) {
   }
   bindAll();
   window.scrollTo(0,0);
+  if (s === 'forside') setTimeout(startHeroAnimation, 50);
 }
 
 /* ================================================================
@@ -170,41 +180,92 @@ function åbnGolfBox() {
    ================================================================ */
 function pgForside() {
   const hero = DB.get('ek_hero')||{};
-  const næste = getArr().filter(a=>erFremtidig(a.dato)).slice(0,3);
+  const animKørt = sessionStorage.getItem('lygHeroAnimationPlayed') === 'true';
+
+  /* Næste fremtidige åbne arrangement */
+  const alleArr  = getArr().filter(a => erFremtidig(a.dato));
+  const næsteArr = alleArr.find(a => a.aaben && ledigePladser(a) > 0) || alleArr[0];
+
   return `
-<div class="hero" style="background-image:url('${esc(hero.billede||CONFIG.billeder.hero)}')">
+<!-- ── HERO (bevaret) ── -->
+<div class="hero hero-anim" style="background-image:url('${esc(hero.billede||CONFIG.billeder.hero)}')">
   <div class="hero-lag">
     <div class="hero-logo">⛳ LYG Erhvervsklub</div>
     <h1 class="hero-h1">${esc(hero.tekst||CONFIG.heroTekst)}</h1>
     <p class="hero-p">${esc(hero.under||CONFIG.heroUnder)}</p>
   </div>
+  <div class="golfer-scene${animKørt?' anim-done':''}">
+    <img class="golfer-frame gf-1" src="./images/golfer-1-address.png"   alt="" aria-hidden="true" loading="eager">
+    <img class="golfer-frame gf-2" src="./images/golfer-2-backswing.png" alt="" aria-hidden="true" loading="eager">
+    <img class="golfer-frame gf-3" src="./images/golfer-3-impact.png"    alt="" aria-hidden="true" loading="eager">
+    <div class="ball-trail"></div>
+    <img class="golfer-frame gf-4" src="./images/golfer-4-finish.png"    alt="" aria-hidden="true" loading="eager">
+  </div>
 </div>
 
-<section class="sek">
-  <div class="g2">
-    <button class="sknap" onclick="navTil('kalender')">📅<span>Se kalender</span></button>
-    <button class="sknap" onclick="navTil('tilmelding')">✅<span>Tilmeld dig</span></button>
-    <button class="sknap gold" onclick="navTil('golfarr')">💼<span>Book firmaarrangement</span></button>
-    <button class="sknap gold" onclick="åbnGolfBox()">🔗<span>GolfBox login</span></button>
+<!-- ── PRIMÆR CTA ── -->
+${næsteArr ? `
+<section class="sek fs-cta-sek">
+  <button class="fs-hoved-cta" onclick="navTil('tilmelding',{id:'${næsteArr.id}'})">
+    <span class="fs-cta-label">Næste arrangement</span>
+    <span class="fs-cta-titel">${esc(næsteArr.titel)}</span>
+    <span class="fs-cta-meta">${fmtDato(næsteArr.dato)}${næsteArr.sted?' · '+esc(næsteArr.sted):''}</span>
+    <span class="fs-cta-pil">Se og tilmeld →</span>
+  </button>
+</section>` : ''}
+
+<!-- ── PROFESSIONELT BUDSKAB ── -->
+<section class="sek fs-budskab-sek">
+  <p class="fs-over">MERE END GOLF</p>
+  <h2 class="fs-h2">Golf. Relationer. Forretning.</h2>
+  <p class="fs-intro">Et professionelt erhvervsnetværk for virksomhedsejere, direktører og beslutningstagere med golf som fælles ramme.</p>
+</section>
+
+<!-- ── TRE VÆRDIER ── -->
+<section class="sek fs-vaerdi-sek">
+  <div class="fs-vaerdi-grid">
+    <button class="fs-vaerdi-kort" onclick="navTil('om')">
+      <div class="fs-vaerdi-ikon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+      <strong>Stærke relationer</strong>
+      <p>Mød virksomhedsejere, ledere og beslutningstagere fra Aarhus-regionen.</p>
+    </button>
+    <button class="fs-vaerdi-kort" onclick="navTil('golfarr')">
+      <div class="fs-vaerdi-ikon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>
+      <strong>Eksklusive oplevelser</strong>
+      <p>Golf, virksomhedsbesøg, turneringer og særlige erhvervsarrangementer.</p>
+    </button>
+    <button class="fs-vaerdi-kort" onclick="navTil('kalender')">
+      <div class="fs-vaerdi-ikon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
+      <strong>Nye forbindelser</strong>
+      <p>Skab relationer der kan udvikle sig både på og uden for golfbanen.</p>
+    </button>
   </div>
 </section>
 
-<section class="sek">
-  <div class="ikg">
-    <button class="ikb" onclick="navTil('om')">      <span class="iks">🤝</span><strong>Netværk</strong>  <p>Relationer & fællesskab</p></button>
-    <button class="ikb" onclick="navTil('golfarr')">  <span class="iks">⛳</span><strong>Firmaevent</strong><p>Golf & oplevelser</p>   </button>
-    <button class="ikb" onclick="navTil('sponsor')">  <span class="iks">📢</span><strong>Sponsor</strong>  <p>Synlighed & brand</p>   </button>
-    <button class="ikb" onclick="navTil('kalender')"> <span class="iks">📅</span><strong>Kalender</strong> <p>10+ events/år</p>        </button>
+<!-- ── SEKUNDÆRE HANDLINGER ── -->
+<section class="sek fs-sek-knapper-sek">
+  <div class="fs-sek-knapper">
+    <button class="fs-sek-k" onclick="navTil('kalender')">📅 Se kalender</button>
+    <button class="fs-sek-k" onclick="navTil('tilmelding')">✅ Tilmeld dig</button>
+    <button class="fs-sek-k gold" onclick="navTil('golfarr')">💼 Book firmaarrangement</button>
+    <button class="fs-sek-k gold" onclick="åbnGolfBox()">🔗 GolfBox login</button>
   </div>
 </section>
 
-${næste.length?`
-<section class="sek">
-  <h2 class="stitl">Kommende arrangementer</h2>
-  <div class="arr-l">${næste.map(a=>arrKort(a,true)).join('')}</div>
-  <div class="tc mt1"><button class="knap-sek" onclick="navTil('kalender')">Se alle arrangementer →</button></div>
-</section>`:''}
+<!-- ── NØGLETAL ── -->
+<section class="sek fs-fakta-sek">
+  <div class="fs-fakta-linje">
+    <div class="fs-fakta-item"><strong>100+</strong><span>virksomheder</span></div>
+    <div class="fs-fakta-sep"></div>
+    <div class="fs-fakta-item"><strong>10+</strong><span>arrangementer/år</span></div>
+    <div class="fs-fakta-sep"></div>
+    <div class="fs-fakta-item"><strong>Aarhus</strong><span>-regionen</span></div>
+    <div class="fs-fakta-sep"></div>
+    <div class="fs-fakta-item"><strong>LYG</strong><span>Lyngbygaard Golf</span></div>
+  </div>
+</section>
 
+<!-- ── GOLFBOX BANNER ── -->
 <button class="gb-banner-knap mx1" onclick="åbnGolfBox()">
   <span class="gb-ikon">🏌️</span>
   <div><strong>GolfBox login</strong><small>Book tid eller log ind direkte i GolfBox</small></div>
@@ -215,8 +276,24 @@ ${næste.length?`
   <p>Lyngbygaard Golf · Lyngbygårdsvej 29, 8220 Brabrand</p>
   <p>📞 <a href="tel:87441070">87 44 10 70</a></p>
   <p class="foot-credit">Bygget af Nordic Operations · nordicoperations.dk</p>
-  <p class="foot-version">LYG Erhvervsklub v4.3</p>
+  <p class="foot-version">LYG Erhvervsklub v1.0</p>
 </footer>`;
+}
+
+/* Startes fra navTil() — afspiller animation og gemmer session-flag */
+function startHeroAnimation() {
+  if (side !== 'forside') return;
+  if (sessionStorage.getItem('lygHeroAnimationPlayed') === 'true') return;
+  const scene = document.querySelector('.golfer-scene');
+  if (!scene) return;
+  // Sæt flag med det samme så gennavigation ikke spiller igen
+  sessionStorage.setItem('lygHeroAnimationPlayed', 'true');
+  scene.classList.add('anim-running');
+  // Ryd anim-klasse efter 4s og lad slutframe stå
+  setTimeout(() => {
+    scene.classList.remove('anim-running');
+    scene.classList.add('anim-done');
+  }, 4200);
 }
 
 /* ================================================================
@@ -1020,39 +1097,185 @@ function tilfoejKal(id){
   window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(a.titel)}&dates=${d}/${d}${a.sted?'&location='+encodeURIComponent(a.sted):''}${a.besk?'&details='+encodeURIComponent(a.besk):''}`, '_blank','noopener');
 }
 
-async function aktPaam(id){
-  const a=getArr().find(x=>x.id===id); if(!a) return;
-  if(!('Notification' in window)){
-    if(confirm(`Din browser understøtter ikke push-notifikationer.\nVil du tilføje "${a.titel}" til din kalender?`)) tilfoejKal(id);
-    return;
-  }
-  if(Notification.permission==='denied'){
-    if(confirm(`Notifikationer er blokeret.\nVil du tilføje "${a.titel}" til din kalender?`)) tilfoejKal(id);
-    return;
-  }
-  let perm=Notification.permission;
-  if(perm==='default'){ try{perm=await Notification.requestPermission();}catch{perm='denied';} }
-  if(perm==='granted'){
-    const pm=DB.get('ek_paam')||{};
-    pm[id]={dato:a.dato,titel:a.titel,tider:[14,7,3]};
-    DB.set('ek_paam',pm);
-    alert(`✅ Påmindelser aktiveret for "${a.titel}".\nDu får besked 14, 7 og 3 dage før.`);
-  } else {
-    if(confirm(`Notifikationer ikke tilladt.\nVil du tilføje "${a.titel}" til din kalender?`)) tilfoejKal(id);
+/* ================================================================
+   PUSH NOTIFIKATIONER — Web Push + lokal fallback
+   ================================================================ */
+
+/* Registrér Web Push subscription hos Supabase */
+async function registrerPushSubscription(swReg) {
+  const vapidKey = CONFIG.vapidPublic;
+  if (!vapidKey || vapidKey === 'INDSÆT_DIN_VAPID_PUBLIC_KEY') return null;
+
+  try {
+    const sub = await swReg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(vapidKey)
+    });
+
+    const subJson = sub.toJSON();
+
+    /* Gem subscription i Supabase */
+    if (CONFIG.supabaseUrl && CONFIG.supabaseUrl !== 'INDSÆT_DIN_SUPABASE_URL') {
+      await fetch(`${CONFIG.supabaseUrl}/rest/v1/push_subscriptions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': CONFIG.supabaseAnon,
+          'Authorization': `Bearer ${CONFIG.supabaseAnon}`,
+          'Prefer': 'resolution=ignore-duplicates'
+        },
+        body: JSON.stringify({
+          endpoint: subJson.endpoint,
+          p256dh:   subJson.keys.p256dh,
+          auth:     subJson.keys.auth,
+          device_label: navigator.userAgent.substring(0, 80)
+        })
+      });
+    }
+
+    /* Synkronisér arrangementer til Supabase */
+    await synkroniserArrangementer();
+
+    DB.set('ek_push_subscription', subJson.endpoint);
+    return sub;
+  } catch (err) {
+    console.warn('[Push] Subscription fejlede:', err);
+    return null;
   }
 }
 
-function tjekPaam(){
-  if(!('Notification' in window)||Notification.permission!=='granted') return;
-  const pm=DB.get('ek_paam')||{}, vist=DB.get('ek_paam_vist')||{}, nu=new Date();
-  Object.entries(pm).forEach(([id,p])=>{
-    (p.tider||[]).forEach(dage=>{
-      const k=`${id}_${dage}`; if(vist[k]) return;
-      const gr=new Date(p.dato+'T00:00:00'); gr.setDate(gr.getDate()-dage);
-      if(nu>=gr){ try{new Notification(`Husk: ${p.titel}`,{body:`Om ${dage} dag${dage>1?'e':''}`,icon:'./icons/icon-192.png'});}catch{} vist[k]=true; }
+/* Synkronisér arrangementdata til Supabase (til push-scheduler) */
+async function synkroniserArrangementer() {
+  if (!CONFIG.supabaseUrl || CONFIG.supabaseUrl === 'INDSÆT_DIN_SUPABASE_URL') return;
+  const arrs = getArr().filter(a => erFremtidig(a.dato) && a.aaben);
+  for (const a of arrs) {
+    await fetch(`${CONFIG.supabaseUrl}/rest/v1/arrangements`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': CONFIG.supabaseAnon,
+        'Authorization': `Bearer ${CONFIG.supabaseAnon}`,
+        'Prefer': 'resolution=merge-duplicates'
+      },
+      body: JSON.stringify({
+        id:    a.id,
+        titel: a.titel,
+        dato:  a.dato,
+        sted:  a.sted || '',
+        aaben: a.aaben
+      })
+    }).catch(() => {});
+  }
+}
+
+/* Helper: konvertér VAPID public key fra base64 til Uint8Array */
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  return Uint8Array.from([...rawData].map(char => char.charCodeAt(0)));
+}
+
+/* Vis push-dialog (første gang, brugerinitieret) */
+function visPushDialog() {
+  if (DB.get('ek_push_spurgt')) return;
+  /* Kræver Notification API */
+  if (!('Notification' in window) || !('serviceWorker' in navigator)) return;
+  if (Notification.permission !== 'default') { DB.set('ek_push_spurgt', true); return; }
+  setTimeout(() => {
+    const modal = document.getElementById('push-modal');
+    if (modal) modal.style.display = 'flex';
+  }, 4500);
+}
+
+async function accepterPush() {
+  const modal = document.getElementById('push-modal');
+  if (modal) modal.style.display = 'none';
+  DB.set('ek_push_spurgt', true);
+
+  /* Anmod tilladelse */
+  const perm = await Notification.requestPermission().catch(() => 'denied');
+
+  if (perm === 'granted') {
+    /* Forsøg rigtig Web Push-subscription */
+    const reg = await navigator.serviceWorker.ready.catch(() => null);
+    if (reg) {
+      const sub = await registrerPushSubscription(reg);
+      if (sub) {
+        console.log('[Push] Web Push aktiveret ✅');
+        return;
+      }
+    }
+    /* Fallback: lokal påmindelseslogik */
+    console.log('[Push] Lokal fallback aktiveret (ingen Supabase konfigureret)');
+  } else {
+    console.log('[Push] Tilladelse afvist');
+  }
+}
+
+function afvisPush() {
+  const modal = document.getElementById('push-modal');
+  if (modal) modal.style.display = 'none';
+  DB.set('ek_push_spurgt', true);
+}
+
+/* Aktiver påmindelser for enkelt arrangement (🔔-knap) */
+async function aktPaam(id) {
+  const a = getArr().find(x => x.id === id);
+  if (!a) return;
+
+  if (!('Notification' in window)) {
+    if (confirm(`Din browser understøtter ikke push-notifikationer.\nVil du tilføje "${a.titel}" til din kalender?`))
+      tilfoejKal(id);
+    return;
+  }
+  if (Notification.permission === 'denied') {
+    if (confirm(`Notifikationer er blokeret i dine indstillinger.\nVil du tilføje "${a.titel}" til din kalender?`))
+      tilfoejKal(id);
+    return;
+  }
+
+  let perm = Notification.permission;
+  if (perm === 'default') {
+    try { perm = await Notification.requestPermission(); } catch { perm = 'denied'; }
+  }
+
+  if (perm === 'granted') {
+    /* Gem lokal påmindelse (fallback) */
+    const pm = DB.get('ek_paam') || {};
+    pm[id] = { dato: a.dato, titel: a.titel, tider: [14, 7, 3] };
+    DB.set('ek_paam', pm);
+
+    /* Forsøg Web Push subscription */
+    const reg = await navigator.serviceWorker.ready.catch(() => null);
+    if (reg) await registrerPushSubscription(reg);
+
+    alert(`✅ Påmindelser aktiveret for "${a.titel}".\nDu får besked 14, 7 og 3 dage før.`);
+  } else {
+    if (confirm(`Notifikationer ikke tilladt.\nVil du tilføje "${a.titel}" til din kalender?`))
+      tilfoejKal(id);
+  }
+}
+
+/* Lokal påmindelses-tjek (kører ved app-åbning — fallback uden server) */
+function tjekPaam() {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  const pm   = DB.get('ek_paam') || {};
+  const vist = DB.get('ek_paam_vist') || {};
+  const nu   = new Date();
+  Object.entries(pm).forEach(([id, p]) => {
+    (p.tider || []).forEach(dage => {
+      const k = `${id}_${dage}`;
+      if (vist[k]) return;
+      const gr = new Date(p.dato + 'T00:00:00');
+      gr.setDate(gr.getDate() - dage);
+      if (nu >= gr) {
+        try { new Notification(`Husk: ${p.titel}`, { body: `Om ${dage} dag${dage > 1 ? 'e' : ''}`, icon: './icons/icon-192.png' }); } catch {}
+        vist[k] = true;
+      }
     });
   });
-  DB.set('ek_paam_vist',vist);
+  DB.set('ek_paam_vist', vist);
 }
 
 /* ================================================================
@@ -1117,24 +1340,62 @@ function afvisIosInstall() {
 }
 
 /* ================================================================
-   APP-OPDATERING — vises når SW finder ny version
+   APP-OPDATERING — kun ved reel ny SW-version (bug-fixed v4.4)
    ================================================================ */
 let nySwVenter = null;
+let reloadPgangSkete = false;
+
+function visOpdaterBanner() {
+  const b = document.getElementById('update-banner');
+  if (b) b.style.display = 'flex';
+}
 
 function opdaterApp() {
   const b = document.getElementById('update-banner');
   if (b) b.style.display = 'none';
+  /* Send SKIP_WAITING til den ventende SW */
   if (nySwVenter) {
     nySwVenter.postMessage({ type: 'SKIP_WAITING' });
-  }
-  /* Ryd caches og reload — henter alt frisk fra netværket */
-  if ('caches' in window) {
-    caches.keys().then(keys => {
-      Promise.all(keys.map(k => caches.delete(k))).then(() => location.reload(true));
-    });
+    /* controllerchange vil herefter trigge reload */
   } else {
-    location.reload(true);
+    /* Fallback: ryd caches og reload */
+    if ('caches' in window) {
+      caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k)))).then(() => location.reload(true));
+    } else {
+      location.reload(true);
+    }
   }
+}
+
+/* ================================================================
+   PUSH-DIALOG — spørg bruger om påmindelser (første gang)
+   ================================================================ */
+function visPushDialog() {
+  if (DB.get('ek_push_spurgt')) return;           // kun én gang
+  if (!('Notification' in window)) return;        // ikke understøttet
+  if (Notification.permission !== 'default') return; // allerede svaret
+
+  setTimeout(() => {
+    const modal = document.getElementById('push-modal');
+    if (modal) modal.style.display = 'flex';
+  }, 4500); // vent til animation er færdig
+}
+
+function accepterPush() {
+  const modal = document.getElementById('push-modal');
+  if (modal) modal.style.display = 'none';
+  DB.set('ek_push_spurgt', true);
+  Notification.requestPermission().then(perm => {
+    if (perm === 'granted') {
+      console.log('[Push] Tilladelse givet ✅');
+    }
+  });
+}
+
+function afvisPush() {
+  const modal = document.getElementById('push-modal');
+  if (modal) modal.style.display = 'none';
+  DB.set('ek_push_spurgt', true);
 }
 
 /* ================================================================
@@ -1142,14 +1403,14 @@ function opdaterApp() {
    ================================================================ */
 function migrérGolfbox() {
   const gammelt = DB.get('ek_golfbox');
-  const dårligeLinks = [
+  const dårlige = [
     'https://www.golfbox.dk/site/login/loginform.asp',
     'https://golf.dk',
     'https://www.golf.dk',
   ];
-  if (gammelt && dårligeLinks.some(d => gammelt.startsWith(d))) {
+  if (gammelt && dårlige.some(d => gammelt.startsWith(d))) {
     DB.set('ek_golfbox', CONFIG.golfboxUrl);
-    console.log('[GB] Gammelt GolfBox-link overskrevet med:', CONFIG.golfboxUrl);
+    console.log('[GB] Migreret:', CONFIG.golfboxUrl);
   }
 }
 
@@ -1158,7 +1419,7 @@ function migrérGolfbox() {
    ================================================================ */
 document.addEventListener('DOMContentLoaded', () => {
   init();
-  migrérGolfbox();   // ret evt. gammelt GolfBox-link i localStorage
+  migrérGolfbox();
   tjekPaam();
 
   /* Service Worker */
@@ -1167,35 +1428,44 @@ document.addEventListener('DOMContentLoaded', () => {
       .then(reg => {
         console.log('[SW] Scope:', reg.scope);
 
-        /* Lyt efter ny SW der venter */
+        /* Tjek for opdatering ved åbning */
+        reg.update().catch(() => {});
+
+        /* updatefound = ny SW-version er fundet og installeres */
         reg.addEventListener('updatefound', () => {
           const nyWorker = reg.installing;
           if (!nyWorker) return;
           nyWorker.addEventListener('statechange', () => {
+            /* 'installed' + eksisterende controller = ny version klar til aktivering */
             if (nyWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              /* Ny version klar — vis opdateringsknap */
               nySwVenter = nyWorker;
-              const b = document.getElementById('update-banner');
-              if (b) b.style.display = 'flex';
+              visOpdaterBanner();
             }
           });
         });
+
+        /* Hvis der allerede venter en SW ved åbning (fra forrige besøg) */
+        if (reg.waiting && navigator.serviceWorker.controller) {
+          nySwVenter = reg.waiting;
+          visOpdaterBanner();
+        }
       })
       .catch(e => console.warn('[SW] Fejl:', e));
 
-    /* Besked fra SW om at ny version er tilgængelig via network-first */
+    /* SW_UPDATED fra service-worker — kun brugt som backup-signal,
+       IKKE til at vise banner alene (undgår false positives) */
     navigator.serviceWorker.addEventListener('message', event => {
-      if (event.data && event.data.type === 'SW_UPDATED') {
-        /* SW har hentet ny version fra netværket — vis knap */
-        const b = document.getElementById('update-banner');
-        if (b && b.style.display === 'none') b.style.display = 'flex';
+      if (event.data?.type === 'SW_UPDATED') {
+        /* Ignoreret i v4.4 — updatefound håndterer dette korrekt */
       }
     });
 
-    /* Reload automatisk når ny SW overtager */
-    let opdateret = false;
+    /* controllerchange: ny SW har overtaget — reload siden én gang */
     navigator.serviceWorker.addEventListener('controllerchange', () => {
-      if (!opdateret) { opdateret = true; location.reload(); }
+      if (!reloadPgangSkete) {
+        reloadPgangSkete = true;
+        location.reload();
+      }
     });
   }
 
@@ -1212,4 +1482,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   /* iOS installér-guide */
   visIosInstallGuide();
+
+  /* Push-notifikation dialog */
+  visPushDialog();
 });
