@@ -171,60 +171,92 @@ function åbnGolfBox() {
    ================================================================ */
 function pgForside() {
   const hero = DB.get('ek_hero')||{};
-  const næste = getArr().filter(a=>erFremtidig(a.dato)).slice(0,3);
-  // Kør animation kun én gang pr. session
   const animKørt = sessionStorage.getItem('lygHeroAnimationPlayed') === 'true';
+
+  /* Næste fremtidige åbne arrangement */
+  const alleArr  = getArr().filter(a => erFremtidig(a.dato));
+  const næsteArr = alleArr.find(a => a.aaben && ledigePladser(a) > 0) || alleArr[0];
+
   return `
+<!-- ── HERO (bevaret) ── -->
 <div class="hero hero-anim" style="background-image:url('${esc(hero.billede||CONFIG.billeder.hero)}')">
   <div class="hero-lag">
     <div class="hero-logo">⛳ LYG Erhvervsklub</div>
     <h1 class="hero-h1">${esc(hero.tekst||CONFIG.heroTekst)}</h1>
     <p class="hero-p">${esc(hero.under||CONFIG.heroUnder)}</p>
   </div>
-
-  <!-- Golfspiller-animation (højre side) -->
   <div class="golfer-scene${animKørt?' anim-done':''}">
-    <!-- Frame 1: Address (0–15%) -->
-    <img class="golfer-frame gf-1" src="./images/golfer-1-address.png"
-         alt="" aria-hidden="true" loading="eager">
-    <!-- Frame 2: Backswing (15–35%) -->
-    <img class="golfer-frame gf-2" src="./images/golfer-2-backswing.png"
-         alt="" aria-hidden="true" loading="eager">
-    <!-- Frame 3: Impact (35–65%) — boldbane vises her -->
-    <img class="golfer-frame gf-3" src="./images/golfer-3-impact.png"
-         alt="" aria-hidden="true" loading="eager">
+    <img class="golfer-frame gf-1" src="./images/golfer-1-address.png"   alt="" aria-hidden="true" loading="eager">
+    <img class="golfer-frame gf-2" src="./images/golfer-2-backswing.png" alt="" aria-hidden="true" loading="eager">
+    <img class="golfer-frame gf-3" src="./images/golfer-3-impact.png"    alt="" aria-hidden="true" loading="eager">
     <div class="ball-trail"></div>
-    <!-- Frame 4: Finish (65–100%) — bliver stående -->
-    <img class="golfer-frame gf-4" src="./images/golfer-4-finish.png"
-         alt="" aria-hidden="true" loading="eager">
+    <img class="golfer-frame gf-4" src="./images/golfer-4-finish.png"    alt="" aria-hidden="true" loading="eager">
   </div>
 </div>
 
-<section class="sek">
-  <div class="g2">
-    <button class="sknap" onclick="navTil('kalender')">📅<span>Se kalender</span></button>
-    <button class="sknap" onclick="navTil('tilmelding')">✅<span>Tilmeld dig</span></button>
-    <button class="sknap gold" onclick="navTil('golfarr')">💼<span>Book firmaarrangement</span></button>
-    <button class="sknap gold" onclick="åbnGolfBox()">🔗<span>GolfBox login</span></button>
+<!-- ── PRIMÆR CTA ── -->
+${næsteArr ? `
+<section class="sek fs-cta-sek">
+  <button class="fs-hoved-cta" onclick="navTil('tilmelding',{id:'${næsteArr.id}'})">
+    <span class="fs-cta-label">Næste arrangement</span>
+    <span class="fs-cta-titel">${esc(næsteArr.titel)}</span>
+    <span class="fs-cta-meta">${fmtDato(næsteArr.dato)}${næsteArr.sted?' · '+esc(næsteArr.sted):''}</span>
+    <span class="fs-cta-pil">Se og tilmeld →</span>
+  </button>
+</section>` : ''}
+
+<!-- ── PROFESSIONELT BUDSKAB ── -->
+<section class="sek fs-budskab-sek">
+  <p class="fs-over">MERE END GOLF</p>
+  <h2 class="fs-h2">Golf. Relationer. Forretning.</h2>
+  <p class="fs-intro">Et professionelt erhvervsnetværk for virksomhedsejere, direktører og beslutningstagere med golf som fælles ramme.</p>
+</section>
+
+<!-- ── TRE VÆRDIER ── -->
+<section class="sek fs-vaerdi-sek">
+  <div class="fs-vaerdi-grid">
+    <button class="fs-vaerdi-kort" onclick="navTil('om')">
+      <div class="fs-vaerdi-ikon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+      <strong>Stærke relationer</strong>
+      <p>Mød virksomhedsejere, ledere og beslutningstagere fra Aarhus-regionen.</p>
+    </button>
+    <button class="fs-vaerdi-kort" onclick="navTil('golfarr')">
+      <div class="fs-vaerdi-ikon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>
+      <strong>Eksklusive oplevelser</strong>
+      <p>Golf, virksomhedsbesøg, turneringer og særlige erhvervsarrangementer.</p>
+    </button>
+    <button class="fs-vaerdi-kort" onclick="navTil('kalender')">
+      <div class="fs-vaerdi-ikon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
+      <strong>Nye forbindelser</strong>
+      <p>Skab relationer der kan udvikle sig både på og uden for golfbanen.</p>
+    </button>
   </div>
 </section>
 
-<section class="sek">
-  <div class="ikg">
-    <button class="ikb" onclick="navTil('om')">      <span class="iks">🤝</span><strong>Netværk</strong>  <p>Relationer & fællesskab</p></button>
-    <button class="ikb" onclick="navTil('golfarr')">  <span class="iks">⛳</span><strong>Firmaevent</strong><p>Golf & oplevelser</p>   </button>
-    <button class="ikb" onclick="navTil('sponsor')">  <span class="iks">📢</span><strong>Sponsor</strong>  <p>Synlighed & brand</p>   </button>
-    <button class="ikb" onclick="navTil('kalender')"> <span class="iks">📅</span><strong>Kalender</strong> <p>10+ events/år</p>        </button>
+<!-- ── SEKUNDÆRE HANDLINGER ── -->
+<section class="sek fs-sek-knapper-sek">
+  <div class="fs-sek-knapper">
+    <button class="fs-sek-k" onclick="navTil('kalender')">📅 Se kalender</button>
+    <button class="fs-sek-k" onclick="navTil('tilmelding')">✅ Tilmeld dig</button>
+    <button class="fs-sek-k gold" onclick="navTil('golfarr')">💼 Book firmaarrangement</button>
+    <button class="fs-sek-k gold" onclick="åbnGolfBox()">🔗 GolfBox login</button>
   </div>
 </section>
 
-${næste.length?`
-<section class="sek">
-  <h2 class="stitl">Kommende arrangementer</h2>
-  <div class="arr-l">${næste.map(a=>arrKort(a,true)).join('')}</div>
-  <div class="tc mt1"><button class="knap-sek" onclick="navTil('kalender')">Se alle arrangementer →</button></div>
-</section>`:''}
+<!-- ── NØGLETAL ── -->
+<section class="sek fs-fakta-sek">
+  <div class="fs-fakta-linje">
+    <div class="fs-fakta-item"><strong>100+</strong><span>virksomheder</span></div>
+    <div class="fs-fakta-sep"></div>
+    <div class="fs-fakta-item"><strong>10+</strong><span>arrangementer/år</span></div>
+    <div class="fs-fakta-sep"></div>
+    <div class="fs-fakta-item"><strong>Aarhus</strong><span>-regionen</span></div>
+    <div class="fs-fakta-sep"></div>
+    <div class="fs-fakta-item"><strong>LYG</strong><span>Lyngbygaard Golf</span></div>
+  </div>
+</section>
 
+<!-- ── GOLFBOX BANNER ── -->
 <button class="gb-banner-knap mx1" onclick="åbnGolfBox()">
   <span class="gb-ikon">🏌️</span>
   <div><strong>GolfBox login</strong><small>Book tid eller log ind direkte i GolfBox</small></div>
@@ -235,7 +267,7 @@ ${næste.length?`
   <p>Lyngbygaard Golf · Lyngbygårdsvej 29, 8220 Brabrand</p>
   <p>📞 <a href="tel:87441070">87 44 10 70</a></p>
   <p class="foot-credit">Bygget af Nordic Operations · nordicoperations.dk</p>
-  <p class="foot-version">LYG Erhvervsklub v4.4</p>
+  <p class="foot-version">LYG Erhvervsklub v4.5</p>
 </footer>`;
 }
 

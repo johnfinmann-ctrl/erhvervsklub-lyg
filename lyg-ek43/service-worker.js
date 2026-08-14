@@ -11,14 +11,14 @@
    · Offline fallback → cached index.html
    ================================================================ */
 
-const CACHE_VERSION = 'lyg-erhverv-v4.4';
+const CACHE_VERSION = 'lyg-erhverv-v4.5';
 const BASE          = self.registration.scope;
 
 const PRECACHE_URLS = [
   BASE + 'index.html',
-  BASE + 'style.css?v=4.4',
-  BASE + 'app.js?v=4.4',
-  BASE + 'manifest.json?v=4.4',
+  BASE + 'style.css?v=4.5',
+  BASE + 'app.js?v=4.5',
+  BASE + 'manifest.json?v=4.5',
   BASE + 'icons/icon-192.png',
   BASE + 'icons/icon-512.png',
   BASE + 'images/golfer-1-address.png',
