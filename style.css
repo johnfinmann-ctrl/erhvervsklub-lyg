@@ -1242,3 +1242,202 @@ details.tidl-details[open] summary::before{content:'▾  '}
 
 
 @media(hover:hover){.pk:hover{transform:translateY(-2px) !important;}}
+
+/* ================================================================
+   V4.6 — COMPACT EXECUTIVE HOME / CAROUSEL
+   ================================================================ */
+
+/* ── Hero kompakt (lidt lavere) ── */
+.hero-kompakt {
+  min-height: 48vw;
+  max-height: 320px;
+}
+.hero-p-kort {
+  font-size: .82rem;
+  opacity: .8;
+  max-width: 34ch;
+  line-height: 1.45;
+  margin-top: .35rem;
+}
+@media (min-width: 600px) {
+  .hero-kompakt { min-height: 260px; max-height: 380px; }
+}
+
+/* ── Næste arrangement ── */
+.cx-naeste-sek { padding: .85rem 1rem .65rem; }
+
+.cx-naeste-kort {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 1rem;
+  width: 100%;
+  background: var(--p);
+  color: #fff;
+  border: none;
+  border-radius: var(--r);
+  padding: 1.25rem 1.4rem 1.1rem;
+  text-align: left;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 300ms cubic-bezier(.22,1,.36,1),
+              box-shadow 300ms cubic-bezier(.22,1,.36,1);
+}
+.cx-naeste-kort::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(184,151,58,.2) 0%, transparent 55%);
+  pointer-events: none;
+}
+.cx-naeste-kort:active { transform: scale(.985); }
+@media (hover: hover) {
+  .cx-naeste-kort:hover { transform: translateY(-2px); box-shadow: 0 10px 32px rgba(13,43,26,.28); }
+}
+
+.cx-naeste-indhold { display: flex; flex-direction: column; gap: .22rem; min-width: 0; }
+.cx-naeste-label   { font-size: .66rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--g); }
+.cx-naeste-titel   { font-size: 1.1rem; font-weight: 900; line-height: 1.15; }
+.cx-naeste-meta    { font-size: .8rem; opacity: .75; }
+.cx-naeste-pladser { font-size: .75rem; color: rgba(255,255,255,.6); margin-top: .1rem; }
+.cx-naeste-cta     { font-size: .82rem; font-weight: 700; color: var(--g); white-space: nowrap; flex-shrink: 0; padding-bottom: .1rem; }
+
+@media (min-width: 600px) {
+  .cx-naeste-sek { padding: 1.1rem 1.25rem .85rem; }
+  .cx-naeste-titel { font-size: 1.25rem; }
+}
+
+/* ── Carousel sektion ── */
+.cx-sek { padding: .75rem 0 .85rem; }
+
+.cx-hdr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1rem .55rem;
+}
+
+.cx-titel {
+  font-size: .88rem;
+  font-weight: 800;
+  color: var(--p);
+  letter-spacing: .01em;
+  text-transform: uppercase;
+}
+
+.cx-se-alle {
+  font-size: .78rem;
+  font-weight: 700;
+  color: var(--g);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ── Scroll-container ── */
+.cx-scroll {
+  display: flex;
+  gap: .65rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding: 0 1rem .25rem;
+  /* Lad bruger se næste kort delvist */
+}
+.cx-scroll::-webkit-scrollbar { display: none; }
+
+/* ── Carousel kort (base) ── */
+.cx-kort {
+  flex: 0 0 82%;
+  scroll-snap-align: start;
+  background: #fff;
+  border-radius: var(--r);
+  padding: 1.1rem 1rem 1rem;
+  box-shadow: var(--s1);
+  display: flex;
+  flex-direction: column;
+  gap: .35rem;
+  cursor: pointer;
+  border: none;
+  text-align: left;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 300ms cubic-bezier(.22,1,.36,1),
+              box-shadow 300ms cubic-bezier(.22,1,.36,1);
+  min-width: 0;
+}
+.cx-kort:active { transform: scale(.98); }
+@media (hover: hover) {
+  .cx-kort:hover { transform: translateY(-2px); box-shadow: var(--s2); }
+}
+
+/* ── Kort-tekst ── */
+.cx-k-dato  { font-size: .68rem; font-weight: 800; color: var(--g); letter-spacing: .04em; text-transform: uppercase; }
+.cx-k-titel { font-size: .95rem; font-weight: 800; color: var(--p); line-height: 1.2; }
+.cx-k-sted  { font-size: .78rem; color: var(--mut); }
+.cx-k-tekst { font-size: .8rem;  color: var(--mut); line-height: 1.45; flex: 1; }
+.cx-k-cta   { font-size: .78rem; font-weight: 700; color: var(--g); margin-top: .35rem; display: block; }
+
+/* ── Arrangement-kort: border-top ── */
+.cx-arr-kort  { border-top: 3px solid var(--g); }
+.cx-ek-kort   { border-top: 3px solid var(--p); }
+.cx-ek-kort .cx-k-titel { font-size: 1rem; }
+
+/* ── Partner-kort ── */
+.cx-partner-kort   { align-items: flex-start; }
+.cx-partner-logo   { max-height: 36px; max-width: 100%; object-fit: contain; margin-bottom: .3rem; }
+.cx-partner-navn   { font-size: .82rem; font-weight: 700; color: var(--mut); margin-bottom: .3rem; }
+
+/* ── Medlemsvirksomheds-kort: smalere ── */
+.cx-mvirk-kort  { flex: 0 0 58%; align-items: center; text-align: center; }
+.cx-mvirk-logo  { max-height: 42px; max-width: 80%; object-fit: contain; margin-bottom: .4rem; }
+.cx-mvirk-initial {
+  width: 48px; height: 48px; border-radius: 50%;
+  background: var(--p); color: #fff;
+  font-size: 1.2rem; font-weight: 900;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto .4rem;
+}
+
+/* ── Nyhedskort ── */
+.cx-nyhed-billede {
+  width: 100%; height: 110px;
+  background-size: cover; background-position: center;
+  border-radius: calc(var(--r) - 2px);
+  margin-bottom: .4rem;
+}
+
+/* ── Prik-indikatorer ── */
+.cx-prikker {
+  display: flex;
+  gap: .35rem;
+  justify-content: center;
+  padding: .55rem 0 .1rem;
+}
+.cx-prik {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--bdr);
+  transition: background 250ms, transform 250ms;
+  display: inline-block;
+}
+.cx-prik.aktiv { background: var(--g); transform: scale(1.3); }
+
+/* ── Desktop: vis 3 kort ad gangen ── */
+@media (min-width: 600px) {
+  .cx-kort     { flex: 0 0 calc(33.333% - .65rem); }
+  .cx-mvirk-kort { flex: 0 0 calc(25% - .65rem); }
+  .cx-sek      { padding: 1rem 0 1.1rem; }
+  .cx-hdr      { padding: 0 1.25rem .65rem; }
+  .cx-scroll   { padding: 0 1.25rem .35rem; }
+}
+
+/* ── Sørg for at ingen gamle fs-klasser skaber redundans ── */
+/* (De gamle sektioner er fjernet fra pgForside — dette er blot cleanup) */
+.fs-budskab-sek, .fs-billed-linje, .fs-vaerdi-sek, .fs-fakta-sek,
+.fs-kommende-sek, .fs-sek-knapper-sek { display: none; }
+

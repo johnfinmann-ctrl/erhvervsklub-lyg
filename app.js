@@ -179,20 +179,32 @@ function åbnGolfBox() {
    FORSIDE
    ================================================================ */
 function pgForside() {
-  const hero = DB.get('ek_hero')||{};
+  const hero     = DB.get('ek_hero')||{};
   const animKørt = sessionStorage.getItem('lygHeroAnimationPlayed') === 'true';
 
-  /* Næste fremtidige åbne arrangement */
-  const alleArr  = getArr().filter(a => erFremtidig(a.dato));
-  const næsteArr = alleArr.find(a => a.aaben && ledigePladser(a) > 0) || alleArr[0];
+  /* Data */
+  const alleArr    = getArr().filter(a => erFremtidig(a.dato));
+  const næsteArr   = alleArr.find(a => a.aaben && ledigePladser(a) > 0) || alleArr[0];
+  const kommende   = alleArr.slice(0, 8);
+  const nyheder    = DB.get('ek_nyheder') || [];
+  const partnere   = DB.get('ek_partnere') || [];
+  const mvirk      = DB.get('ek_mvirksomheder') || [];
+
+  /* ── EK-kort til carousel ── */
+  const ekKort = [
+    { titel:'Netværk',          tekst:'Mød virksomhedsejere og beslutningstagere fra Aarhus-regionen.',  cta:'Læs mere →',    side:'om' },
+    { titel:'Relationer',       tekst:'Stærke forretningsrelationer i professionelle, uformelle rammer.', cta:'Læs mere →',    side:'om' },
+    { titel:'Golf & oplevelser',tekst:'Turneringer, rejser og særlige golfoplevelser.',                   cta:'Se oplevelser →',side:'golfarr' },
+    { titel:'EK-mesterskabet',  tekst:'Erhvervsklubbens sportslige højdepunkt for alle erhvervsmedlemmer.',cta:'Se EK →',      side:'om' },
+    { titel:'Bliv sponsor',     tekst:'Synlighed, netværk og eksklusive oplevelser for din virksomhed.',  cta:'Se fordele →',  side:'sponsor' },
+  ];
 
   return `
-<!-- ── HERO (bevaret) ── -->
-<div class="hero hero-anim" style="background-image:url('${esc(hero.billede||CONFIG.billeder.hero)}')">
+<div class="hero hero-anim hero-kompakt" style="background-image:url('${esc(hero.billede||CONFIG.billeder.hero)}')">
   <div class="hero-lag">
     <div class="hero-logo">⛳ LYG Erhvervsklub</div>
-    <h1 class="hero-h1">${esc(hero.tekst||CONFIG.heroTekst)}</h1>
-    <p class="hero-p">${esc(hero.under||CONFIG.heroUnder)}</p>
+    <h1 class="hero-h1">Golf · Relationer · Forretning</h1>
+    <p class="hero-p-kort">Professionelt netværk for virksomhedsejere, direktører og beslutningstagere.</p>
   </div>
   <div class="golfer-scene${animKørt?' anim-done':''}">
     <img class="golfer-frame gf-1" src="./images/golfer-1-address.png"   alt="" aria-hidden="true" loading="eager">
@@ -203,80 +215,104 @@ function pgForside() {
   </div>
 </div>
 
-<!-- ── PRIMÆR CTA ── -->
 ${næsteArr ? `
-<section class="sek fs-cta-sek">
-  <button class="fs-hoved-cta" onclick="navTil('tilmelding',{id:'${næsteArr.id}'})">
-    <span class="fs-cta-label">Næste arrangement</span>
-    <span class="fs-cta-titel">${esc(næsteArr.titel)}</span>
-    <span class="fs-cta-meta">${fmtDato(næsteArr.dato)}${næsteArr.sted?' · '+esc(næsteArr.sted):''}</span>
-    <span class="fs-cta-pil">Se og tilmeld →</span>
+<section class="cx-sek cx-naeste-sek">
+  <button class="cx-naeste-kort" onclick="navTil('tilmelding',{id:'${næsteArr.id}'})">
+    <div class="cx-naeste-indhold">
+      <span class="cx-naeste-label">Næste arrangement</span>
+      <span class="cx-naeste-titel">${esc(næsteArr.titel)}</span>
+      <span class="cx-naeste-meta">${fmtDato(næsteArr.dato)}${næsteArr.sted?' · '+esc(næsteArr.sted):''}</span>
+      ${næsteArr.maks ? `<span class="cx-naeste-pladser">${ledigePladser(næsteArr)} ledige pladser</span>` : ''}
+    </div>
+    <span class="cx-naeste-cta">Se og tilmeld →</span>
   </button>
 </section>` : ''}
 
-<!-- ── PROFESSIONELT BUDSKAB ── -->
-<section class="sek fs-budskab-sek">
-  <p class="fs-over">MERE END GOLF</p>
-  <h2 class="fs-h2">Golf. Relationer. Forretning.</h2>
-  <p class="fs-intro">Et professionelt erhvervsnetværk for virksomhedsejere, direktører og beslutningstagere med golf som fælles ramme.</p>
-</section>
+${kommende.length > 1 ? `
+<section class="cx-sek">
+  <div class="cx-hdr">
+    <h2 class="cx-titel">Kommende arrangementer</h2>
+    <button class="cx-se-alle" onclick="navTil('kalender')">Se alle →</button>
+  </div>
+  <div class="cx-scroll" id="cx-arr" role="list">
+    ${kommende.map((a,i) => `
+    <button class="cx-kort cx-arr-kort" role="listitem" onclick="navTil('tilmelding',{id:'${a.id}'})">
+      <span class="cx-k-dato">${fmtDato(a.dato)}</span>
+      <span class="cx-k-titel">${esc(a.titel)}</span>
+      ${a.sted ? `<span class="cx-k-sted">📍 ${esc(a.sted)}</span>` : ''}
+      <span class="cx-k-cta">Se arrangement →</span>
+    </button>`).join('')}
+  </div>
+  <div class="cx-prikker" id="cx-arr-prikker">${kommende.map((_,i)=>`<span class="cx-prik${i===0?' aktiv':''}"></span>`).join('')}</div>
+</section>` : ''}
 
-<!-- ── TRE VÆRDIER ── -->
-<section class="sek fs-vaerdi-sek">
-  <div class="fs-vaerdi-grid">
-    <button class="fs-vaerdi-kort" onclick="navTil('om')">
-      <div class="fs-vaerdi-ikon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
-      <strong>Stærke relationer</strong>
-      <p>Mød virksomhedsejere, ledere og beslutningstagere fra Aarhus-regionen.</p>
-    </button>
-    <button class="fs-vaerdi-kort" onclick="navTil('golfarr')">
-      <div class="fs-vaerdi-ikon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>
-      <strong>Eksklusive oplevelser</strong>
-      <p>Golf, virksomhedsbesøg, turneringer og særlige erhvervsarrangementer.</p>
-    </button>
-    <button class="fs-vaerdi-kort" onclick="navTil('kalender')">
-      <div class="fs-vaerdi-ikon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
-      <strong>Nye forbindelser</strong>
-      <p>Skab relationer der kan udvikle sig både på og uden for golfbanen.</p>
-    </button>
+<section class="cx-sek">
+  <div class="cx-hdr">
+    <h2 class="cx-titel">Erhvervsklubben</h2>
+    <button class="cx-se-alle" onclick="navTil('om')">Læs mere →</button>
+  </div>
+  <div class="cx-scroll" id="cx-ek" role="list">
+    ${ekKort.map(k => `
+    <button class="cx-kort cx-ek-kort" role="listitem" onclick="navTil('${k.side}')">
+      <span class="cx-k-titel">${esc(k.titel)}</span>
+      <span class="cx-k-tekst">${esc(k.tekst)}</span>
+      <span class="cx-k-cta">${esc(k.cta)}</span>
+    </button>`).join('')}
   </div>
 </section>
 
-<!-- ── SEKUNDÆRE HANDLINGER ── -->
-<section class="sek fs-sek-knapper-sek">
-  <div class="fs-sek-knapper">
-    <button class="fs-sek-k" onclick="navTil('kalender')">📅 Se kalender</button>
-    <button class="fs-sek-k" onclick="navTil('tilmelding')">✅ Tilmeld dig</button>
-    <button class="fs-sek-k gold" onclick="navTil('golfarr')">💼 Book firmaarrangement</button>
-    <button class="fs-sek-k gold" onclick="åbnGolfBox()">🔗 GolfBox login</button>
+${partnere.length ? `
+<section class="cx-sek">
+  <div class="cx-hdr">
+    <h2 class="cx-titel">Partnerfordele</h2>
   </div>
-</section>
-
-<!-- ── NØGLETAL ── -->
-<section class="sek fs-fakta-sek">
-  <div class="fs-fakta-linje">
-    <div class="fs-fakta-item"><strong>100+</strong><span>virksomheder</span></div>
-    <div class="fs-fakta-sep"></div>
-    <div class="fs-fakta-item"><strong>10+</strong><span>arrangementer/år</span></div>
-    <div class="fs-fakta-sep"></div>
-    <div class="fs-fakta-item"><strong>Aarhus</strong><span>-regionen</span></div>
-    <div class="fs-fakta-sep"></div>
-    <div class="fs-fakta-item"><strong>LYG</strong><span>Lyngbygaard Golf</span></div>
+  <div class="cx-scroll" id="cx-partner" role="list">
+    ${partnere.map(p => `
+    <div class="cx-kort cx-partner-kort">
+      ${p.logo ? `<img src="${esc(p.logo)}" alt="${esc(p.navn)}" class="cx-partner-logo" loading="lazy">` : `<div class="cx-partner-navn">${esc(p.navn)}</div>`}
+      <span class="cx-k-titel">${esc(p.fordel||p.navn)}</span>
+      <span class="cx-k-tekst">${esc(p.tekst||'Fordel for LYG Erhvervsklub-medlemmer.')}</span>
+      ${p.link ? `<a class="cx-k-cta" href="${esc(p.link)}" target="_blank" rel="noopener">Se fordel →</a>` : ''}
+    </div>`).join('')}
   </div>
-</section>
+</section>` : ''}
 
-<!-- ── GOLFBOX BANNER ── -->
-<button class="gb-banner-knap mx1" onclick="åbnGolfBox()">
-  <span class="gb-ikon">🏌️</span>
-  <div><strong>GolfBox login</strong><small>Book tid eller log ind direkte i GolfBox</small></div>
-  <span class="gb-pil">→</span>
-</button>
+${mvirk.length ? `
+<section class="cx-sek">
+  <div class="cx-hdr">
+    <h2 class="cx-titel">Medlemsvirksomheder</h2>
+  </div>
+  <div class="cx-scroll" id="cx-mvirk" role="list">
+    ${mvirk.map(v => `
+    <div class="cx-kort cx-mvirk-kort">
+      ${v.logo ? `<img src="${esc(v.logo)}" alt="${esc(v.navn)}" class="cx-mvirk-logo" loading="lazy">` : `<div class="cx-mvirk-initial">${esc(v.navn[0]||'V')}</div>`}
+      <span class="cx-k-titel">${esc(v.navn)}</span>
+      ${v.branche ? `<span class="cx-k-tekst">${esc(v.branche)}</span>` : ''}
+    </div>`).join('')}
+  </div>
+</section>` : ''}
+
+${nyheder.length ? `
+<section class="cx-sek">
+  <div class="cx-hdr">
+    <h2 class="cx-titel">Seneste nyt</h2>
+  </div>
+  <div class="cx-scroll" id="cx-nyt" role="list">
+    ${nyheder.slice(0,4).map(n => `
+    <div class="cx-kort cx-nyhed-kort">
+      ${n.billede ? `<div class="cx-nyhed-billede" style="background-image:url('${esc(n.billede)}')" loading="lazy"></div>` : ''}
+      <span class="cx-k-dato">${n.dato ? fmtDato(n.dato) : ''}</span>
+      <span class="cx-k-titel">${esc(n.titel)}</span>
+      <span class="cx-k-tekst">${esc(n.tekst||'')}</span>
+    </div>`).join('')}
+  </div>
+</section>` : ''}
 
 <footer class="app-footer">
   <p>Lyngbygaard Golf · Lyngbygårdsvej 29, 8220 Brabrand</p>
   <p>📞 <a href="tel:87441070">87 44 10 70</a></p>
   <p class="foot-credit">Bygget af Nordic Operations · nordicoperations.dk</p>
-  <p class="foot-version">LYG Erhvervsklub v1.0</p>
+  <p class="foot-version">LYG Erhvervsklub v4.6</p>
 </footer>`;
 }
 
@@ -728,7 +764,7 @@ function pgAdmin() {
   </div>
 </section>`;
 
-  const faner=[['arr','Arrangementer'],['tilm','Tilmeldinger'],['kont','Kontakthenvendelser'],['sp','Sponsorer'],['golf','Firmapakker'],['inst','Indstillinger'],['bk','Backup']];
+  const faner=[['arr','Arrangementer'],['tilm','Tilmeldinger'],['kont','Kontakthenvendelser'],['sp','Sponsorer'],['golf','Firmapakker'],['indh','Indhold'],['inst','Indstillinger'],['bk','Backup']];
   return `
 <div class="ph bg-mork" style="display:flex;justify-content:space-between;align-items:center">
   <div><h1>Admin ⚙️</h1></div>
@@ -743,6 +779,7 @@ function pgAdmin() {
   ${_adFane==='kont' ? adKont() : ''}
   ${_adFane==='sp'   ? adSp()   : ''}
   ${_adFane==='golf' ? adGolf() : ''}
+  ${_adFane==='indh' ? adIndhold() : ''}
   ${_adFane==='inst' ? adInst() : ''}
   ${_adFane==='bk'   ? adBk()   : ''}
 </section>`;
@@ -979,6 +1016,73 @@ function gemPakke(e,i){
   pk[i]={...pk[i],titel:f.titel.value,pris:f.pris.value,beskrivelse:f.besk.value,inkl:f.inkl.value.split('\n').filter(Boolean)};
   DB.set('ek_pakker',pk); alert('Pakke gemt ✓');
 }
+
+/* ── Admin: Indhold (Nyheder · Partnere · Medlemsvirksomheder) ── */
+function adIndhold() {
+  const nyheder = DB.get('ek_nyheder')||[];
+  const partnere = DB.get('ek_partnere')||[];
+  const mvirk   = DB.get('ek_mvirksomheder')||[];
+
+  return `
+<div class="ad-form mb1">
+  <h3>Nyheder <span class="muted">(${nyheder.length})</span></h3>
+  <p class="muted mb1">Vises i "Seneste nyt"-carousel på forsiden.</p>
+  <form onsubmit="tilfoejNyhed(event)">
+    <div class="fg"><label>Overskrift *</label><input name="titel" required placeholder="Nyhedsoverskrift"></div>
+    <div class="fg"><label>Tekst</label><input name="tekst" placeholder="Kort teaser"></div>
+    <div class="g2f">
+      <div class="fg"><label>Dato</label><input type="date" name="dato"></div>
+      <div class="fg"><label>Billede URL</label><input name="billede" placeholder="https://…"></div>
+    </div>
+    <button type="submit" class="knap-p">+ Tilføj nyhed</button>
+  </form>
+  ${nyheder.length ? `<div class="ad-l mt1">${nyheder.map((n,i)=>`
+  <div class="ad-rad"><div class="ad-ri"><strong>${esc(n.titel)}</strong><span>${n.dato||''}</span></div>
+  <div class="ad-rk"><button class="knap-i red" onclick="sletNyhed(${i})">🗑️</button></div>
+  </div>`).join('')}</div>` : ''}
+</div>
+
+<div class="ad-form mb1">
+  <h3>Partnerfordele <span class="muted">(${partnere.length})</span></h3>
+  <p class="muted mb1">Vises i "Partnerfordele"-carousel på forsiden.</p>
+  <form onsubmit="tilfoejPartner(event)">
+    <div class="fg"><label>Virksomhed *</label><input name="navn" required></div>
+    <div class="fg"><label>Fordel</label><input name="fordel" placeholder="20 % rabat til medlemmer"></div>
+    <div class="fg"><label>Tekst</label><input name="tekst" placeholder="Kort beskrivelse"></div>
+    <div class="g2f">
+      <div class="fg"><label>Logo URL</label><input name="logo" placeholder="https://…"></div>
+      <div class="fg"><label>Link URL</label><input name="link" placeholder="https://…"></div>
+    </div>
+    <button type="submit" class="knap-p">+ Tilføj partner</button>
+  </form>
+  ${partnere.length ? `<div class="ad-l mt1">${partnere.map((p,i)=>`
+  <div class="ad-rad"><div class="ad-ri"><strong>${esc(p.navn)}</strong><span>${esc(p.fordel||'')}</span></div>
+  <div class="ad-rk"><button class="knap-i red" onclick="sletPartner(${i})">🗑️</button></div>
+  </div>`).join('')}</div>` : ''}
+</div>
+
+<div class="ad-form">
+  <h3>Medlemsvirksomheder <span class="muted">(${mvirk.length})</span></h3>
+  <p class="muted mb1">Vises i "Medlemsvirksomheder"-carousel på forsiden.</p>
+  <form onsubmit="tilfoejMVirk(event)">
+    <div class="fg"><label>Virksomhed *</label><input name="navn" required></div>
+    <div class="fg"><label>Branche</label><input name="branche"></div>
+    <div class="fg"><label>Logo URL</label><input name="logo" placeholder="https://…"></div>
+    <button type="submit" class="knap-p">+ Tilføj virksomhed</button>
+  </form>
+  ${mvirk.length ? `<div class="ad-l mt1">${mvirk.map((v,i)=>`
+  <div class="ad-rad"><div class="ad-ri"><strong>${esc(v.navn)}</strong><span>${esc(v.branche||'')}</span></div>
+  <div class="ad-rk"><button class="knap-i red" onclick="sletMVirk(${i})">🗑️</button></div>
+  </div>`).join('')}</div>` : ''}
+</div>`;
+}
+
+function tilfoejNyhed(e){e.preventDefault();const f=e.target;const a=DB.get('ek_nyheder')||[];a.unshift({titel:f.titel.value,tekst:f.tekst.value,dato:f.dato.value,billede:f.billede.value});DB.set('ek_nyheder',a);skiftFane('indh');}
+function sletNyhed(i){if(!confirm('Slet nyhed?'))return;const a=DB.get('ek_nyheder')||[];a.splice(i,1);DB.set('ek_nyheder',a);skiftFane('indh');}
+function tilfoejPartner(e){e.preventDefault();const f=e.target;const a=DB.get('ek_partnere')||[];a.push({navn:f.navn.value,fordel:f.fordel.value,tekst:f.tekst.value,logo:f.logo.value,link:f.link.value});DB.set('ek_partnere',a);skiftFane('indh');}
+function sletPartner(i){if(!confirm('Fjern partner?'))return;const a=DB.get('ek_partnere')||[];a.splice(i,1);DB.set('ek_partnere',a);skiftFane('indh');}
+function tilfoejMVirk(e){e.preventDefault();const f=e.target;const a=DB.get('ek_mvirksomheder')||[];a.push({navn:f.navn.value,branche:f.branche.value,logo:f.logo.value});DB.set('ek_mvirksomheder',a);skiftFane('indh');}
+function sletMVirk(i){if(!confirm('Fjern virksomhed?'))return;const a=DB.get('ek_mvirksomheder')||[];a.splice(i,1);DB.set('ek_mvirksomheder',a);skiftFane('indh');}
 
 /* ── Admin: Indstillinger ── */
 function adInst() {
@@ -1284,6 +1388,21 @@ function tjekPaam() {
 function bindAll(){
   const ak=document.getElementById('ak-inp');
   if(ak){ak.addEventListener('keydown',e=>{if(e.key==='Enter')tjekKode();});ak.focus();}
+  /* Carousel prik-indikatorer */
+  bindCarouselPrikker('cx-arr', 'cx-arr-prikker');
+}
+
+function bindCarouselPrikker(scrollId, prikId) {
+  const scroll = document.getElementById(scrollId);
+  const prikker = document.getElementById(prikId);
+  if (!scroll || !prikker) return;
+  const kort = scroll.querySelectorAll('.cx-kort');
+  if (!kort.length) return;
+  scroll.addEventListener('scroll', () => {
+    const w = scroll.offsetWidth;
+    const idx = Math.round(scroll.scrollLeft / w);
+    prikker.querySelectorAll('.cx-prik').forEach((p,i) => p.classList.toggle('aktiv', i === idx));
+  }, { passive: true });
 }
 
 /* ================================================================
