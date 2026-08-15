@@ -509,17 +509,23 @@ function pgGolf() {
   </button>
 </section>
 
-<section class="sek">
-  <h2 class="stitl">Vælg arrangement</h2>
-  <div class="pk-g">
-    ${pakker.map(p=>`
-    <div class="pk">
-      <h3>${esc(p.titel)}</h3>
-      <div class="pk-pris">${esc(p.pris)}</div>
-      <p>${esc(p.beskrivelse)}</p>
-      <ul class="pk-ul">${(p.inkl||[]).map(i=>`<li>✓ ${esc(i)}</li>`).join('')}</ul>
-      <button class="knap-sek sm-knap" onclick="document.getElementById('golf-form').scrollIntoView({behavior:'smooth'})">Vælg →</button>
-    </div>`).join('')}
+<section class="cx-sek">
+  <div class="cx-hdr">
+    <h2 class="cx-titel">Vælg arrangement</h2>
+  </div>
+  <div class="cx-scroll" id="cx-pakker" role="list">
+    ${pakker.map((p,i) => `
+    <button class="cx-kort cx-pk-kort" role="listitem"
+            onclick="vælgPakke(${JSON.stringify(esc(p.titel))})">
+      <span class="cx-pk-pris">${esc(p.pris)}</span>
+      <span class="cx-k-titel">${esc(p.titel)}</span>
+      <span class="cx-k-tekst">${esc(p.beskrivelse)}</span>
+      <ul class="cx-pk-ul">${(p.inkl||[]).slice(0,3).map(x=>`<li>${esc(x)}</li>`).join('')}</ul>
+      <span class="cx-k-cta">Se og vælg →</span>
+    </button>`).join('')}
+  </div>
+  <div class="cx-prikker" id="cx-pk-prikker">
+    ${pakker.map((_,i)=>`<span class="cx-prik${i===0?' aktiv':''}"></span>`).join('')}
   </div>
 </section>
 
@@ -538,7 +544,7 @@ function pgGolf() {
     <div class="g2f">
       <div class="fg"><label>Antal personer</label><input type="number" name="antal" min="1" value="4"></div>
       <div class="fg"><label>Arrangement</label>
-        <select name="pakke">
+        <select name="pakke" id="golf-pakke-select">
           <option value="">Vælg type…</option>
           ${pakker.map(p=>`<option value="${esc(p.titel)}">${esc(p.titel)}</option>`).join('')}
         </select>
@@ -563,6 +569,18 @@ function submitGolf(e) {
   bg.push({id:'g'+Date.now(),virk:f.virk.value,kp:f.kp.value,email:f.email.value,tlf:f.tlf.value,dato:f.dato.value,antal:f.antal.value,pakke:f.pakke.value,besk:f.besk.value,oprettet:new Date().toISOString()});
   DB.set('ek_golf_booking',bg);
   f.style.display='none'; document.getElementById('golf-kv').style.display='block';
+}
+
+/* Vælg pakke fra carousel → vælg i select og scroll til form */
+function vælgPakke(titel) {
+  const sel = document.getElementById('golf-pakke-select');
+  if (sel) {
+    for (const opt of sel.options) {
+      if (opt.value === titel) { opt.selected = true; break; }
+    }
+  }
+  const form = document.getElementById('golf-form');
+  if (form) form.scrollIntoView({ behavior: 'smooth' });
 }
 
 /* ================================================================
@@ -1388,8 +1406,8 @@ function tjekPaam() {
 function bindAll(){
   const ak=document.getElementById('ak-inp');
   if(ak){ak.addEventListener('keydown',e=>{if(e.key==='Enter')tjekKode();});ak.focus();}
-  /* Carousel prik-indikatorer */
-  bindCarouselPrikker('cx-arr', 'cx-arr-prikker');
+  bindCarouselPrikker('cx-arr',    'cx-arr-prikker');
+  bindCarouselPrikker('cx-pakker', 'cx-pk-prikker');
 }
 
 function bindCarouselPrikker(scrollId, prikId) {

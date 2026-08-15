@@ -1441,3 +1441,54 @@ details.tidl-details[open] summary::before{content:'▾  '}
 .fs-budskab-sek, .fs-billed-linje, .fs-vaerdi-sek, .fs-fakta-sek,
 .fs-kommende-sek, .fs-sek-knapper-sek { display: none; }
 
+
+/* ================================================================
+   V4.6.1 — GOLF PAKKE-CAROUSEL
+   ================================================================ */
+
+/* Pakke-kort: guld top-accent, lidt lavere end fuld-højde */
+.cx-pk-kort {
+  border-top: 3px solid var(--g);
+  flex: 0 0 84%;
+  min-height: 0;        /* ikke unødvendigt høj */
+}
+
+.cx-pk-pris {
+  font-size: .78rem;
+  font-weight: 800;
+  color: var(--g);
+  letter-spacing: .02em;
+}
+
+/* Checkmark-liste i pakke-kort */
+.cx-pk-ul {
+  list-style: none;
+  padding: 0;
+  margin: .35rem 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: .2rem;
+}
+
+.cx-pk-ul li {
+  font-size: .76rem;
+  color: #166534;
+  padding-left: 1rem;
+  position: relative;
+}
+
+.cx-pk-ul li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  color: var(--g);
+  font-weight: 700;
+}
+
+/* Desktop: 2–3 pakker synlige */
+@media (min-width: 600px) {
+  .cx-pk-kort { flex: 0 0 calc(50% - .65rem); }
+}
+@media (min-width: 900px) {
+  .cx-pk-kort { flex: 0 0 calc(33.333% - .65rem); }
+}
