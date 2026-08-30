@@ -264,23 +264,19 @@ ${kommende.length > 1 ? `
       const d = new Date(a.dato+'T12:00:00');
       const dag = d.toLocaleDateString('da-DK',{day:'numeric'});
       const mnd = d.toLocaleDateString('da-DK',{month:'short'}).toUpperCase().replace('.','');
-      const bilIdx = i % 3;
-      const bil = bilIdx===0 ? CONFIG.billeder.golf1
-                : bilIdx===1 ? CONFIG.billeder.golf2
-                : CONFIG.billeder.netvaerk;
+      const ledig = ledigePladser(a);
       return `
-    <button class="cx-kort cx-arr-kort2" role="listitem" onclick="navTil('tilmelding',{id:'${a.id}'})">
-      <div class="cx-arr-billede" style="background-image:url('${bil}')">
-        <div class="cx-arr-dato-badge"><strong>${dag}.</strong><span>${mnd}</span></div>
-      </div>
-      <div class="cx-arr-indhold">
+    <button class="cx-kort cx-arr-txt" role="listitem" onclick="navTil('tilmelding',{id:'${a.id}'})">
+      <div class="cx-arr-txt-dato"><span class="cx-att-dag">${dag}.</span><span class="cx-att-mnd">${mnd}</span></div>
+      <div class="cx-arr-txt-indhold">
         <span class="cx-arr-navn">${esc(a.titel)}</span>
         ${a.sted ? `<span class="cx-arr-sted">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-          ${esc(a.sted)}
-        </span>` : ''}
-        <span class="cx-arr-cta">Se arrangement →</span>
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          ${esc(a.sted)}</span>` : ''}
+        ${a.type ? `<span class="cx-arr-type">${esc(a.type)}</span>` : ''}
+        ${ledig > 0 && a.aaben ? `<span class="cx-arr-ledig">${ledig} ledige pladser</span>` : ''}
       </div>
+      <span class="cx-arr-cta">Se arrangement →</span>
     </button>`}).join('')}
   </div>
   <div class="cx-prikker" id="cx-arr-prikker">${kommende.map((_,i)=>`<span class="cx-prik${i===0?' aktiv':''}"></span>`).join('')}</div>
@@ -364,7 +360,7 @@ ${nyheder.length ? `
   <p>Lyngbygaard Golf · Lyngbygårdsvej 29, 8220 Brabrand</p>
   <p>📞 <a href="tel:87441070">87 44 10 70</a></p>
   <p class="foot-credit">Bygget af Nordic Operations · nordicoperations.dk</p>
-  <p class="foot-version">LYG Erhvervsklub v4.8
+  <p class="foot-version">LYG Erhvervsklub v4.9
 </footer>`;
 }
 
@@ -759,36 +755,79 @@ function submitSponsor(e) {
    OM ERHVERVSKLUBBEN
    ================================================================ */
 function pgOm() {
+  /* SVG line-icons — Lucide-stil, stroke-width 1.4, mørkegrønne */
+  const ekSVG = [
+    { titel:'Netværk',          tekst:'Mød virksomhedsejere og beslutningstagere fra Aarhus-regionen.', cta:'Læs mere →', side:'om',
+      svg:`<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>` },
+    { titel:'Relationer',       tekst:'Stærke forretningsrelationer i professionelle, uformelle rammer.', cta:'Læs mere →', side:'om',
+      svg:`<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>` },
+    { titel:'Golf & oplevelser',tekst:'Turneringer, rejser og særlige golfoplevelser året rundt.', cta:'Se oplevelser →', side:'golfarr',
+      svg:`<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="18" r="2"/><path d="M12 2v14M7 7l5-5 5 5"/><path d="M20 18H4"/></svg>` },
+    { titel:'Sponsorværdi',     tekst:'Synlighed og associering med Lyngbygaard Golf og erhvervsklubben.', cta:'Læs mere →', side:'sponsor',
+      svg:`<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>` },
+    { titel:'EK-mesterskabet',  tekst:'Erhvervsklubbens sportslige højdepunkt for alle erhvervsmedlemmer.', cta:'Læs mere →', side:'om',
+      svg:`<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg>` },
+    { titel:'10+ events/år',    tekst:'Fra SIM Golf til julefrokost og udlandsrejser — altid noget i kalenderen.', cta:'Se events →', side:'kalender',
+      svg:`<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>` },
+  ];
+
+  /* SVG til CTA-knapper */
+  const svgPhone = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.17h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 8.91a16 16 0 0 0 6 6l.81-.81a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 21.9 16.92z"/></svg>`;
+  const svgMail  = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>`;
+
   return `
-<div class="ph bg-mork">
-  <h1>Erhvervsklubben 🤝</h1>
-  <p>${esc(CONFIG.omEK.tagline)}</p>
+<!-- ── EK PAGE HEADER ── -->
+<div class="ph bg-mork ek-ph">
+  <p class="ek-ph-over">LYG ERHVERVSKLUB</p>
+  <h1 class="ek-ph-h1">Erhvervsklubben</h1>
+  <p class="ek-ph-sub">${esc(CONFIG.omEK.tagline)}</p>
 </div>
 
-<section class="sek">
-  <div class="bi-kort" style="background-image:url('${CONFIG.billeder.netvaerk}')">
-    <div class="bi-lag"><p>${esc(CONFIG.omEK.tekst)}</p></div>
-  </div>
-</section>
-
-<section class="sek">
-  <div class="ikg">
-    ${CONFIG.omEK.punkter.map(p=>`
-    <div class="ikb static"><span class="iks">${p.ikon}</span><strong>${esc(p.titel)}</strong><p>${esc(p.tekst)}</p></div>`).join('')}
-  </div>
-</section>
-
-<section class="sek">
-  <div class="om-cta">
-    <h3>Interesseret i erhvervsmedlemskab?</h3>
-    <p>Kontakt os og hør om mulighederne.</p>
-    <div class="btn-row jc">
-      <a class="knap-p" href="tel:${CONFIG.telefon.replace(/\s/g,'')}">📞 Ring til os</a>
-      <button class="knap-sek" onclick="navTil('kontakt')">✉️ Send besked</button>
+<!-- ── AUTENTISK ARRANGEMENTSFOTO ── -->
+<div class="ek-foto-wrap">
+  <div class="ek-foto" style="background-image:url('./images/ek-arrangement.jpg')" role="img" aria-label="Arrangement i Lyngbygaard Erhvervsklub">
+    <div class="ek-foto-lag">
+      <p class="ek-foto-citat">${esc(CONFIG.omEK.tekst)}</p>
     </div>
   </div>
-</section>`;
-}
+</div>
+
+<!-- ── EK-PUNKTER CAROUSEL ── -->
+<section class="ek-cx-sek">
+  <div class="cx-hdr">
+    <h2 class="cx-sek-titel">HVAD FÅR DU</h2>
+    <button class="cx-se-alle" onclick="navTil('sponsor')">Bliv sponsor →</button>
+  </div>
+  <div class="cx-scroll ek-cx-scroll" id="cx-ek-pg" role="list">
+    ${ekSVG.map(k => `
+    <button class="ek-kort" role="listitem" onclick="navTil('${k.side}')">
+      <div class="ek-k-ikon">${k.svg}</div>
+      <strong class="ek-k-titel">${esc(k.titel)}</strong>
+      <p class="ek-k-tekst">${esc(k.tekst)}</p>
+      <span class="ek-k-cta">${esc(k.cta)}</span>
+    </button>`).join('')}
+  </div>
+  <div class="cx-prikker" id="ek-pg-prikker">
+    ${ekSVG.map((_,i)=>`<span class="cx-prik${i===0?' aktiv':''}"></span>`).join('')}
+  </div>
+</section>
+
+<!-- ── CTA ── -->
+<section class="sek">
+  <div class="ek-cta-boks">
+    <h3 class="ek-cta-h3">Interesseret i erhvervsmedlemskab?</h3>
+    <p class="ek-cta-p">Kontakt os og hør om mulighederne.</p>
+    <div class="ek-cta-knapper">
+      <a class="ek-cta-knap primaer" href="tel:${CONFIG.telefon.replace(/\s/g,'')}">
+        ${svgPhone} Ring til os
+      </a>
+      <button class="ek-cta-knap sekundaer" onclick="navTil('kontakt')">
+        ${svgMail} Send besked
+      </button>
+    </div>
+  </div>
+</section>`;}
+
 
 /* ================================================================
    KONTAKT
@@ -1488,6 +1527,7 @@ function bindAll(){
   if(ak){ak.addEventListener('keydown',e=>{if(e.key==='Enter')tjekKode();});ak.focus();}
   bindCarouselPrikker('cx-arr',    'cx-arr-prikker');
   bindCarouselPrikker('cx-pakker', 'cx-pk-prikker');
+  bindCarouselPrikker('cx-ek-pg',  'ek-pg-prikker');
 }
 
 function bindCarouselPrikker(scrollId, prikId) {

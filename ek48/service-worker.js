@@ -11,20 +11,21 @@
    · Offline fallback → cached index.html
    ================================================================ */
 
-const CACHE_VERSION = 'lyg-erhverv-v4.8';
+const CACHE_VERSION = 'lyg-erhverv-v4.9';
 const BASE          = self.registration.scope;
 
 const PRECACHE_URLS = [
   BASE + 'index.html',
-  BASE + 'style.css?v=4.8',
-  BASE + 'app.js?v=4.8',
-  BASE + 'manifest.json?v=4.8',
+  BASE + 'style.css?v=4.9',
+  BASE + 'app.js?v=4.9',
+  BASE + 'manifest.json?v=4.9',
   BASE + 'icons/icon-192.png',
   BASE + 'icons/icon-512.png',
   BASE + 'images/golfer-1-address.png',
   BASE + 'images/golfer-2-backswing.png',
   BASE + 'images/golfer-3-impact.png',
   BASE + 'images/golfer-4-finish.png',
+  BASE + 'images/ek-arrangement.jpg',
 ];
 
 /* Cache-first: statiske assets */
