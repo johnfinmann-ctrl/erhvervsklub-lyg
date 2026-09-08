@@ -156,6 +156,7 @@ function navTil(s, data) {
   switch(s) {
     case 'forside':    main.innerHTML = pgForside();  break;
     case 'kalender':   main.innerHTML = pgKalender(); break;
+    case 'arr':        main.innerHTML = pgArr(_data);  break;
     case 'tilmelding': main.innerHTML = pgTilm(data); break;
     case 'golfarr':    main.innerHTML = pgGolf();     break;
     case 'sponsor':    main.innerHTML = pgSponsor();  break;
@@ -360,7 +361,7 @@ ${nyheder.length ? `
   <p>Lyngbygaard Golf · Lyngbygårdsvej 29, 8220 Brabrand</p>
   <p>📞 <a href="tel:87441070">87 44 10 70</a></p>
   <p class="foot-credit">Bygget af Nordic Operations · nordicoperations.dk</p>
-  <p class="foot-version">LYG Erhvervsklub v5.0
+  <p class="foot-version">LYG Erhvervsklub v5.1
 </footer>`;
 }
 
@@ -385,78 +386,133 @@ function startHeroAnimation() {
    Timezone-safe: sammenligner ISO-datostrenge direkte.
    Tidligere arrangementer: ingen aktive funktioner.
    ================================================================ */
-function arrKort(a, kompakt=false) {
+/* SVG-ikoner til eventkort */
+const _SVG = {
+  arr:  `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>`,
+  pin:  `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>`,
+  pil:  `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>`,
+  golf: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="18" r="2"/><path d="M12 2v14M7 7l5-5 5 5"/><path d="M20 18H4"/></svg>`,
+  net:  `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
+  din:  `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg>`,
+  back: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>`,
+  kal:  `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>`,
+  bell: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`,
+};
+
+function _arrIkon(a) {
+  const t = (a.type||a.titel||'').toLowerCase();
+  if (t.includes('netv') || t.includes('relat')) return _SVG.net;
+  if (t.includes('middag') || t.includes('frokost') || t.includes('gokart') || t.includes('jul')) return _SVG.din;
+  return _SVG.golf;
+}
+
+function _arrStatus(a) {
   const frem  = erFremtidig(a.dato);
   const ledig = ledigePladser(a);
-  const pct   = Math.min(100, Math.round((a.tlm/a.maks)*100));
-
-  let sbKls, sbTxt;
-  if (!frem) {
-    sbKls='sb-afholdt'; sbTxt='Afholdt';
-  } else if (!a.aaben||a.status==='lukket') {
-    sbKls='sb-lukket';  sbTxt='Lukket';
-  } else if (ledig<=0) {
-    sbKls='sb-lukket';  sbTxt='Fuldt';
-  } else if (ledig<=3) {
-    sbKls='sb-faa';     sbTxt='Få pladser';
-  } else {
-    sbKls='sb-aaben';   sbTxt='Åben';
-  }
-
-  return `
-<div class="akort${kompakt?' akort-k':''}${!frem?' akort-past':''}">
-  <div class="ak-top">
-    <div>
-      <div class="ak-dato">${fmtDato(a.dato)}${a.tid?' · '+esc(a.tid):''}</div>
-      <h3 class="ak-titel">${esc(a.titel)}</h3>
-      ${a.sted?`<div class="ak-sted">📍 ${esc(a.sted)}</div>`:''}
-      ${a.type&&!kompakt?`<div class="ak-type">${esc(a.type)}</div>`:''}
-    </div>
-    <span class="sb ${sbKls}">${sbTxt}</span>
-  </div>
-  ${!kompakt&&a.besk?`<p class="ak-besk">${esc(a.besk)}</p>`:''}
-  ${!kompakt&&frem?`
-  <div class="ak-tal">
-    <div class="ak-tf"><span>Maks</span><strong>${a.maks}</strong></div>
-    <div class="ak-tf"><span>Tilmeldte</span><strong>${a.tlm}</strong></div>
-    <div class="ak-tf"><span>Ledige</span><strong>${ledig}</strong></div>
-  </div>
-  <div class="pbw"><div class="pbf" style="width:${pct}%"></div></div>`:''}
-  ${frem?`
-  <div class="ak-kn">
-    ${a.aaben&&ledig>0?`<button class="knap-p" onclick="navTil('tilmelding',{id:'${a.id}'})">Tilmeld</button>`:''}
-    ${a.aaben&&ledig<=0&&a.status!=='lukket'?`<button class="knap-sek" onclick="venteListe('${a.id}')">Venteliste</button>`:''}
-    <button class="knap-i" onclick="tilfoejKal('${a.id}')" title="Tilføj til kalender">📆</button>
-    <button class="knap-i" onclick="aktPaam('${a.id}')" title="Påmindelser">🔔</button>
-  </div>`:''}
-</div>`;
+  if (!frem)                           return { kls:'ev-st-afholdt', txt:'Afholdt' };
+  if (!a.aaben || a.status==='lukket') return { kls:'ev-st-lukket',  txt:'Lukket' };
+  if (ledig <= 0)                      return { kls:'ev-st-fuldt',   txt:'Udsolgt' };
+  if (ledig <= 3)                      return { kls:'ev-st-faa',     txt:`Kun ${ledig} pladser` };
+  return { kls:'ev-st-aaben', txt:`${ledig} ledige` };
 }
 
-/* ================================================================
-   KALENDER
-   ================================================================ */
+function arrKort(a, kompakt=false) {
+  const frem   = erFremtidig(a.dato);
+  const st     = _arrStatus(a);
+  const d      = new Date(a.dato+'T12:00:00');
+  const datoStr= d.toLocaleDateString('da-DK',{day:'2-digit',month:'2-digit',year:'2-digit'}).replace(/\//g,'.');
+  return `
+<button class="ev-kort${frem?'':' ev-past'}" onclick="navTil('arr',{id:'${a.id}'})" role="listitem" aria-label="${esc(a.titel)}">
+  <div class="ev-ikon-wrap">${_arrIkon(a)}</div>
+  <div class="ev-content">
+    <div class="ev-meta">
+      <span class="ev-dato">${datoStr}</span>
+      ${a.sted?`<span class="ev-sep">·</span><span class="ev-sted">${esc(a.sted)}</span>`:''}
+    </div>
+    <div class="ev-titel">${esc(a.titel)}</div>
+    ${a.besk?`<div class="ev-besk">${esc(a.besk.length>72?a.besk.substring(0,70)+'…':a.besk)}</div>`:''}
+    <span class="ev-status ${st.kls}">${st.txt}</span>
+  </div>
+  <div class="ev-pil">${_SVG.pil}</div>
+</button>`;
+}
+
 function pgKalender() {
-  const alle  = getArr();
-  const frem  = alle.filter(a=> erFremtidig(a.dato));
-  const tidl  = alle.filter(a=>!erFremtidig(a.dato)).reverse();
+  const alle = getArr();
+  const frem = alle.filter(a =>  erFremtidig(a.dato));
+  const tidl = alle.filter(a => !erFremtidig(a.dato)).reverse();
   return `
 <div class="ph bg-mork">
-  <h1>Kalender 📅</h1>
-  <p>Alle arrangementer i Erhvervsklubben</p>
+  <p class="ev-ph-over">LYG ERHVERVSKLUB</p>
+  <h1 class="ev-ph-h1">Arrangementer</h1>
+  <p class="ev-ph-sub">Golf, relationer og erhvervsoplevelser</p>
 </div>
-<section class="sek">
+<section class="ev-liste-sek">
   ${frem.length
-    ?`<div class="arr-l">${frem.map(a=>arrKort(a)).join('')}</div>`
-    :`<div class="tom-kal"><p>Ingen kommende arrangementer.</p><button class="knap-sek" onclick="navTil('kontakt')">Kontakt os →</button></div>`}
+    ? `<div class="ev-liste" role="list">${frem.map(a=>arrKort(a)).join('')}</div>`
+    : `<div class="tom-kal"><p>Ingen kommende arrangementer.</p><button class="knap-sek" onclick="navTil('kontakt')">Kontakt os</button></div>`}
 </section>
 ${tidl.length?`
-<section class="sek pt0">
-  <details class="tidl-details">
-    <summary>Tidligere arrangementer (${tidl.length})</summary>
-    <div class="arr-l mt1">${tidl.map(a=>arrKort(a)).join('')}</div>
+<section class="ev-liste-sek ev-tidl-sek">
+  <details class="ev-tidl-details">
+    <summary class="ev-tidl-sum">Tidligere arrangementer (${tidl.length})</summary>
+    <div class="ev-liste mt1" role="list">${tidl.map(a=>arrKort(a)).join('')}</div>
   </details>
-</section>`:'' }`;
+</section>`:''}`;
 }
+
+function pgArr(data) {
+  const a = getArr().find(x => x.id === (data?.id||''));
+  if (!a) return `<div class="ph bg-mork"><h1>Arrangement ikke fundet</h1></div>
+<section class="sek"><button class="knap-sek" onclick="navTil('kalender')">← Tilbage</button></section>`;
+  const frem  = erFremtidig(a.dato);
+  const ledig = ledigePladser(a);
+  const st    = _arrStatus(a);
+  const d     = new Date(a.dato+'T12:00:00');
+  const datoLang = d.toLocaleDateString('da-DK',{day:'numeric',month:'long',year:'numeric'});
+  const kanTilm  = frem && a.aaben && ledig > 0;
+  const kanVente = frem && a.aaben && ledig <= 0 && a.status !== 'lukket';
+  const svgShield = `<svg width="48" height="56" viewBox="0 0 24 28" fill="none"><path d="M12 0L0 5v8c0 7.18 5.14 13.9 12 15.5C18.86 26.9 24 20.18 24 13V5L12 0z" fill="#b8973a" opacity=".2"/><path d="M12 1.8L1.5 6.2V13c0 6.4 4.6 12.4 10.5 13.85C17.9 25.4 22.5 19.4 22.5 13V6.2L12 1.8z" stroke="#b8973a" stroke-width="1.2" fill="none"/><path d="M8 14l2.5 2.5L16 10" stroke="#b8973a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  return `
+<div class="ev-detail-header">
+  <button class="bk-back" onclick="navTil('kalender')" aria-label="Tilbage">${_SVG.back}</button>
+  <span class="ev-detail-breadcrumb">Kalender</span>
+</div>
+<div class="ev-detail-hero">
+  ${a.image
+    ? `<img src="${esc(a.image)}" alt="${esc(a.titel)}" class="ev-detail-img">`
+    : `<div class="ev-detail-fallback"><div class="ev-detail-fb-inner">${svgShield}<span>LYG ERHVERVSKLUB</span></div></div>`}
+</div>
+<section class="sek ev-detail-sek">
+  <div class="ev-detail-topp">
+    <div class="ev-detail-dato">${_SVG.kal} ${datoLang}${a.tid?' · '+esc(a.tid):''}</div>
+    <span class="ev-status-badge ${st.kls}">${st.txt}</span>
+  </div>
+  <h1 class="ev-detail-h1">${esc(a.titel)}</h1>
+  ${a.sted?`<div class="ev-detail-sted">${_SVG.pin} ${esc(a.sted)}</div>`:''}
+  ${a.type?`<div class="ev-detail-type">${esc(a.type)}</div>`:''}
+  ${a.besk?`<p class="ev-detail-besk">${esc(a.besk)}</p>`:''}
+  <div class="ev-detail-praktisk">
+    ${a.maks?`<div class="ev-dp-rad"><span>Pladser</span><strong>${a.maks}</strong></div>`:''}
+    ${a.maks?`<div class="ev-dp-rad"><span>Tilmeldte</span><strong>${a.tlm||0}</strong></div>`:''}
+    ${frem&&a.maks?`<div class="ev-dp-rad"><span>Ledige</span><strong class="${ledig<=3&&ledig>0?'ev-faa':''}">${ledig}</strong></div>`:''}
+    ${a.pris?`<div class="ev-dp-rad"><span>Pris</span><strong>${esc(a.pris)}</strong></div>`:''}
+  </div>
+  ${frem?`<div class="ev-detail-cta">
+    ${kanTilm
+      ?`<button class="knap-p ev-tilmeld-btn" onclick="navTil('tilmelding',{id:'${a.id}'})">Tilmeld dig →</button>`
+      :kanVente
+        ?`<button class="knap-sek ev-tilmeld-btn" onclick="venteListe('${a.id}')">Venteliste</button>`
+        :`<button class="knap-p ev-tilmeld-btn" disabled>Tilmelding ikke mulig</button>`}
+    <div class="ev-detail-sek-cta">
+      <button class="ev-icon-knap" onclick="tilfoejKal('${a.id}')">${_SVG.kal} Tilføj til kalender</button>
+      <button class="ev-icon-knap" onclick="aktPaam('${a.id}')">${_SVG.bell} Påmindelser</button>
+    </div>
+  </div>`:''}
+  <button class="ev-tilbage-link" onclick="navTil('kalender')">← Tilbage til kalender</button>
+</section>`;
+}
+
 
 /* ================================================================
    TILMELDING

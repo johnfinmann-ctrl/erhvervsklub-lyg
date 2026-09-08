@@ -2800,3 +2800,265 @@ details.tidl-details[open] summary::before{content:'▾  '}
   }
 }
 
+
+/* ================================================================
+   V5.0.1 — PROFESSIONAL EVENT CARDS + DETAIL PAGE
+   ================================================================ */
+
+/* ── Kalender page header ── */
+.ev-ph-over { font-size:.64rem; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--g); display:block; margin-bottom:.4rem; }
+.ev-ph-h1   { font-size:1.65rem; font-weight:900; color:#fff; line-height:1.1; letter-spacing:-.02em; margin-bottom:.3rem; }
+.ev-ph-sub  { font-size:.875rem; color:rgba(255,255,255,.65); }
+
+/* ── Eventkort-liste ── */
+.ev-liste-sek { padding: .75rem 0 .5rem; }
+.ev-liste      { display:flex; flex-direction:column; gap:.55rem; padding:0 1rem; }
+
+/* ── Kompakt eventkort (reference-stil) ── */
+.ev-kort {
+  display: flex;
+  align-items: center;
+  gap: .85rem;
+  width: 100%;
+  background: var(--hvid);
+  border: none;
+  border-radius: 12px;
+  padding: .85rem .9rem;
+  cursor: pointer;
+  text-align: left;
+  box-shadow: var(--s1);
+  -webkit-tap-highlight-color: transparent;
+  position: relative;
+  overflow: hidden;
+  transition: transform 220ms ease, box-shadow 220ms ease, background 220ms ease;
+}
+.ev-kort::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0; width: 3px;
+  background: var(--g);
+  border-radius: 2px 0 0 2px;
+}
+.ev-kort:active { transform: scale(.985); }
+@media(hover:hover){
+  .ev-kort:hover { transform: translateY(-1px); box-shadow: var(--s2); background: #f8f7f3; }
+}
+.ev-past { opacity: .55; }
+.ev-past::before { background: var(--bdr); }
+
+/* Ikonfelt venstre */
+.ev-ikon-wrap {
+  width: 38px; height: 38px;
+  border-radius: 9px;
+  background: rgba(13,43,26,.07);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--p);
+  flex-shrink: 0;
+}
+
+/* Indhold */
+.ev-content { flex: 1; min-width: 0; }
+
+.ev-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .3rem;
+  margin-bottom: .2rem;
+}
+.ev-dato  { font-size:.72rem; font-weight:700; color:var(--g); letter-spacing:.03em; }
+.ev-sep   { font-size:.72rem; color:var(--bdr); }
+.ev-sted  { font-size:.72rem; color:var(--mut); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:160px; }
+
+.ev-titel { font-size:.92rem; font-weight:800; color:var(--p); line-height:1.2; }
+
+.ev-besk  { font-size:.78rem; color:var(--mut); line-height:1.35; margin-top:.18rem;
+            white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+/* Status badge */
+.ev-status   { font-size:.68rem; font-weight:700; display:inline-block; margin-top:.3rem; }
+.ev-st-aaben  { color:#166534; }
+.ev-st-faa    { color:#92400e; }
+.ev-st-fuldt  { color:#991b1b; }
+.ev-st-lukket { color:var(--mut); }
+.ev-st-afholdt{ color:var(--mut); opacity:.6; }
+
+/* Pil højre */
+.ev-pil {
+  color: var(--g);
+  flex-shrink: 0;
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: rgba(184,151,58,.1);
+  display: flex; align-items: center; justify-content: center;
+  transition: transform 200ms ease, background 200ms ease;
+}
+@media(hover:hover){
+  .ev-kort:hover .ev-pil { transform: translateX(2px); background: rgba(184,151,58,.18); }
+}
+
+/* ── Tidligere-sektion ── */
+.ev-tidl-sek { padding-top: .25rem; }
+.ev-tidl-details { }
+.ev-tidl-sum {
+  font-size:.8rem; font-weight:700; color:var(--mut);
+  cursor:pointer; padding:.75rem 1rem; list-style:none; display:block;
+  -webkit-tap-highlight-color:transparent;
+}
+.ev-tidl-sum::-webkit-details-marker { display:none; }
+.ev-tidl-sum::before { content:'› '; color:var(--g); }
+details[open] .ev-tidl-sum::before { content:'‹ '; }
+
+/* Desktop: 2-kolonne evt-liste */
+@media(min-width:900px){
+  .ev-liste { padding:0 1.5rem; max-width:900px; }
+  .ev-liste { display:grid; grid-template-columns:1fr 1fr; gap:.65rem; }
+  .ev-tidl-sum { padding:.75rem 1.5rem; }
+}
+
+/* ================================================================
+   EVENT DETALJE-SIDE
+   ================================================================ */
+
+/* Tilbageknap + breadcrumb */
+.ev-detail-header {
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+  padding: calc(.85rem + env(safe-area-inset-top,.5rem)) 1rem .65rem;
+  background: var(--p);
+}
+.ev-detail-breadcrumb {
+  font-size: .78rem; font-weight: 600;
+  color: rgba(255,255,255,.55);
+}
+
+/* Billedfelt / fallback */
+.ev-detail-hero {
+  width: 100%;
+  height: clamp(180px, 48vw, 320px);
+  overflow: hidden;
+  position: relative;
+  background: var(--p);
+}
+.ev-detail-img {
+  width: 100%; height: 100%;
+  object-fit: cover; object-position: center;
+  display: block;
+}
+.ev-detail-fallback {
+  width: 100%; height: 100%;
+  background: linear-gradient(135deg, var(--p) 0%, var(--p2) 100%);
+  display: flex; align-items: center; justify-content: center;
+}
+.ev-detail-fb-inner {
+  display: flex; flex-direction: column;
+  align-items: center; gap: .75rem;
+}
+.ev-detail-fb-inner span {
+  font-size: .68rem; font-weight: 800;
+  letter-spacing: .14em; text-transform: uppercase;
+  color: var(--g); opacity: .75;
+}
+
+/* Detalje-indhold */
+.ev-detail-sek { padding-top: 1.25rem; }
+
+.ev-detail-topp {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  margin-bottom: .65rem;
+  flex-wrap: wrap;
+}
+.ev-detail-dato {
+  display: flex; align-items: center; gap: .35rem;
+  font-size: .82rem; font-weight: 700; color: var(--p);
+}
+
+.ev-status-badge {
+  font-size: .68rem; font-weight: 800;
+  padding: .28rem .7rem;
+  border-radius: 20px;
+}
+.ev-status-badge.ev-st-aaben  { background: #d1fae5; color: #166534; }
+.ev-status-badge.ev-st-faa    { background: #fef3c7; color: #92400e; }
+.ev-status-badge.ev-st-fuldt  { background: #fee2e2; color: #991b1b; }
+.ev-status-badge.ev-st-lukket,
+.ev-status-badge.ev-st-afholdt{ background: var(--lys); color: var(--mut); }
+
+.ev-detail-h1 {
+  font-size: clamp(1.4rem, 5.5vw, 2rem);
+  font-weight: 900; line-height: 1.1;
+  letter-spacing: -.02em; color: var(--p);
+  margin-bottom: .5rem;
+}
+
+.ev-detail-sted {
+  display: flex; align-items: center; gap: .4rem;
+  font-size: .875rem; color: var(--mut); margin-bottom: .35rem;
+}
+.ev-detail-type {
+  font-size: .72rem; font-weight: 700;
+  letter-spacing: .08em; text-transform: uppercase;
+  color: var(--g); margin-bottom: .75rem;
+}
+.ev-detail-besk {
+  font-size: .9rem; color: var(--txt);
+  line-height: 1.65; margin-bottom: 1.25rem;
+}
+
+/* Praktisk info-tabel */
+.ev-detail-praktisk {
+  background: var(--lys);
+  border-radius: 10px;
+  padding: .1rem .1rem;
+  margin-bottom: 1.25rem;
+  overflow: hidden;
+}
+.ev-dp-rad {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: .65rem 1rem;
+  border-bottom: 1px solid var(--bdr);
+}
+.ev-dp-rad:last-child { border-bottom: none; }
+.ev-dp-rad span { font-size:.82rem; color:var(--mut); }
+.ev-dp-rad strong { font-size:.88rem; font-weight:700; color:var(--p); }
+.ev-faa { color: #92400e !important; }
+
+/* CTA */
+.ev-detail-cta { margin-bottom: 1rem; }
+.ev-tilmeld-btn { width: 100%; height: 52px; font-size: .92rem; font-weight: 800; border-radius: 10px; letter-spacing: .02em; margin-bottom: .85rem; }
+.ev-tilmeld-btn:disabled { background: var(--mut); cursor: not-allowed; opacity: .6; }
+
+.ev-detail-sek-cta {
+  display: flex; gap: .65rem; flex-wrap: wrap;
+}
+.ev-icon-knap {
+  display: flex; align-items: center; gap: .4rem;
+  background: var(--lys); border: 1.5px solid var(--bdr);
+  border-radius: 8px; padding: .62rem .9rem;
+  font-size: .8rem; font-weight: 600; color: var(--p);
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+  transition: background 200ms, border-color 200ms;
+}
+@media(hover:hover){ .ev-icon-knap:hover { background: var(--hvid); border-color: var(--p); } }
+
+.ev-tilbage-link {
+  display: block;
+  background: none; border: none;
+  color: var(--mut); font-size: .85rem;
+  padding: 1rem 0 .5rem;
+  cursor: pointer; text-align: left;
+  -webkit-tap-highlight-color: transparent;
+}
+.ev-tilbage-link:active { color: var(--p); }
+
+@media(min-width:900px){
+  .ev-detail-hero { height: 380px; }
+  .ev-detail-h1   { font-size: 2.1rem; }
+}
+
