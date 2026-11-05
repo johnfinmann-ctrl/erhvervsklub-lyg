@@ -1,5 +1,5 @@
 /* ================================================================
-   LYNGBYGAARD ERHVERVSKLUB — app.js v7.3
+   LYNGBYGAARD ERHVERVSKLUB — app.js v7.4
    Al konfiguration samlet øverst. Ret her – ingen andre steder.
 
    CHANGELOG v7.0 (fra v6.2):
@@ -31,7 +31,7 @@ const CONFIG = {
 
   heroTekst:   'Erhverv, netværk og golfoplevelser',
   heroUnder:   'Lyngbygaard Erhvervsklub samler virksomheder i Aarhus-regionen om golf, relationer og fællesskab.',
-  heroBillede: './images/ek-arrangement.jpg',
+  heroBillede: './images/ek-klubhus.jpg',
 
   /* ⚠️  SIKKERHED: adminKode er KUN en fallback til lokal test.
      I produktion bruges Supabase Auth (se admin-login nedenfor).
@@ -86,7 +86,7 @@ const CONFIG = {
      Manglende billeder → tekst-bi-kort i klubbens farver. */
   billeder: {
     hero:     './images/klubhus-hero.jpg',
-    ek:       './images/ek-arrangement.jpg',
+    ek:       './images/ek-klubhus.jpg',
     golf1:    '',   // ikke tilgængeligt — tekst-bi-kort vises
     golf2:    '',   // ikke tilgængeligt — tekst-bi-kort vises
     netvaerk: '',   // ikke tilgængeligt — tekst-bi-kort vises
@@ -542,7 +542,7 @@ ${nyheder.length ? `
   <p>Lyngbygaard Golf · Lyngbygårdsvej 29, 8220 Brabrand</p>
   <p class="kont-tlf-linje"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.17h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 8.91a16 16 0 0 0 6 6l.81-.81a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 21.9 16.92z"/></svg> <a href="tel:87441070">87 44 10 70</a></p>
   <p class="foot-credit">Bygget af Nordic Operations · nordicoperations.dk</p>
-  <p class="foot-version">LYG Erhvervsklub v7.3</p>
+  <p class="foot-version">LYG Erhvervsklub v7.4</p>
 </footer>`;
 }
 

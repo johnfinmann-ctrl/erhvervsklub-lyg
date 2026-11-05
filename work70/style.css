@@ -1,5 +1,5 @@
 /* ================================================================
-   LYNGBYGAARD ERHVERVSKLUB — style.css v7.2
+   LYNGBYGAARD ERHVERVSKLUB — style.css v7.4
    Mobil-først · Erhvervslook · Grøn #0d2b1a · Guld #b8973a
    ================================================================ */
 
@@ -1366,7 +1366,7 @@ details.tidl-details[open] summary::before{content:'▾  '}
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
   padding: 0 1rem .25rem;
-  /* Lad bruger se næste kort delvist */
+  scroll-padding-left: 1rem;
 }
 .cx-scroll::-webkit-scrollbar { display: none; }
 
@@ -2657,7 +2657,7 @@ details.tidl-details[open] summary::before{content:'▾  '}
 
 /* ── Golf pakke tekst-kort (ingen stockfotos) ── */
 .golf-pk-txt {
-  flex: 0 0 78%;
+  flex: 0 0 calc(100% - 2rem);
   scroll-snap-align: start;
   background: var(--hvid);
   border: none;
@@ -4371,33 +4371,13 @@ textarea:focus-visible {
 .sp-n-titel { color: var(--p) !important; }
 .sp-n p     { color: #374151 !important; }
 
-/* ── 3. GOLF PAKKER: ét kort pr. swipe, ingen overflow ── */
-/* Sikr at hvert kort fylder skærmen (minus padding) på mobil */
+/* ── 3. GOLF PAKKER: ét kort pr. swipe ── */
+/* golf-pk-txt: kilden rettet til calc(100% - 2rem) — ingen override nødvendig */
+/* ek-kort: lidt bredere på small screens */
 @media (max-width: 639px) {
-  .golf-pk-txt {
-    flex: 0 0 calc(100vw - 2.5rem) !important;
-    max-width: calc(100vw - 2.5rem) !important;
-    min-height: 0;
-    box-sizing: border-box;
-  }
-  /* cx-scroll: vis KUN ét kort + kant af næste (peek) */
-  .cx-scroll {
-    padding-left: 1rem !important;
-    padding-right: 1rem !important;
-    scroll-padding-left: 1rem;
-  }
-  /* ek-kort: lidt bredere på small screens */
   .ek-kort {
     flex: 0 0 calc(100vw - 3rem) !important;
   }
-}
-
-/* Desktop golf pakker: 2 kort ved 600px, 3 kort ved 900px */
-@media (min-width: 600px) {
-  .golf-pk-txt { flex: 0 0 calc(50% - .65rem) !important; }
-}
-@media (min-width: 900px) {
-  .golf-pk-txt { flex: 0 0 calc(33.333% - .65rem) !important; }
 }
 
 /* ── 4. INFO-BJÆLKE: forbedret tekst-håndtering ── */
