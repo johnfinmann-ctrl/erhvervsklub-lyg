@@ -11,7 +11,7 @@
    · Offline fallback → cached index.html
    ================================================================ */
 
-const CACHE_VERSION = 'lyg-erhverv-v7.1-rc1';
+const CACHE_VERSION = 'lyg-erhverv-v7.1-rc2';
 const BASE          = self.registration.scope;
 
 const PRECACHE_URLS = [

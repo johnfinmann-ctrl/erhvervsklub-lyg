@@ -261,20 +261,41 @@ function opdaterInfoBjaelke() {
       <!-- Desktop: statisk titel + meta -->
       <span class="ib-titel">${esc(næsteArr.titel)}</span>
       <span class="ib-meta">${metaTxt}</span>
-      <!-- Mobil (< 640px): vandrette scrollende tekst -->
+      <!-- Mobil (< 640px): marquee KUN aktiveret via JS hvis teksten overflow -->
       <span class="ib-marquee-wrap" aria-hidden="true" style="flex:1;min-width:0;overflow:hidden;display:flex;">
         <span class="ib-marquee-track">
-          <span>${marqueeTekst}</span>
-          <span>${marqueeTekst}</span>
+          <span class="ib-marquee-txt">${marqueeTekst}</span>
+          <span class="ib-marquee-txt" aria-hidden="true">${marqueeTekst}</span>
         </span>
       </span>
       <svg class="ib-pil" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
     </button>`;
   el.style.display = '';
 
-  /* Stop marquee ved touch (genstart ved touchend) */
+  /* Overflow-detektion: kun marquee hvis teksten ikke passer */
+  const wrap  = el.querySelector('.ib-marquee-wrap');
   const track = el.querySelector('.ib-marquee-track');
-  if (track) {
+  const txt   = el.querySelector('.ib-marquee-txt');
+
+  if (wrap && track && txt) {
+    /* Mål EFTER render (requestAnimationFrame sikrer at layout er beregnet) */
+    requestAnimationFrame(() => {
+      /* På mobil (< 640px) vises marquee-wrap, på desktop er den skjult via CSS */
+      const isMobil = window.innerWidth < 640;
+      if (!isMobil) return; /* desktop: statisk titel bruges — ingen marquee */
+
+      /* Sammenlign enkelt-tekstens bredde med containerens bredde */
+      const overflow = txt.scrollWidth > wrap.clientWidth;
+      if (overflow) {
+        track.classList.add('ib-marquee-active');
+        /* Juster hastighed proportionalt med tekstlængde: ~60px/s */
+        const duration = Math.max(10, Math.round(txt.scrollWidth / 60));
+        track.style.animationDuration = duration + 's';
+      }
+      /* Hvis teksten passer: ingen klasse → ingen animation (statisk) */
+    });
+
+    /* Stop marquee ved touch — brugeren kan læse i ro */
     el.addEventListener('touchstart', () => track.classList.add('paused'),    { passive: true });
     el.addEventListener('touchend',   () => track.classList.remove('paused'), { passive: true });
   }
@@ -342,31 +363,12 @@ function pgForside() {
     <img class="golfer-frame gf-4" src="./images/golfer-4-finish.png"    alt="" aria-hidden="true" loading="eager">
   </div>
 
-  <!-- Golfbolde der ruller hen over græsset (v7.0) -->
+  <!-- Golfbolde der ruller hen over græsset (v7.1) -->
   <div class="golf-bolde-scene${animKørt?' bolde-done':''}" aria-hidden="true">
     <div class="gb gb-1">
       <div class="gb-bold">
         <div class="gb-indre">
-          <svg class="gb-logo-svg" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="30" cy="30" r="28" fill="white" stroke="rgba(0,0,0,0.08)" stroke-width="1"/>
-            <!-- Grupper af 3 træer — Lyngbygaard-logo forenklet -->
-            <circle cx="22" cy="24" r="6" fill="#1a5c2e"/>
-            <circle cx="30" cy="20" r="7" fill="#1a5c2e"/>
-            <circle cx="38" cy="24" r="6" fill="#1a5c2e"/>
-            <rect x="21" y="29" width="3" height="6" fill="#1a5c2e"/>
-            <rect x="28.5" y="27" width="3" height="8" fill="#1a5c2e"/>
-            <rect x="36" y="29" width="3" height="6" fill="#1a5c2e"/>
-            <!-- Bølgestreg -->
-            <path d="M16 38 Q20 35 24 38 Q28 41 32 38 Q36 35 40 38 Q44 41 46 38" stroke="#5a9e3f" stroke-width="2" fill="none" stroke-linecap="round"/>
-            <!-- Dimples (golfbold-grubber) -->
-            <circle cx="14" cy="22" r="1.2" fill="rgba(0,0,0,.1)"/>
-            <circle cx="46" cy="22" r="1.2" fill="rgba(0,0,0,.1)"/>
-            <circle cx="12" cy="30" r="1.2" fill="rgba(0,0,0,.1)"/>
-            <circle cx="48" cy="30" r="1.2" fill="rgba(0,0,0,.1)"/>
-            <circle cx="16" cy="44" r="1.2" fill="rgba(0,0,0,.1)"/>
-            <circle cx="44" cy="44" r="1.2" fill="rgba(0,0,0,.1)"/>
-            <circle cx="30" cy="52" r="1.2" fill="rgba(0,0,0,.1)"/>
-          </svg>
+          <img src="./images/lyg-logo-transparent.png" alt="" class="gb-logo-png" loading="eager" decoding="async">
         </div>
       </div>
       <div class="gb-skygge"></div>
@@ -374,21 +376,7 @@ function pgForside() {
     <div class="gb gb-2">
       <div class="gb-bold">
         <div class="gb-indre">
-          <svg class="gb-logo-svg" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="30" cy="30" r="28" fill="white" stroke="rgba(0,0,0,0.08)" stroke-width="1"/>
-            <circle cx="22" cy="24" r="6" fill="#1a5c2e"/>
-            <circle cx="30" cy="20" r="7" fill="#1a5c2e"/>
-            <circle cx="38" cy="24" r="6" fill="#1a5c2e"/>
-            <rect x="21" y="29" width="3" height="6" fill="#1a5c2e"/>
-            <rect x="28.5" y="27" width="3" height="8" fill="#1a5c2e"/>
-            <rect x="36" y="29" width="3" height="6" fill="#1a5c2e"/>
-            <path d="M16 38 Q20 35 24 38 Q28 41 32 38 Q36 35 40 38 Q44 41 46 38" stroke="#5a9e3f" stroke-width="2" fill="none" stroke-linecap="round"/>
-            <circle cx="14" cy="22" r="1.2" fill="rgba(0,0,0,.1)"/>
-            <circle cx="46" cy="22" r="1.2" fill="rgba(0,0,0,.1)"/>
-            <circle cx="12" cy="30" r="1.2" fill="rgba(0,0,0,.1)"/>
-            <circle cx="48" cy="30" r="1.2" fill="rgba(0,0,0,.1)"/>
-            <circle cx="30" cy="52" r="1.2" fill="rgba(0,0,0,.1)"/>
-          </svg>
+          <img src="./images/lyg-logo-transparent.png" alt="" class="gb-logo-png" loading="eager" decoding="async">
         </div>
       </div>
       <div class="gb-skygge"></div>
@@ -396,19 +384,7 @@ function pgForside() {
     <div class="gb gb-3">
       <div class="gb-bold">
         <div class="gb-indre">
-          <svg class="gb-logo-svg" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="30" cy="30" r="28" fill="white" stroke="rgba(0,0,0,0.08)" stroke-width="1"/>
-            <circle cx="22" cy="24" r="6" fill="#1a5c2e"/>
-            <circle cx="30" cy="20" r="7" fill="#1a5c2e"/>
-            <circle cx="38" cy="24" r="6" fill="#1a5c2e"/>
-            <rect x="21" y="29" width="3" height="6" fill="#1a5c2e"/>
-            <rect x="28.5" y="27" width="3" height="8" fill="#1a5c2e"/>
-            <rect x="36" y="29" width="3" height="6" fill="#1a5c2e"/>
-            <path d="M16 38 Q20 35 24 38 Q28 41 32 38 Q36 35 40 38 Q44 41 46 38" stroke="#5a9e3f" stroke-width="2" fill="none" stroke-linecap="round"/>
-            <circle cx="14" cy="22" r="1.2" fill="rgba(0,0,0,.1)"/>
-            <circle cx="46" cy="22" r="1.2" fill="rgba(0,0,0,.1)"/>
-            <circle cx="30" cy="52" r="1.2" fill="rgba(0,0,0,.1)"/>
-          </svg>
+          <img src="./images/lyg-logo-transparent.png" alt="" class="gb-logo-png" loading="eager" decoding="async">
         </div>
       </div>
       <div class="gb-skygge"></div>
@@ -548,7 +524,7 @@ ${nyheder.length ? `
   <p>Lyngbygaard Golf · Lyngbygårdsvej 29, 8220 Brabrand</p>
   <p class="kont-tlf-linje"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.17h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 8.91a16 16 0 0 0 6 6l.81-.81a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 21.9 16.92z"/></svg> <a href="tel:87441070">87 44 10 70</a></p>
   <p class="foot-credit">Bygget af Nordic Operations · nordicoperations.dk</p>
-  <p class="foot-version">LYG Erhvervsklub v7.1 RC1</p>
+  <p class="foot-version">LYG Erhvervsklub v7.1 RC2</p>
 </footer>`;
 }
 

@@ -3355,9 +3355,13 @@ textarea:focus-visible {
   align-items: center;
   justify-content: center;
 }
-.gb-logo-svg {
-  width: 32px;
-  height: 32px;
+.gb-logo-png {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  border-radius: 50%;
+  padding: 4px; /* lille luft inde i bolden */
 }
 
 /* Skygge under bolden */
@@ -3439,7 +3443,6 @@ textarea:focus-visible {
 /* ── Desktop: lidt større bolde ── */
 @media (min-width: 600px) {
   .gb-bold { width: 54px; height: 54px; }
-  .gb-logo-svg { width: 42px; height: 42px; }
   .gb-skygge { width: 46px; height: 9px; }
   /* hero-v7 max-height håndteres i RC2-blokken nedenfor */
 }
@@ -3578,7 +3581,6 @@ textarea:focus-visible {
   .hero-h1-v7 { font-size: 1.3rem; }
   .golf-bolde-scene { height: 24%; }
   .gb-bold { width: 36px; height: 36px; }
-  .gb-logo-svg { width: 28px; height: 28px; }
 }
 
 /* Desktop: bredt hero-layout */
@@ -3641,7 +3643,6 @@ textarea:focus-visible {
 /* ── 3. Golfbolde: lidt større og mere synlige på desktop ── */
 @media (min-width: 900px) {
   .gb-bold { width: 50px; height: 50px; }
-  .gb-logo-svg { width: 40px; height: 40px; }
   .gb-skygge { width: 44px; height: 8px; }
 }
 
@@ -3745,19 +3746,24 @@ textarea:focus-visible {
   .ib-marquee-track {
     display: flex;
     gap: 2.5rem;
-    animation: ib-scroll 18s linear infinite;
+    /* Ingen animation som standard — JS tilføjer .ib-marquee-active kun ved overflow */
     will-change: transform;
     white-space: nowrap;
     flex-shrink: 0;
   }
-  /* Stop ved prefers-reduced-motion */
+    /* Stop ved prefers-reduced-motion */
   @media (prefers-reduced-motion: reduce) {
-    .ib-marquee-track { animation: none !important; }
+    .ib-marquee-track.ib-marquee-active { animation: none !important; }
   }
   /* Skjul meta separat (inkluderet i marquee) */
   .ib-meta { display: none; }
-  /* Titel viser kun i track */
+  /* Titel vises kun i marquee-track */
   .ib-titel { display: none; }
+}
+
+/* JS-aktiveret marquee: kun når tekst rent faktisk overflower */
+.ib-marquee-track.ib-marquee-active {
+  animation: ib-scroll 18s linear infinite;
 }
 
 @keyframes ib-scroll {
@@ -3766,7 +3772,7 @@ textarea:focus-visible {
 }
 
 /* Stop-on-touch: JS-styret klasse */
-.ib-marquee-track.paused { animation-play-state: paused; }
+.ib-marquee-track.ib-marquee-active.paused { animation-play-state: paused; }
 
 /* Tablet og desktop: aldrig marquee */
 @media (min-width: 640px) {
@@ -4071,7 +4077,7 @@ textarea:focus-visible {
 
 /* ── 9. TILGÆNGELIGHED ── */
 @media (prefers-reduced-motion: reduce) {
-  .ib-marquee-track { animation: none !important; }
+  .ib-marquee-track.ib-marquee-active { animation: none !important; }
   .ib-prik { animation: none !important; }
   .golf-bolde-scene { display: none !important; }
 }
