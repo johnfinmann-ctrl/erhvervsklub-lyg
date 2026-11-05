@@ -1,5 +1,5 @@
 /* ================================================================
-   LYNGBYGAARD ERHVERVSKLUB — app.js v7.0
+   LYNGBYGAARD ERHVERVSKLUB — app.js v7.1
    Al konfiguration samlet øverst. Ret her – ingen andre steder.
 
    CHANGELOG v7.0 (fra v6.2):
@@ -239,24 +239,45 @@ function navTil(s, data) {
 function opdaterInfoBjaelke() {
   const el = document.getElementById('info-bjaelke');
   if (!el) return;
+
+  /* Find næste arrangement — prioritér åbne med ledige pladser, ellers første fremtidige */
   const alleArr  = getArr().filter(a => erFremtidig(a.dato));
   const næsteArr = alleArr.find(a => a.aaben && ledigePladser(a) > 0) || alleArr[0];
   if (!næsteArr) { el.style.display = 'none'; return; }
 
-  const dato    = fmtDato(næsteArr.dato);
-  const ledig   = næsteArr.maks ? ledigePladser(næsteArr) : null;
+  const dato     = fmtDato(næsteArr.dato);
+  const ledig    = næsteArr.maks ? ledigePladser(næsteArr) : null;
   const fristTxt = næsteArr.frist ? ` · Frist ${fmtDato(næsteArr.frist)}` : '';
   const ledigTxt = (ledig !== null && næsteArr.aaben) ? ` · ${ledig} pladser` : '';
+  const metaTxt  = `${dato}${fristTxt}${ledigTxt}`;
+
+  /* Kombineret tekst til marquee (dublet = seamless loop) */
+  const marqueeTekst = `${esc(næsteArr.titel)} · ${metaTxt}`;
 
   el.innerHTML = `
     <button class="ib-indre" onclick="navTil('tilmelding',{id:'${næsteArr.id}'})" aria-label="Gå til ${esc(næsteArr.titel)}">
       <span class="ib-prik"></span>
       <span class="ib-label">NÆSTE</span>
+      <!-- Desktop: statisk titel + meta -->
       <span class="ib-titel">${esc(næsteArr.titel)}</span>
-      <span class="ib-meta">${dato}${fristTxt}${ledigTxt}</span>
+      <span class="ib-meta">${metaTxt}</span>
+      <!-- Mobil (< 640px): vandrette scrollende tekst -->
+      <span class="ib-marquee-wrap" aria-hidden="true" style="flex:1;min-width:0;overflow:hidden;display:flex;">
+        <span class="ib-marquee-track">
+          <span>${marqueeTekst}</span>
+          <span>${marqueeTekst}</span>
+        </span>
+      </span>
       <svg class="ib-pil" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
     </button>`;
   el.style.display = '';
+
+  /* Stop marquee ved touch (genstart ved touchend) */
+  const track = el.querySelector('.ib-marquee-track');
+  if (track) {
+    el.addEventListener('touchstart', () => track.classList.add('paused'),    { passive: true });
+    el.addEventListener('touchend',   () => track.classList.remove('paused'), { passive: true });
+  }
 }
 
 /* ================================================================
@@ -527,7 +548,7 @@ ${nyheder.length ? `
   <p>Lyngbygaard Golf · Lyngbygårdsvej 29, 8220 Brabrand</p>
   <p class="kont-tlf-linje"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.17h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 8.91a16 16 0 0 0 6 6l.81-.81a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 21.9 16.92z"/></svg> <a href="tel:87441070">87 44 10 70</a></p>
   <p class="foot-credit">Bygget af Nordic Operations · nordicoperations.dk</p>
-  <p class="foot-version">LYG Erhvervsklub v7.0 · RC2-TEST</p>
+  <p class="foot-version">LYG Erhvervsklub v7.1 RC1</p>
 </footer>`;
 }
 
