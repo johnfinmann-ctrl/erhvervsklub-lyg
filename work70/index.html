@@ -20,9 +20,9 @@
 
   <title>Lyngbygaard Erhvervsklub</title>
 
-  <!-- v7.0 — skift versionsnummer her og i service-worker.js ved opdatering -->
-  <link rel="manifest"   href="./manifest.json?v=7.0">
-  <link rel="stylesheet" href="./style.css?v=7.0">
+  <!-- v7.3 — skift versionsnummer her og i service-worker.js ved opdatering -->
+  <link rel="manifest"   href="./manifest.json?v=7.3">
+  <link rel="stylesheet" href="./style.css?v=7.3">
 
   <!-- Supabase JS — fælles database for alle brugere -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
@@ -138,51 +138,72 @@
   <!-- Informationsbjælke: næste arrangement — vises på alle sider -->
   <div id="info-bjaelke" role="complementary" aria-label="Næste arrangement" style="display:none"></div>
 
+  <!-- Oversigt-overlay: Golf, Sponsor, Kontakt, Admin — åbnes fra Oversigt-knap på mobil -->
+  <div id="mere-baggrund" onclick="lukkMere()"></div>
+  <div id="mere-overlay" role="dialog" aria-label="Oversigt navigation">
+    <button class="mere-knap" onclick="lukkMere();navTil('golfarr')" aria-label="Golf">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="19" r="2"/><path d="M14 4v14M14 4l6 3-6 3M2 21h10"/></svg>
+      Golf
+    </button>
+    <button class="mere-knap" onclick="lukkMere();navTil('sponsor')" aria-label="Sponsor">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+      Sponsor
+    </button>
+    <button class="mere-knap" onclick="lukkMere();navTil('kontakt')" aria-label="Kontakt">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      Kontakt
+    </button>
+    <button class="mere-knap" onclick="lukkMere();navTil('admin')" aria-label="Admin">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      Admin
+    </button>
+  </div>
+
   <nav id="bottom-nav" role="navigation" aria-label="Hovedmenu">
     <!-- Forside: hus -->
     <button class="nav-item active" data-side="forside" aria-label="Forside">
       <span class="nav-ikon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z"/><polyline points="9 21 9 13 15 13 15 21"/></svg></span>
       <span class="nav-lbl">Forside</span>
     </button>
-    <!-- Kalender: simpel kalender -->
+    <!-- Kalender -->
     <button class="nav-item" data-side="kalender" aria-label="Kalender">
       <span class="nav-ikon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>
       <span class="nav-lbl">Kalender</span>
     </button>
-    <!-- Tilmeld: person + plus -->
+    <!-- Tilmeld -->
     <button class="nav-item" data-side="tilmelding" aria-label="Tilmeld">
       <span class="nav-ikon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="16" y1="11" x2="22" y2="11"/></svg></span>
       <span class="nav-lbl">Tilmeld</span>
     </button>
-    <!-- Golf: bold + flagstang -->
-    <button class="nav-item" data-side="golfarr" aria-label="Golf">
-      <span class="nav-ikon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="19" r="2"/><path d="M14 4v14"/><path d="M14 4l6 3-6 3"/><path d="M2 21h10"/></svg></span>
-      <span class="nav-lbl">Golf</span>
-    </button>
-    <!-- Sponsor: håndtryk -->
-    <button class="nav-item" data-side="sponsor" aria-label="Sponsor">
-      <span class="nav-ikon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></span>
-      <span class="nav-lbl">Sponsor</span>
-    </button>
-    <!-- EK: netværk/gruppe -->
+    <!-- EK: netværk/gruppe (rykket frem på mobil) -->
     <button class="nav-item" data-side="om" aria-label="EK">
       <span class="nav-ikon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
       <span class="nav-lbl">EK</span>
     </button>
-    <!-- Kontakt: taleboble -->
-    <button class="nav-item" data-side="kontakt" aria-label="Kontakt">
+    <!-- Golf: skjules på mobil — tilgås via Oversigt -->
+    <button class="nav-item" data-side="golfarr" aria-label="Golf" style="display:none" id="nav-golf-desk">
+      <span class="nav-ikon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="19" r="2"/><path d="M14 4v14"/><path d="M14 4l6 3-6 3"/><path d="M2 21h10"/></svg></span>
+      <span class="nav-lbl">Golf</span>
+    </button>
+    <!-- Sponsor (skjules på mobil — tilgås via Mere) -->
+    <button class="nav-item" data-side="sponsor" aria-label="Sponsor" style="display:none" id="nav-sponsor-desk">
+      <span class="nav-ikon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></span>
+      <span class="nav-lbl">Sponsor</span>
+    </button>
+    <!-- Kontakt (skjules på mobil — tilgås via Mere) -->
+    <button class="nav-item" data-side="kontakt" aria-label="Kontakt" style="display:none" id="nav-kontakt-desk">
       <span class="nav-ikon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
       <span class="nav-lbl">Kontakt</span>
     </button>
-    <!-- Admin: tandhjul -->
-    <button class="nav-item nav-admin" data-side="admin" aria-label="Admin">
-      <span class="nav-ikon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
-      <span class="nav-lbl">Admin</span>
+    <!-- Oversigt: åbner overlay på mobil / Admin på desktop -->
+    <button class="nav-item nav-admin" data-side="admin" aria-label="Oversigt" id="nav-mere-btn">
+      <span class="nav-ikon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></span>
+      <span class="nav-lbl" id="nav-mere-lbl">Oversigt</span>
     </button>
   </nav>
 
 </div>
 
-<script src="./app.js?v=7.0"></script>
+<script src="./app.js?v=7.3"></script>
 </body>
 </html>

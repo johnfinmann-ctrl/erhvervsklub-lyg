@@ -1,5 +1,5 @@
 /* ================================================================
-   LYNGBYGAARD ERHVERVSKLUB — app.js v7.0
+   LYNGBYGAARD ERHVERVSKLUB — app.js v7.3
    Al konfiguration samlet øverst. Ret her – ingen andre steder.
 
    CHANGELOG v7.0 (fra v6.2):
@@ -207,6 +207,24 @@ function esc(str) {
 }
 
 /* ================================================================
+   MERE-OVERLAY (mobil navigation)
+   ================================================================ */
+function aabMere() {
+  const overlay = document.getElementById('mere-overlay');
+  const baggrund = document.getElementById('mere-baggrund');
+  if (overlay) { overlay.classList.add('vis'); overlay.setAttribute('aria-hidden','false'); }
+  if (baggrund) baggrund.classList.add('vis');
+}
+function lukkMere() {
+  const overlay = document.getElementById('mere-overlay');
+  const baggrund = document.getElementById('mere-baggrund');
+  if (overlay) { overlay.classList.remove('vis'); overlay.setAttribute('aria-hidden','true'); }
+  if (baggrund) baggrund.classList.remove('vis');
+}
+/* Luk overlay ved Escape */
+document.addEventListener('keydown', e => { if (e.key === 'Escape') lukkMere(); });
+
+/* ================================================================
    ROUTER
    ================================================================ */
 let side = 'forside';
@@ -239,24 +257,66 @@ function navTil(s, data) {
 function opdaterInfoBjaelke() {
   const el = document.getElementById('info-bjaelke');
   if (!el) return;
+
+  /* Find næste arrangement — prioritér åbne med ledige pladser, ellers første fremtidige */
   const alleArr  = getArr().filter(a => erFremtidig(a.dato));
   const næsteArr = alleArr.find(a => a.aaben && ledigePladser(a) > 0) || alleArr[0];
   if (!næsteArr) { el.style.display = 'none'; return; }
 
-  const dato    = fmtDato(næsteArr.dato);
-  const ledig   = næsteArr.maks ? ledigePladser(næsteArr) : null;
+  const dato     = fmtDato(næsteArr.dato);
+  const ledig    = næsteArr.maks ? ledigePladser(næsteArr) : null;
   const fristTxt = næsteArr.frist ? ` · Frist ${fmtDato(næsteArr.frist)}` : '';
   const ledigTxt = (ledig !== null && næsteArr.aaben) ? ` · ${ledig} pladser` : '';
+  const metaTxt  = `${dato}${fristTxt}${ledigTxt}`;
+
+  /* Kombineret tekst til marquee (dublet = seamless loop) */
+  const marqueeTekst = `${esc(næsteArr.titel)} · ${metaTxt}`;
 
   el.innerHTML = `
     <button class="ib-indre" onclick="navTil('tilmelding',{id:'${næsteArr.id}'})" aria-label="Gå til ${esc(næsteArr.titel)}">
       <span class="ib-prik"></span>
       <span class="ib-label">NÆSTE</span>
+      <!-- Desktop: statisk titel + meta -->
       <span class="ib-titel">${esc(næsteArr.titel)}</span>
-      <span class="ib-meta">${dato}${fristTxt}${ledigTxt}</span>
+      <span class="ib-meta">${metaTxt}</span>
+      <!-- Mobil (< 640px): marquee KUN aktiveret via JS hvis teksten overflow -->
+      <span class="ib-marquee-wrap" aria-hidden="true" style="flex:1;min-width:0;overflow:hidden;display:flex;">
+        <span class="ib-marquee-track">
+          <span class="ib-marquee-txt">${marqueeTekst}</span>
+          <span class="ib-marquee-txt" aria-hidden="true">${marqueeTekst}</span>
+        </span>
+      </span>
       <svg class="ib-pil" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
     </button>`;
   el.style.display = '';
+
+  /* Overflow-detektion: kun marquee hvis teksten ikke passer */
+  const wrap  = el.querySelector('.ib-marquee-wrap');
+  const track = el.querySelector('.ib-marquee-track');
+  const txt   = el.querySelector('.ib-marquee-txt');
+
+  if (wrap && track && txt) {
+    /* Mål EFTER render (requestAnimationFrame sikrer at layout er beregnet) */
+    requestAnimationFrame(() => {
+      /* På mobil (< 640px) vises marquee-wrap, på desktop er den skjult via CSS */
+      const isMobil = window.innerWidth < 640;
+      if (!isMobil) return; /* desktop: statisk titel bruges — ingen marquee */
+
+      /* Sammenlign enkelt-tekstens bredde med containerens bredde */
+      const overflow = txt.scrollWidth > wrap.clientWidth;
+      if (overflow) {
+        track.classList.add('ib-marquee-active');
+        /* Juster hastighed proportionalt med tekstlængde: ~60px/s */
+        const duration = Math.max(10, Math.round(txt.scrollWidth / 60));
+        track.style.animationDuration = duration + 's';
+      }
+      /* Hvis teksten passer: ingen klasse → ingen animation (statisk) */
+    });
+
+    /* Stop marquee ved touch — brugeren kan læse i ro */
+    el.addEventListener('touchstart', () => track.classList.add('paused'),    { passive: true });
+    el.addEventListener('touchend',   () => track.classList.remove('paused'), { passive: true });
+  }
 }
 
 /* ================================================================
@@ -321,31 +381,12 @@ function pgForside() {
     <img class="golfer-frame gf-4" src="./images/golfer-4-finish.png"    alt="" aria-hidden="true" loading="eager">
   </div>
 
-  <!-- Golfbolde der ruller hen over græsset (v7.0) -->
+  <!-- Golfbolde der ruller hen over græsset (v7.1) -->
   <div class="golf-bolde-scene${animKørt?' bolde-done':''}" aria-hidden="true">
     <div class="gb gb-1">
       <div class="gb-bold">
         <div class="gb-indre">
-          <svg class="gb-logo-svg" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="30" cy="30" r="28" fill="white" stroke="rgba(0,0,0,0.08)" stroke-width="1"/>
-            <!-- Grupper af 3 træer — Lyngbygaard-logo forenklet -->
-            <circle cx="22" cy="24" r="6" fill="#1a5c2e"/>
-            <circle cx="30" cy="20" r="7" fill="#1a5c2e"/>
-            <circle cx="38" cy="24" r="6" fill="#1a5c2e"/>
-            <rect x="21" y="29" width="3" height="6" fill="#1a5c2e"/>
-            <rect x="28.5" y="27" width="3" height="8" fill="#1a5c2e"/>
-            <rect x="36" y="29" width="3" height="6" fill="#1a5c2e"/>
-            <!-- Bølgestreg -->
-            <path d="M16 38 Q20 35 24 38 Q28 41 32 38 Q36 35 40 38 Q44 41 46 38" stroke="#5a9e3f" stroke-width="2" fill="none" stroke-linecap="round"/>
-            <!-- Dimples (golfbold-grubber) -->
-            <circle cx="14" cy="22" r="1.2" fill="rgba(0,0,0,.1)"/>
-            <circle cx="46" cy="22" r="1.2" fill="rgba(0,0,0,.1)"/>
-            <circle cx="12" cy="30" r="1.2" fill="rgba(0,0,0,.1)"/>
-            <circle cx="48" cy="30" r="1.2" fill="rgba(0,0,0,.1)"/>
-            <circle cx="16" cy="44" r="1.2" fill="rgba(0,0,0,.1)"/>
-            <circle cx="44" cy="44" r="1.2" fill="rgba(0,0,0,.1)"/>
-            <circle cx="30" cy="52" r="1.2" fill="rgba(0,0,0,.1)"/>
-          </svg>
+          <img src="./images/lyg-logo-transparent.png" alt="" class="gb-logo-png" loading="eager" decoding="async">
         </div>
       </div>
       <div class="gb-skygge"></div>
@@ -353,21 +394,7 @@ function pgForside() {
     <div class="gb gb-2">
       <div class="gb-bold">
         <div class="gb-indre">
-          <svg class="gb-logo-svg" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="30" cy="30" r="28" fill="white" stroke="rgba(0,0,0,0.08)" stroke-width="1"/>
-            <circle cx="22" cy="24" r="6" fill="#1a5c2e"/>
-            <circle cx="30" cy="20" r="7" fill="#1a5c2e"/>
-            <circle cx="38" cy="24" r="6" fill="#1a5c2e"/>
-            <rect x="21" y="29" width="3" height="6" fill="#1a5c2e"/>
-            <rect x="28.5" y="27" width="3" height="8" fill="#1a5c2e"/>
-            <rect x="36" y="29" width="3" height="6" fill="#1a5c2e"/>
-            <path d="M16 38 Q20 35 24 38 Q28 41 32 38 Q36 35 40 38 Q44 41 46 38" stroke="#5a9e3f" stroke-width="2" fill="none" stroke-linecap="round"/>
-            <circle cx="14" cy="22" r="1.2" fill="rgba(0,0,0,.1)"/>
-            <circle cx="46" cy="22" r="1.2" fill="rgba(0,0,0,.1)"/>
-            <circle cx="12" cy="30" r="1.2" fill="rgba(0,0,0,.1)"/>
-            <circle cx="48" cy="30" r="1.2" fill="rgba(0,0,0,.1)"/>
-            <circle cx="30" cy="52" r="1.2" fill="rgba(0,0,0,.1)"/>
-          </svg>
+          <img src="./images/lyg-logo-transparent.png" alt="" class="gb-logo-png" loading="eager" decoding="async">
         </div>
       </div>
       <div class="gb-skygge"></div>
@@ -375,19 +402,7 @@ function pgForside() {
     <div class="gb gb-3">
       <div class="gb-bold">
         <div class="gb-indre">
-          <svg class="gb-logo-svg" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="30" cy="30" r="28" fill="white" stroke="rgba(0,0,0,0.08)" stroke-width="1"/>
-            <circle cx="22" cy="24" r="6" fill="#1a5c2e"/>
-            <circle cx="30" cy="20" r="7" fill="#1a5c2e"/>
-            <circle cx="38" cy="24" r="6" fill="#1a5c2e"/>
-            <rect x="21" y="29" width="3" height="6" fill="#1a5c2e"/>
-            <rect x="28.5" y="27" width="3" height="8" fill="#1a5c2e"/>
-            <rect x="36" y="29" width="3" height="6" fill="#1a5c2e"/>
-            <path d="M16 38 Q20 35 24 38 Q28 41 32 38 Q36 35 40 38 Q44 41 46 38" stroke="#5a9e3f" stroke-width="2" fill="none" stroke-linecap="round"/>
-            <circle cx="14" cy="22" r="1.2" fill="rgba(0,0,0,.1)"/>
-            <circle cx="46" cy="22" r="1.2" fill="rgba(0,0,0,.1)"/>
-            <circle cx="30" cy="52" r="1.2" fill="rgba(0,0,0,.1)"/>
-          </svg>
+          <img src="./images/lyg-logo-transparent.png" alt="" class="gb-logo-png" loading="eager" decoding="async">
         </div>
       </div>
       <div class="gb-skygge"></div>
@@ -527,7 +542,7 @@ ${nyheder.length ? `
   <p>Lyngbygaard Golf · Lyngbygårdsvej 29, 8220 Brabrand</p>
   <p class="kont-tlf-linje"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.17h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 8.91a16 16 0 0 0 6 6l.81-.81a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 21.9 16.92z"/></svg> <a href="tel:87441070">87 44 10 70</a></p>
   <p class="foot-credit">Bygget af Nordic Operations · nordicoperations.dk</p>
-  <p class="foot-version">LYG Erhvervsklub v7.0 · RC2-TEST</p>
+  <p class="foot-version">LYG Erhvervsklub v7.3</p>
 </footer>`;
 }
 
@@ -540,8 +555,9 @@ function startHeroAnimation() {
   if (!scene && !bolde) return;
   // Sæt flag med det samme så gennavigation ikke spiller igen
   sessionStorage.setItem('lygHeroAnimationPlayed', 'true');
-  // Start golfspiller-animation
-  if (scene) {
+  // Start golfspiller-animation — KUN på tablet/desktop (≥640px)
+  // På mobil: golfspiller skjult helt — kun golfbolde animerer diskret
+  if (scene && window.innerWidth >= 640) {
     scene.classList.add('anim-running');
     setTimeout(() => {
       scene.classList.remove('anim-running');
@@ -1264,7 +1280,7 @@ function pgOm() {
 
 <!-- ── AUTENTISK ARRANGEMENTSFOTO ── -->
 <div class="ek-foto-wrap">
-  <div class="ek-foto" style="background-image:url('./images/ek-arrangement.jpg')" role="img" aria-label="Arrangement i Lyngbygaard Erhvervsklub">
+  <div class="ek-foto" style="background-image:url('./images/ek-klubhus.jpg')" role="img" aria-label="Lyngbygaard Erhvervsklub - klubhuset">
     <div class="ek-foto-lag">
       <p class="ek-foto-citat">${esc(CONFIG.omEK.tekst)}</p>
     </div>
@@ -2324,9 +2340,44 @@ document.addEventListener('DOMContentLoaded', () => {
 
   navTil('forside');
 
+  /* ── NAVIGATION: mobil "Mere"-overlay + desktop vis alle knapper ── */
+  const isMobilNav = () => window.innerWidth < 640;
+
+  /* Skift Oversigt-knap til "Oversigt" på mobil / "Admin" på desktop */
+  function opdaterNavLayout() {
+    const mobil = isMobilNav();
+    const mereLbl = document.getElementById('nav-mere-lbl');
+    const mereBtn = document.getElementById('nav-mere-btn');
+    const sponsorBtn = document.getElementById('nav-sponsor-desk');
+    const kontaktBtn = document.getElementById('nav-kontakt-desk');
+    const golfBtn   = document.getElementById('nav-golf-desk');
+    if (!mereBtn) return;
+    if (mobil) {
+      if (mereLbl) mereLbl.textContent = 'Oversigt';
+      mereBtn.dataset.side = ''; /* åbner overlay — ikke direkte nav */
+      if (sponsorBtn) sponsorBtn.style.display = 'none';
+      if (kontaktBtn) kontaktBtn.style.display = 'none';
+      if (golfBtn)   golfBtn.style.display = 'none';
+    } else {
+      if (mereLbl) mereLbl.textContent = 'Admin';
+      mereBtn.dataset.side = 'admin';
+      if (sponsorBtn) sponsorBtn.style.display = '';
+      if (kontaktBtn) kontaktBtn.style.display = '';
+      if (golfBtn)   golfBtn.style.display = '';
+    }
+  }
+  opdaterNavLayout();
+  window.addEventListener('resize', opdaterNavLayout);
+
   document.getElementById('bottom-nav').addEventListener('click', e => {
     const btn = e.target.closest('.nav-item');
-    if (btn && btn.dataset.side) navTil(btn.dataset.side);
+    if (!btn) return;
+    if (btn.id === 'nav-mere-btn' && isMobilNav()) {
+      /* Åbn Mere-overlay */
+      aabMere();
+      return;
+    }
+    if (btn.dataset.side) navTil(btn.dataset.side);
   });
 
   /* Splash */

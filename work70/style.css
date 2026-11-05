@@ -1,5 +1,5 @@
 /* ================================================================
-   LYNGBYGAARD ERHVERVSKLUB — style.css v4.1
+   LYNGBYGAARD ERHVERVSKLUB — style.css v7.2
    Mobil-først · Erhvervslook · Grøn #0d2b1a · Guld #b8973a
    ================================================================ */
 
@@ -749,8 +749,9 @@ details.tidl-details[open] summary::before{content:'▾  '}
 }
 
 /* ── SLUTPOSITION (ingen animation — standard og efter anim) ── */
-/* Før animation starter: vis frame 1 stille */
-.golfer-scene:not(.anim-running):not(.anim-done) .gf-1 { opacity: 1; }
+/* v7.2: Golfer-scene skjules ALTID når ikke animerer (mobil + desktop) */
+/* Vises kun under .anim-running. Undgår stockfoto-spiller på hero. */
+.golfer-scene:not(.anim-running):not(.anim-done) { display: none; }
 
 /* After animation: vis kun finish-frame */
 .golfer-scene.anim-done .gf-4 { opacity: 1; }
@@ -3355,9 +3356,13 @@ textarea:focus-visible {
   align-items: center;
   justify-content: center;
 }
-.gb-logo-svg {
-  width: 32px;
-  height: 32px;
+.gb-logo-png {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  border-radius: 50%;
+  padding: 4px; /* lille luft inde i bolden */
 }
 
 /* Skygge under bolden */
@@ -3439,7 +3444,6 @@ textarea:focus-visible {
 /* ── Desktop: lidt større bolde ── */
 @media (min-width: 600px) {
   .gb-bold { width: 54px; height: 54px; }
-  .gb-logo-svg { width: 42px; height: 42px; }
   .gb-skygge { width: 46px; height: 9px; }
   /* hero-v7 max-height håndteres i RC2-blokken nedenfor */
 }
@@ -3578,7 +3582,6 @@ textarea:focus-visible {
   .hero-h1-v7 { font-size: 1.3rem; }
   .golf-bolde-scene { height: 24%; }
   .gb-bold { width: 36px; height: 36px; }
-  .gb-logo-svg { width: 28px; height: 28px; }
 }
 
 /* Desktop: bredt hero-layout */
@@ -3641,7 +3644,6 @@ textarea:focus-visible {
 /* ── 3. Golfbolde: lidt større og mere synlige på desktop ── */
 @media (min-width: 900px) {
   .gb-bold { width: 50px; height: 50px; }
-  .gb-logo-svg { width: 40px; height: 40px; }
   .gb-skygge { width: 44px; height: 8px; }
 }
 
@@ -3662,4 +3664,877 @@ textarea:focus-visible {
   .ib-titel { font-size: .88rem; }
   .ib-meta  { font-size: .74rem; }
   .ib-label { font-size: .6rem; }
+}
+
+/* ================================================================
+   V7.1 — FINAL FINISH
+   Nordic Operations · November 2026
+   ================================================================ */
+
+/* ── 1. HERO: optimerede proportioner ── */
+
+/* Mobil: kompakt hero — mere indhold synligt uden scroll */
+.hero-v7 {
+  min-height: 46vw;
+  max-height: 320px;
+  background-position: center 28%;
+  background-size: cover;
+}
+
+/* Small mobil (≤390px): endnu kompakt */
+@media (max-width: 390px) {
+  .hero-v7 { min-height: 54vw; max-height: 280px; }
+  .hero-h1-v7 { font-size: 1.15rem; }
+  .hero-tagline-v7 { font-size: .78rem; }
+  .hero-p-kort { display: none; }
+}
+
+/* Tablet (640–900px) */
+@media (min-width: 640px) and (max-width: 899px) {
+  .hero-v7 { min-height: 40vw; max-height: 360px; }
+}
+
+/* Desktop ≥900px */
+@media (min-width: 900px) {
+  .hero-v7 { min-height: 0; height: 300px; max-height: 320px; }
+}
+
+/* Stærkere gradient — tekst altid læsbar over billede */
+.hero-v7::after {
+  background: linear-gradient(
+    to top,
+    rgba(5,15,8,.96) 0%,
+    rgba(5,15,8,.65) 40%,
+    rgba(5,15,8,.22) 75%,
+    rgba(5,15,8,.08) 100%
+  );
+}
+
+/* ── 2. INFORMATIONSBJÆLKE: marquee på mobil hvis tekst for lang ── */
+
+/* Wrapper til marquee-tekst */
+.ib-tekst-wrap {
+  display: flex;
+  align-items: center;
+  gap: .45rem;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* Titel + meta på desktop: statisk */
+.ib-titel {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  min-width: 0;
+  font-size: .78rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.ib-meta {
+  font-size: .68rem;
+  color: rgba(255,255,255,.60);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* Marquee wrapper — kun aktiv på mobil (< 640px) */
+@media (max-width: 639px) {
+  /* Kombineret tekst i ét scrollende span */
+  .ib-marquee-track {
+    display: flex;
+    gap: 2.5rem;
+    /* Ingen animation som standard — JS tilføjer .ib-marquee-active kun ved overflow */
+    will-change: transform;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+    /* Stop ved prefers-reduced-motion */
+  @media (prefers-reduced-motion: reduce) {
+    .ib-marquee-track.ib-marquee-active { animation: none !important; }
+  }
+  /* Skjul meta separat (inkluderet i marquee) */
+  .ib-meta { display: none; }
+  /* Titel vises kun i marquee-track */
+  .ib-titel { display: none; }
+}
+
+/* JS-aktiveret marquee: kun når tekst rent faktisk overflower */
+.ib-marquee-track.ib-marquee-active {
+  animation: ib-scroll 18s linear infinite;
+}
+
+@keyframes ib-scroll {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+/* Stop-on-touch: JS-styret klasse */
+.ib-marquee-track.ib-marquee-active.paused { animation-play-state: paused; }
+
+/* Tablet og desktop: aldrig marquee */
+@media (min-width: 640px) {
+  .ib-marquee-track { display: none !important; }
+  .ib-titel { display: block !important; }
+  .ib-meta { display: block !important; }
+}
+
+/* ── 3. INFO-BJÆLKE: typografi og touch-target forbedret ── */
+.ib-indre {
+  min-height: 46px;
+  gap: .45rem;
+  padding: .5rem .9rem .5rem .85rem;
+}
+
+.ib-label {
+  font-size: .54rem;
+  font-weight: 800;
+  letter-spacing: .11em;
+  color: var(--g);
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+/* Puls-prik: tydelig grøn */
+.ib-prik {
+  width: 7px;
+  height: 7px;
+  min-width: 7px;
+  border-radius: 50%;
+  background: #4caf6e;
+  flex-shrink: 0;
+}
+
+/* ── 4. MOBILFORSIDE: bedre kortlayout og spacing ── */
+
+/* Næste arrangement: kompakt, ikke for høj */
+.cx-naeste-kort2 {
+  margin: .6rem .85rem;
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.cx-naeste-topp {
+  padding: 1rem 1.1rem .85rem;
+}
+
+.cx-naeste-label {
+  font-size: .56rem;
+  font-weight: 800;
+  letter-spacing: .12em;
+  color: var(--g);
+  display: block;
+  margin-bottom: .3rem;
+}
+
+.cx-naeste-titel2 {
+  font-size: 1.08rem;
+  font-weight: 800;
+  line-height: 1.2;
+  color: #fff;
+  margin-bottom: .4rem;
+}
+
+.cx-naeste-meta2 {
+  font-size: .74rem;
+  color: rgba(255,255,255,.65);
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .4rem;
+  margin-bottom: .3rem;
+}
+
+.cx-naeste-dato-row,
+.cx-naeste-sted-row {
+  display: flex;
+  align-items: center;
+  gap: .3rem;
+}
+
+.cx-naeste-sep { opacity: .4; }
+
+.cx-naeste-pladser2 {
+  display: block;
+  font-size: .68rem;
+  font-weight: 700;
+  color: #6dcf8e;
+  margin-top: .2rem;
+}
+
+.cx-naeste-cta-knap {
+  display: block;
+  width: 100%;
+  padding: .8rem 1.1rem;
+  background: var(--g);
+  color: #0a1f10;
+  font-size: .82rem;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-align: center;
+  border: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.cx-naeste-cta-knap:active { opacity: .88; }
+
+/* Sektions-header: kompakt */
+.cx-sek { margin-bottom: .5rem; }
+.cx-hdr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: .6rem .9rem .3rem;
+}
+.cx-sek-titel {
+  font-size: .58rem;
+  font-weight: 800;
+  letter-spacing: .12em;
+  color: rgba(255,255,255,.45);
+  text-transform: uppercase;
+}
+.cx-se-alle {
+  font-size: .72rem;
+  color: var(--g);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Arrangement-scroll: kortere kort */
+.cx-scroll {
+  display: flex;
+  gap: .65rem;
+  overflow-x: auto;
+  padding: 0 .9rem .75rem;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  scroll-snap-type: x mandatory;
+}
+.cx-scroll::-webkit-scrollbar { display: none; }
+
+/* Arrangement-kort */
+.cx-arr-txt {
+  min-width: 230px;
+  max-width: 260px;
+  scroll-snap-align: start;
+  flex-shrink: 0;
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 10px;
+  padding: .75rem .85rem;
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: .65rem;
+  cursor: pointer;
+  text-align: left;
+  -webkit-tap-highlight-color: transparent;
+  transition: background .15s;
+}
+.cx-arr-txt:active { background: rgba(255,255,255,.08); }
+
+.cx-arr-txt-dato {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 32px;
+  flex-shrink: 0;
+  padding-top: .05rem;
+}
+.cx-att-dag { font-size: 1.15rem; font-weight: 800; color: var(--g); line-height: 1; }
+.cx-att-mnd { font-size: .6rem; font-weight: 700; color: rgba(255,255,255,.5); letter-spacing: .05em; margin-top: .05rem; }
+
+.cx-arr-txt-indhold {
+  display: flex;
+  flex-direction: column;
+  gap: .18rem;
+  flex: 1;
+  min-width: 0;
+}
+.cx-arr-navn { font-size: .82rem; font-weight: 700; color: #fff; line-height: 1.2; }
+.cx-arr-sted { font-size: .68rem; color: rgba(255,255,255,.5); display: flex; align-items: center; gap: .2rem; }
+.cx-arr-type { font-size: .62rem; color: var(--g); font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
+.cx-arr-ledig { font-size: .64rem; color: #6dcf8e; font-weight: 600; }
+.cx-arr-cta { font-size: .68rem; color: var(--g); font-weight: 700; margin-top: .3rem; display: block; }
+
+/* EK-kort */
+.cx-ek-kort2 {
+  min-width: 170px;
+  max-width: 190px;
+  scroll-snap-align: start;
+  flex-shrink: 0;
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 10px;
+  padding: .9rem .85rem .75rem;
+  display: flex;
+  flex-direction: column;
+  gap: .3rem;
+  cursor: pointer;
+  text-align: left;
+  -webkit-tap-highlight-color: transparent;
+  transition: background .15s;
+}
+.cx-ek-kort2:active { background: rgba(255,255,255,.09); }
+.cx-ek-ikon { margin-bottom: .15rem; color: var(--g); }
+.cx-ek-titel { font-size: .84rem; font-weight: 800; color: #fff; line-height: 1.1; }
+.cx-k-tekst { font-size: .72rem; color: rgba(255,255,255,.55); line-height: 1.35; flex: 1; }
+.cx-ek-cta { font-size: .68rem; color: var(--g); font-weight: 700; margin-top: .2rem; }
+
+/* Prikke-indikator under scrollbar */
+.cx-prikker { display: flex; justify-content: center; gap: .4rem; padding: .1rem 0 .3rem; }
+.cx-prik { width: 5px; height: 5px; border-radius: 50%; background: rgba(255,255,255,.18); transition: background .2s; }
+.cx-prik.aktiv { background: var(--g); }
+
+/* ── 5. NAVIGATION: 8 items — kompakt på iPhone ── */
+
+/* Skjul tekst-labels ved ≤360px så 8 ikoner passer */
+@media (max-width: 360px) {
+  .nav-lbl { display: none; }
+  .nav-item { padding: .5rem .2rem .3rem; }
+  .nav-ikon svg { width: 24px; height: 24px; }
+}
+
+/* Kontakt + Admin: diskret farve for at adskille dem visuelt */
+.nav-item[data-side="kontakt"] .nav-ikon svg,
+.nav-item[data-side="admin"] .nav-ikon svg {
+  opacity: .65;
+}
+.nav-item[data-side="kontakt"].active .nav-ikon svg,
+.nav-item[data-side="admin"].active .nav-ikon svg {
+  opacity: 1;
+}
+
+/* ── 6. DESKTOP: sidebar + main layout ── */
+@media (min-width: 900px) {
+  /* Info-bjælke alt.: sikre korrekt left = sidebar-bredde */
+  #info-bjaelke {
+    left: 220px;
+    right: 0;
+    bottom: 0;
+    border-top: 1px solid rgba(184,151,58,.3);
+  }
+
+  /* Main-content: plads til bjælke */
+  #main-content {
+    padding-bottom: calc(50px + 1.25rem) !important;
+  }
+
+  /* Næste arrangement: lidt luftigere på desktop */
+  .cx-naeste-kort2 { margin: 1rem 1.5rem; }
+  .cx-naeste-topp { padding: 1.25rem 1.4rem 1rem; }
+  .cx-naeste-titel2 { font-size: 1.3rem; }
+
+  /* EK-kort: bredt layout på desktop */
+  .cx-ek-kort2 { min-width: 200px; max-width: 220px; }
+  .cx-arr-txt { min-width: 260px; max-width: 290px; }
+}
+
+/* ── 7. FOOTER: lidt mere luft ── */
+.app-footer {
+  padding: 1.5rem 1rem 1rem;
+  margin-top: .5rem;
+}
+
+/* ── 8. UNDERSIDER: generel forbedring ── */
+
+/* Kalender / tilmeldings-side: kompakt header */
+.sek-hdr {
+  padding: .9rem 1rem .5rem;
+  font-size: .58rem;
+  letter-spacing: .12em;
+  font-weight: 800;
+  color: rgba(255,255,255,.4);
+  text-transform: uppercase;
+}
+
+/* EK-arrangement billede: bedre aspect-ratio */
+.ek-foto {
+  min-height: 170px;
+  max-height: 230px;
+  background-size: cover;
+  background-position: center 35%;
+}
+
+/* Sponsor-kort: tekst-bi-kort altid synlig og pæn */
+.tekst-bi-kort {
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 12px;
+  padding: 1.1rem 1.1rem;
+}
+.tekst-bi-kort + .tekst-bi-kort { margin-top: .6rem; }
+
+/* Undgå store tomme mellemrum på undersider */
+.golf-side, .sponsor-side, .kontakt-side, .om-side {
+  padding-bottom: .5rem;
+}
+
+/* ── 9. TILGÆNGELIGHED ── */
+@media (prefers-reduced-motion: reduce) {
+  .ib-marquee-track.ib-marquee-active { animation: none !important; }
+  .ib-prik { animation: none !important; }
+  .golf-bolde-scene { display: none !important; }
+}
+
+/* ================================================================
+   V7.2 — MOBILRETTELSER OG KVALITETSSIKRING
+   Nordic Operations · November 2026
+   ================================================================ */
+
+/* ── 1. FORSIDE HERO: golfspiller skjult som standard (mobil fix) ── */
+/* Root fix: .golfer-scene:not(.anim-running):not(.anim-done) { display:none }
+   er allerede tilføjet ovenfor ved linje 751-753 (erstattede gf-1 opacity regel).
+   Sikrer at ingen golfer frame vises på hero FØR animation starter.
+   .anim-done vises fortsat (finish-frame). */
+
+/* Golfspiller: sikrer ingen overlap med hero-tekst */
+.golfer-scene { pointer-events: none; }
+
+/* ── 2. HERO: Klubhusfoto fylder korrekt, ingen stock-billede ── */
+/* Stærk nok gradient over klubhus-hero.jpg til at tekst er læsbar */
+.hero-anim.hero-v7::after {
+  background: linear-gradient(
+    to top,
+    rgba(5,15,8,.97) 0%,
+    rgba(5,15,8,.72) 38%,
+    rgba(5,15,8,.30) 68%,
+    rgba(5,15,8,.08) 100%
+  ) !important;
+}
+
+/* ── 3. EK-SIDE: rent billedlayout ── */
+/* ek-arrangement.jpg vises korrekt som background-image.
+   Overlay dækker godt så EK-citat er altid læseligt. */
+.ek-foto-lag {
+  background: linear-gradient(
+    to bottom,
+    rgba(5,20,10,.55) 0%,
+    rgba(5,20,10,.72) 60%,
+    rgba(5,20,10,.88) 100%
+  ) !important;
+  min-height: 170px;
+  display: flex;
+  align-items: flex-end;
+  padding: 1.25rem 1.1rem !important;
+}
+.ek-foto-citat {
+  font-size: .88rem !important;
+  color: rgba(255,255,255,.95) !important;
+  font-style: italic;
+  line-height: 1.5;
+  text-shadow: 0 1px 4px rgba(0,0,0,.5);
+}
+
+/* ── 4. NAVIGATION: kompakt 5-primær + Mere overlay ── */
+/* Tæt layout: ikoner lidt mindre, labels komprimeret */
+#bottom-nav {
+  display: flex;
+  align-items: stretch;
+  justify-content: space-around;
+}
+
+.nav-item {
+  flex: 1;
+  min-width: 0;
+  padding: 7px 2px 5px;
+}
+
+.nav-ikon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.nav-lbl {
+  font-size: .58rem;
+  letter-spacing: .01em;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+/* v7.3: Oversigt-knap vises altid på mobil (åbner overlay) */
+/* .nav-admin skjules IKKE — det er nu Oversigt-knappen */
+
+/* Mere-overlay: vises over navigationen */
+#mere-overlay {
+  display: none;
+  position: fixed;
+  bottom: calc(var(--nav) + 2px);
+  left: 0;
+  right: 0;
+  background: var(--p);
+  border-top: 1px solid rgba(184,151,58,.3);
+  border-radius: 14px 14px 0 0;
+  z-index: 199;
+  padding: .6rem .5rem .4rem;
+}
+#mere-overlay.vis { display: flex; flex-wrap: wrap; gap: .4rem; justify-content: center; }
+
+.mere-knap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  background: rgba(255,255,255,.07);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 10px;
+  color: rgba(255,255,255,.85);
+  padding: .6rem .9rem .5rem;
+  font-size: .68rem;
+  font-weight: 600;
+  cursor: pointer;
+  min-width: 72px;
+  -webkit-tap-highlight-color: transparent;
+}
+.mere-knap:active { background: rgba(255,255,255,.14); }
+.mere-knap svg { width: 20px; height: 20px; }
+
+#mere-baggrund {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 198;
+}
+#mere-baggrund.vis { display: block; }
+
+/* ── 5. INFO-BJÆLKE: placering korrekt over nav, dækker ikke indhold ── */
+#info-bjaelke {
+  position: fixed;
+  bottom: var(--nav);
+  left: 0;
+  right: 0;
+  z-index: 150;
+  background: var(--p2);
+  border-top: 1px solid rgba(184,151,58,.25);
+  /* Bjælken pushes ikke indhold — den er fixed og overlapper.
+     main-content padding-bottom kompenserer. */
+}
+
+/* main-content: pad nok til info-bjælke + nav */
+#main-content {
+  padding-bottom: calc(var(--nav) + 54px) !important;
+}
+
+/* Desktop: bjælke ved bund, sidder til højre for sidebar */
+@media (min-width: 900px) {
+  #info-bjaelke {
+    left: 220px;
+    bottom: 0;
+    border-top: 1px solid rgba(184,151,58,.3);
+  }
+  #main-content {
+    padding-bottom: calc(48px + 1.5rem) !important;
+  }
+}
+
+/* ── 6. EK KORT: kontrast og rent layout ── */
+/* Sikrer mørkegrøn tekst på hvide kort */
+.ek-kort .ek-k-titel { color: var(--p) !important; }
+.ek-kort .ek-k-tekst { color: var(--mut) !important; }
+.ek-kort .ek-k-ikon  { color: var(--p) !important; }
+
+/* CTA boks: kontrast */
+.ek-cta-boks h3, .ek-cta-h3 { color: var(--p); }
+.ek-cta-boks p,  .ek-cta-p  { color: var(--mut); }
+
+/* ── 7. SPONSOR SIDE: kontrast på sponsorniveauer ── */
+.sp-n-titel { color: var(--p) !important; }
+.sp-n p     { color: var(--mut) !important; }
+
+/* ── 8. GOLFBOLDE: diskrete, dækker ikke hero-tekst ── */
+/* Golfbolde placeres lavt og falder ind diskret */
+.golf-bolde-scene {
+  /* Allerede positioneret i CSS — sænk opacity en smule */
+  opacity: .82;
+}
+
+/* ── 9. TABLET OG DESKTOP: navigation vis alle punkter ── */
+@media (min-width: 640px) {
+  .nav-admin { display: flex !important; }
+  #mere-overlay, #mere-baggrund { display: none !important; }
+}
+
+/* ── 10. TEKST-KONTRAST GLOBAL: Sikr aldrig usynlig hvid tekst på lys baggrund ── */
+/* Farver allerede korrekt sat — denne blok er sikkerhedslag */
+.cx-ek-kort2 .cx-ek-titel { color: #fff; } /* hvid tekst på mørk baggrund: korrekt */
+.cx-arr-txt .cx-att-dag, .cx-arr-txt .cx-att-mnd { color: #fff; }
+
+/* ── 11. BREDT DESIGN 390px: hero lidt højere ── */
+@media (min-width: 375px) and (max-width: 430px) {
+  .hero-v7 { min-height: 50vw; max-height: 300px; }
+}
+
+
+/* ================================================================
+   V7.3 — KRITISK MOBILRETTELSE
+   ================================================================ */
+
+/* ── 1. EK-FOTO: autentisk klubhusfoto med stærk overlay ── */
+.ek-foto-wrap { position: relative; overflow: hidden; border-radius: 0; margin: 0; }
+.ek-foto {
+  min-height: 220px;
+  background-size: cover;
+  background-position: center 40%;
+  background-repeat: no-repeat;
+  position: relative;
+}
+.ek-foto-lag {
+  position: absolute; inset: 0;
+  background: linear-gradient(to bottom,
+    rgba(5,20,10,.45) 0%,
+    rgba(5,20,10,.65) 50%,
+    rgba(5,20,10,.88) 100%) !important;
+  display: flex; align-items: flex-end;
+  padding: 1.5rem 1.25rem !important;
+}
+.ek-foto-citat {
+  font-size: .9rem !important;
+  color: #fff !important;
+  font-style: italic;
+  line-height: 1.55;
+  text-shadow: 0 1px 6px rgba(0,0,0,.6);
+  margin: 0;
+}
+
+/* ── 2. KONTRAST: ERHVERVSKLUBBEN-overskrift og sektioner ── */
+/* cx-ek-kort2 (forside): hvid baggrund → mørkegrøn tekst */
+.cx-ek-kort2 {
+  background: var(--hvid) !important;
+}
+.cx-ek-titel {
+  color: var(--p) !important;
+  font-weight: 800;
+}
+.cx-k-tekst {
+  color: #374151 !important; /* mørkere end var(--mut) for bedre kontrast */
+}
+.cx-ek-cta {
+  color: var(--g) !important;
+  font-weight: 700;
+}
+.cx-ek-ikon {
+  color: var(--p) !important;
+}
+
+/* ek-kort (EK-side): hvid baggrund → mørkegrøn tekst */
+.ek-kort {
+  background: var(--hvid) !important;
+}
+.ek-k-titel {
+  color: var(--p) !important;
+  font-weight: 800;
+}
+.ek-k-tekst {
+  color: #374151 !important;
+}
+.ek-k-cta {
+  color: var(--g) !important;
+}
+.ek-k-ikon {
+  color: var(--p) !important;
+}
+
+/* EK CTA-boks: hvid baggrund */
+.ek-cta-boks {
+  background: var(--hvid) !important;
+  border-radius: 14px;
+  padding: 1.5rem 1.25rem;
+  box-shadow: var(--s1);
+}
+.ek-cta-h3 {
+  color: var(--p) !important;
+  font-size: 1.1rem;
+  font-weight: 800;
+  margin: 0 0 .4rem;
+}
+.ek-cta-p {
+  color: #374151 !important;
+  margin: 0 0 1rem;
+}
+
+/* cx-sek-titel (overskrifter som ERHVERVSKLUBBEN, HVAD FÅR DU) */
+.cx-sek-titel {
+  color: var(--p) !important;
+  font-weight: 800;
+}
+
+/* Sponsor side kontrast */
+.sp-n-titel { color: var(--p) !important; }
+.sp-n p     { color: #374151 !important; }
+
+/* ── 3. GOLF PAKKER: ét kort pr. swipe, ingen overflow ── */
+/* Sikr at hvert kort fylder skærmen (minus padding) på mobil */
+@media (max-width: 639px) {
+  .golf-pk-txt {
+    flex: 0 0 calc(100vw - 2.5rem) !important;
+    max-width: calc(100vw - 2.5rem) !important;
+    min-height: 0;
+    box-sizing: border-box;
+  }
+  /* cx-scroll: vis KUN ét kort + kant af næste (peek) */
+  .cx-scroll {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+    scroll-padding-left: 1rem;
+  }
+  /* ek-kort: lidt bredere på small screens */
+  .ek-kort {
+    flex: 0 0 calc(100vw - 3rem) !important;
+  }
+}
+
+/* Desktop golf pakker: 2 kort ved 600px, 3 kort ved 900px */
+@media (min-width: 600px) {
+  .golf-pk-txt { flex: 0 0 calc(50% - .65rem) !important; }
+}
+@media (min-width: 900px) {
+  .golf-pk-txt { flex: 0 0 calc(33.333% - .65rem) !important; }
+}
+
+/* ── 4. INFO-BJÆLKE: forbedret tekst-håndtering ── */
+/* Forhindre at tekst klippes ved midtlinjeskift */
+.ib-marquee-txt {
+  white-space: nowrap;
+  word-break: keep-all;
+  overflow-wrap: normal;
+  padding-right: 3rem; /* luft mellem loop-gentagelser */
+}
+/* Titel + meta på desktop: vist direkte */
+@media (min-width: 640px) {
+  .ib-titel { color: rgba(255,255,255,.92) !important; }
+  .ib-meta  { color: rgba(255,255,255,.6) !important; }
+}
+
+/* ── 5. NAVIGATION: Oversigt-knap og ensartede ikoner ── */
+/* Oversigt-label — vis altid på mobil */
+#nav-mere-btn .nav-lbl { font-size: .58rem !important; }
+
+/* Nav-items: bredere touch-targets */
+.nav-item {
+  min-height: 54px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Mere-overlay: nu 4 items (Golf, Sponsor, Kontakt, Admin) */
+#mere-overlay {
+  display: none;
+  position: fixed;
+  bottom: calc(var(--nav) + 2px);
+  left: 0; right: 0;
+  background: var(--p);
+  border-top: 1px solid rgba(184,151,58,.35);
+  border-radius: 16px 16px 0 0;
+  z-index: 199;
+  padding: .8rem .6rem .5rem;
+}
+#mere-overlay.vis {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  justify-content: center;
+}
+.mere-knap {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 12px;
+  color: rgba(255,255,255,.9);
+  padding: .7rem 1.1rem .6rem;
+  font-size: .72rem; font-weight: 600;
+  cursor: pointer;
+  min-width: 76px;
+  -webkit-tap-highlight-color: transparent;
+}
+.mere-knap svg { width: 22px; height: 22px; }
+.mere-knap:active { background: rgba(255,255,255,.15); }
+
+/* ── 6. HERO GRADIENT: tekst altid læsbar ── */
+.hero-anim.hero-v7::after {
+  background: linear-gradient(
+    to top,
+    rgba(5,15,8,.97) 0%,
+    rgba(5,15,8,.78) 35%,
+    rgba(5,15,8,.35) 65%,
+    rgba(5,15,8,.08) 100%
+  ) !important;
+}
+
+/* ── 7. PAGE HEADER: mørkegrøn baggrund → hvid tekst (altid korrekt) ── */
+.ph.bg-mork, .ek-ph {
+  background: var(--p);
+  color: #fff;
+}
+.ph.bg-mork h1, .ek-ph h1,
+.ph.bg-mork .ek-ph-h1,
+.ek-ph-h1 { color: #fff !important; }
+.ph.bg-mork p, .ek-ph p,
+.ek-ph-over, .ek-ph-sub { color: rgba(255,255,255,.75) !important; }
+
+/* ── 8. PADDING BOTTOM: indhold skjules aldrig bag bjælker ── */
+#main-content {
+  padding-bottom: calc(var(--nav) + 58px) !important;
+}
+@media (min-width: 900px) {
+  #main-content { padding-bottom: calc(50px + 1.5rem) !important; }
+}
+
+/* ── 9. INFO-BJÆLKE positionering ── */
+#info-bjaelke {
+  position: fixed;
+  bottom: var(--nav);
+  left: 0; right: 0;
+  z-index: 150;
+  background: var(--p2);
+  border-top: 1px solid rgba(184,151,58,.25);
+}
+@media (min-width: 900px) {
+  #info-bjaelke {
+    left: 220px;
+    bottom: 0;
+    border-top: 1px solid rgba(184,151,58,.3);
+  }
+}
+
+/* ── 10. DESKTOP: Oversigt-knap = Admin ── */
+@media (min-width: 640px) {
+  .nav-admin { display: flex !important; }
+  #mere-overlay, #mere-baggrund { display: none !important; }
+}
+
+/* ── V7.3: INFO-BJÆLKE — statisk truncated tekst på mobil (ingen marquee-klip) ── */
+@media (max-width: 639px) {
+  .ib-marquee-wrap { display: none !important; }
+  .ib-titel {
+    display: block !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+    min-width: 0;
+    font-size: .78rem;
+    font-weight: 700;
+    color: rgba(255,255,255,.95);
+  }
+  .ib-meta {
+    display: block !important;
+    font-size: .68rem;
+    color: rgba(255,255,255,.6);
+    flex-shrink: 0;
+    white-space: nowrap;
+    max-width: 40%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 }
