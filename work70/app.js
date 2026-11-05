@@ -1,18 +1,21 @@
 /* ================================================================
-   LYNGBYGAARD ERHVERVSKLUB — app.js v6.2
+   LYNGBYGAARD ERHVERVSKLUB — app.js v7.0
    Al konfiguration samlet øverst. Ret her – ingen andre steder.
 
-   CHANGELOG v6.2 (fra v6.1):
-   · Supabase-klient integreret (fælles datakilde for alle brugere)
-   · Booking via atomisk server-side RPC (tilmeld_arrangement)
-     — succes vises KUN efter serverbekræftelse
-   · Kontaktformular gemmes i Supabase (kontakt-tabel)
-   · Admin-login via Supabase Auth med graceful fallback
-   · Alle Unsplash-URLs fjernet — kun ek-arrangement.jpg bruges
-   · Tekstkort (tekst-bi-kort) erstatter manglende billeder
-   · Push deaktiveret indtil backend er etableret og testet
-   · Versionsbump til 6.2 — SW/HTML synkroniseres separat
-   · localStorage-nøgler (ek_*) uændrede — eksisterende data bevaret
+   CHANGELOG v7.0 (fra v6.2):
+   · Klubhusbillede som hero (klubhus-hero.jpg) — ikke golfspiller
+   · Golfbold-animation: 3 bolde ruller diskret hen over græs
+   · Golfer-scene skjult på desktop (≥900px) — vises kun under animation
+   · Informationsbjælke: fast over bundnav (mobil), bund af indhold (desktop)
+   · SVG-ikoner i navigation (hus, kalender, person+plus, golf, hjerte, gruppe, boble, gear)
+   · Hero-højde begrænset: 340px desktop, 52vw mobil — ingen dominerende lodret visning
+   · Service Worker bumped: lyg-erhverv-v7.0
+   · Cache-busting: ?v=7.0 på alle assets
+   · Alle v6.2-funktioner bevaret uændret:
+     — Supabase booking (atomisk RPC), kontaktformular, Auth
+     — GolfBox-integration (https://golfbox.golf/)
+     — localStorage-nøgler (ek_*) uændrede
+     — Push deaktiveret indtil backend klar
    ================================================================ */
 
 const CONFIG = {
@@ -524,7 +527,7 @@ ${nyheder.length ? `
   <p>Lyngbygaard Golf · Lyngbygårdsvej 29, 8220 Brabrand</p>
   <p class="kont-tlf-linje"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.17h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 8.91a16 16 0 0 0 6 6l.81-.81a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 21.9 16.92z"/></svg> <a href="tel:87441070">87 44 10 70</a></p>
   <p class="foot-credit">Bygget af Nordic Operations · nordicoperations.dk</p>
-  <p class="foot-version">LYG Erhvervsklub v7.0</p>
+  <p class="foot-version">LYG Erhvervsklub v7.0 · RC2-TEST</p>
 </footer>`;
 }
 

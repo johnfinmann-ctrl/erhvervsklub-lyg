@@ -1,5 +1,5 @@
 /* ================================================================
-   Lyngbygaard Erhvervsklub — Service Worker v6.2
+   Lyngbygaard Erhvervsklub — Service Worker v7.0
 
    VERSIONSSTYRING:
    Skift CACHE_VERSION ved hver GitHub-upload.
@@ -11,7 +11,7 @@
    · Offline fallback → cached index.html
    ================================================================ */
 
-const CACHE_VERSION = 'lyg-erhverv-v7.0';
+const CACHE_VERSION = 'lyg-erhverv-v7.0-rc2';
 const BASE          = self.registration.scope;
 
 const PRECACHE_URLS = [
