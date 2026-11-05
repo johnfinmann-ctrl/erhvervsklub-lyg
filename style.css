@@ -1,5 +1,5 @@
 /* ================================================================
-   LYNGBYGAARD ERHVERVSKLUB — style.css v4.1
+   LYNGBYGAARD ERHVERVSKLUB — style.css v7.2
    Mobil-først · Erhvervslook · Grøn #0d2b1a · Guld #b8973a
    ================================================================ */
 
@@ -749,8 +749,9 @@ details.tidl-details[open] summary::before{content:'▾  '}
 }
 
 /* ── SLUTPOSITION (ingen animation — standard og efter anim) ── */
-/* Før animation starter: vis frame 1 stille */
-.golfer-scene:not(.anim-running):not(.anim-done) .gf-1 { opacity: 1; }
+/* v7.2: Golfer-scene skjules ALTID når ikke animerer (mobil + desktop) */
+/* Vises kun under .anim-running. Undgår stockfoto-spiller på hero. */
+.golfer-scene:not(.anim-running):not(.anim-done) { display: none; }
 
 /* After animation: vis kun finish-frame */
 .golfer-scene.anim-done .gf-4 { opacity: 1; }
@@ -4080,5 +4081,197 @@ textarea:focus-visible {
   .ib-marquee-track.ib-marquee-active { animation: none !important; }
   .ib-prik { animation: none !important; }
   .golf-bolde-scene { display: none !important; }
+}
+
+/* ================================================================
+   V7.2 — MOBILRETTELSER OG KVALITETSSIKRING
+   Nordic Operations · November 2026
+   ================================================================ */
+
+/* ── 1. FORSIDE HERO: golfspiller skjult som standard (mobil fix) ── */
+/* Root fix: .golfer-scene:not(.anim-running):not(.anim-done) { display:none }
+   er allerede tilføjet ovenfor ved linje 751-753 (erstattede gf-1 opacity regel).
+   Sikrer at ingen golfer frame vises på hero FØR animation starter.
+   .anim-done vises fortsat (finish-frame). */
+
+/* Golfspiller: sikrer ingen overlap med hero-tekst */
+.golfer-scene { pointer-events: none; }
+
+/* ── 2. HERO: Klubhusfoto fylder korrekt, ingen stock-billede ── */
+/* Stærk nok gradient over klubhus-hero.jpg til at tekst er læsbar */
+.hero-anim.hero-v7::after {
+  background: linear-gradient(
+    to top,
+    rgba(5,15,8,.97) 0%,
+    rgba(5,15,8,.72) 38%,
+    rgba(5,15,8,.30) 68%,
+    rgba(5,15,8,.08) 100%
+  ) !important;
+}
+
+/* ── 3. EK-SIDE: rent billedlayout ── */
+/* ek-arrangement.jpg vises korrekt som background-image.
+   Overlay dækker godt så EK-citat er altid læseligt. */
+.ek-foto-lag {
+  background: linear-gradient(
+    to bottom,
+    rgba(5,20,10,.55) 0%,
+    rgba(5,20,10,.72) 60%,
+    rgba(5,20,10,.88) 100%
+  ) !important;
+  min-height: 170px;
+  display: flex;
+  align-items: flex-end;
+  padding: 1.25rem 1.1rem !important;
+}
+.ek-foto-citat {
+  font-size: .88rem !important;
+  color: rgba(255,255,255,.95) !important;
+  font-style: italic;
+  line-height: 1.5;
+  text-shadow: 0 1px 4px rgba(0,0,0,.5);
+}
+
+/* ── 4. NAVIGATION: kompakt 5-primær + Mere overlay ── */
+/* Tæt layout: ikoner lidt mindre, labels komprimeret */
+#bottom-nav {
+  display: flex;
+  align-items: stretch;
+  justify-content: space-around;
+}
+
+.nav-item {
+  flex: 1;
+  min-width: 0;
+  padding: 7px 2px 5px;
+}
+
+.nav-ikon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.nav-lbl {
+  font-size: .58rem;
+  letter-spacing: .01em;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+/* Admin-knap: skjules på mobil (tilgås via Mere-overlay) */
+@media (max-width: 639px) {
+  .nav-admin { display: none !important; }
+}
+
+/* Mere-overlay: vises over navigationen */
+#mere-overlay {
+  display: none;
+  position: fixed;
+  bottom: calc(var(--nav) + 2px);
+  left: 0;
+  right: 0;
+  background: var(--p);
+  border-top: 1px solid rgba(184,151,58,.3);
+  border-radius: 14px 14px 0 0;
+  z-index: 199;
+  padding: .6rem .5rem .4rem;
+}
+#mere-overlay.vis { display: flex; flex-wrap: wrap; gap: .4rem; justify-content: center; }
+
+.mere-knap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  background: rgba(255,255,255,.07);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 10px;
+  color: rgba(255,255,255,.85);
+  padding: .6rem .9rem .5rem;
+  font-size: .68rem;
+  font-weight: 600;
+  cursor: pointer;
+  min-width: 72px;
+  -webkit-tap-highlight-color: transparent;
+}
+.mere-knap:active { background: rgba(255,255,255,.14); }
+.mere-knap svg { width: 20px; height: 20px; }
+
+#mere-baggrund {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 198;
+}
+#mere-baggrund.vis { display: block; }
+
+/* ── 5. INFO-BJÆLKE: placering korrekt over nav, dækker ikke indhold ── */
+#info-bjaelke {
+  position: fixed;
+  bottom: var(--nav);
+  left: 0;
+  right: 0;
+  z-index: 150;
+  background: var(--p2);
+  border-top: 1px solid rgba(184,151,58,.25);
+  /* Bjælken pushes ikke indhold — den er fixed og overlapper.
+     main-content padding-bottom kompenserer. */
+}
+
+/* main-content: pad nok til info-bjælke + nav */
+#main-content {
+  padding-bottom: calc(var(--nav) + 54px) !important;
+}
+
+/* Desktop: bjælke ved bund, sidder til højre for sidebar */
+@media (min-width: 900px) {
+  #info-bjaelke {
+    left: 220px;
+    bottom: 0;
+    border-top: 1px solid rgba(184,151,58,.3);
+  }
+  #main-content {
+    padding-bottom: calc(48px + 1.5rem) !important;
+  }
+}
+
+/* ── 6. EK KORT: kontrast og rent layout ── */
+/* Sikrer mørkegrøn tekst på hvide kort */
+.ek-kort .ek-k-titel { color: var(--p) !important; }
+.ek-kort .ek-k-tekst { color: var(--mut) !important; }
+.ek-kort .ek-k-ikon  { color: var(--p) !important; }
+
+/* CTA boks: kontrast */
+.ek-cta-boks h3, .ek-cta-h3 { color: var(--p); }
+.ek-cta-boks p,  .ek-cta-p  { color: var(--mut); }
+
+/* ── 7. SPONSOR SIDE: kontrast på sponsorniveauer ── */
+.sp-n-titel { color: var(--p) !important; }
+.sp-n p     { color: var(--mut) !important; }
+
+/* ── 8. GOLFBOLDE: diskrete, dækker ikke hero-tekst ── */
+/* Golfbolde placeres lavt og falder ind diskret */
+.golf-bolde-scene {
+  /* Allerede positioneret i CSS — sænk opacity en smule */
+  opacity: .82;
+}
+
+/* ── 9. TABLET OG DESKTOP: navigation vis alle punkter ── */
+@media (min-width: 640px) {
+  .nav-admin { display: flex !important; }
+  #mere-overlay, #mere-baggrund { display: none !important; }
+}
+
+/* ── 10. TEKST-KONTRAST GLOBAL: Sikr aldrig usynlig hvid tekst på lys baggrund ── */
+/* Farver allerede korrekt sat — denne blok er sikkerhedslag */
+.cx-ek-kort2 .cx-ek-titel { color: #fff; } /* hvid tekst på mørk baggrund: korrekt */
+.cx-arr-txt .cx-att-dag, .cx-arr-txt .cx-att-mnd { color: #fff; }
+
+/* ── 11. BREDT DESIGN 390px: hero lidt højere ── */
+@media (min-width: 375px) and (max-width: 430px) {
+  .hero-v7 { min-height: 50vw; max-height: 300px; }
 }
 

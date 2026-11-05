@@ -1,5 +1,5 @@
 /* ================================================================
-   LYNGBYGAARD ERHVERVSKLUB — app.js v7.1
+   LYNGBYGAARD ERHVERVSKLUB — app.js v7.2
    Al konfiguration samlet øverst. Ret her – ingen andre steder.
 
    CHANGELOG v7.0 (fra v6.2):
@@ -205,6 +205,24 @@ function esc(str) {
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
     .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
+
+/* ================================================================
+   MERE-OVERLAY (mobil navigation)
+   ================================================================ */
+function aabMere() {
+  const overlay = document.getElementById('mere-overlay');
+  const baggrund = document.getElementById('mere-baggrund');
+  if (overlay) { overlay.classList.add('vis'); overlay.setAttribute('aria-hidden','false'); }
+  if (baggrund) baggrund.classList.add('vis');
+}
+function lukkMere() {
+  const overlay = document.getElementById('mere-overlay');
+  const baggrund = document.getElementById('mere-baggrund');
+  if (overlay) { overlay.classList.remove('vis'); overlay.setAttribute('aria-hidden','true'); }
+  if (baggrund) baggrund.classList.remove('vis');
+}
+/* Luk overlay ved Escape */
+document.addEventListener('keydown', e => { if (e.key === 'Escape') lukkMere(); });
 
 /* ================================================================
    ROUTER
@@ -524,7 +542,7 @@ ${nyheder.length ? `
   <p>Lyngbygaard Golf · Lyngbygårdsvej 29, 8220 Brabrand</p>
   <p class="kont-tlf-linje"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.17h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 8.91a16 16 0 0 0 6 6l.81-.81a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 21.9 16.92z"/></svg> <a href="tel:87441070">87 44 10 70</a></p>
   <p class="foot-credit">Bygget af Nordic Operations · nordicoperations.dk</p>
-  <p class="foot-version">LYG Erhvervsklub v7.1 RC2</p>
+  <p class="foot-version">LYG Erhvervsklub v7.2</p>
 </footer>`;
 }
 
@@ -537,8 +555,9 @@ function startHeroAnimation() {
   if (!scene && !bolde) return;
   // Sæt flag med det samme så gennavigation ikke spiller igen
   sessionStorage.setItem('lygHeroAnimationPlayed', 'true');
-  // Start golfspiller-animation
-  if (scene) {
+  // Start golfspiller-animation — KUN på tablet/desktop (≥640px)
+  // På mobil: golfspiller skjult helt — kun golfbolde animerer diskret
+  if (scene && window.innerWidth >= 640) {
     scene.classList.add('anim-running');
     setTimeout(() => {
       scene.classList.remove('anim-running');
@@ -2321,9 +2340,41 @@ document.addEventListener('DOMContentLoaded', () => {
 
   navTil('forside');
 
+  /* ── NAVIGATION: mobil "Mere"-overlay + desktop vis alle knapper ── */
+  const isMobilNav = () => window.innerWidth < 640;
+
+  /* Skift Mere-knap til "Mere" på mobil / "Admin" på desktop */
+  function opdaterNavLayout() {
+    const mobil = isMobilNav();
+    const mereLbl = document.getElementById('nav-mere-lbl');
+    const mereBtn = document.getElementById('nav-mere-btn');
+    const sponsorBtn = document.getElementById('nav-sponsor-desk');
+    const kontaktBtn = document.getElementById('nav-kontakt-desk');
+    if (!mereBtn) return;
+    if (mobil) {
+      if (mereLbl) mereLbl.textContent = 'Mere';
+      mereBtn.dataset.side = ''; /* ikke direkte nav på mobil */
+      if (sponsorBtn) sponsorBtn.style.display = 'none';
+      if (kontaktBtn) kontaktBtn.style.display = 'none';
+    } else {
+      if (mereLbl) mereLbl.textContent = 'Admin';
+      mereBtn.dataset.side = 'admin';
+      if (sponsorBtn) sponsorBtn.style.display = '';
+      if (kontaktBtn) kontaktBtn.style.display = '';
+    }
+  }
+  opdaterNavLayout();
+  window.addEventListener('resize', opdaterNavLayout);
+
   document.getElementById('bottom-nav').addEventListener('click', e => {
     const btn = e.target.closest('.nav-item');
-    if (btn && btn.dataset.side) navTil(btn.dataset.side);
+    if (!btn) return;
+    if (btn.id === 'nav-mere-btn' && isMobilNav()) {
+      /* Åbn Mere-overlay */
+      aabMere();
+      return;
+    }
+    if (btn.dataset.side) navTil(btn.dataset.side);
   });
 
   /* Splash */
