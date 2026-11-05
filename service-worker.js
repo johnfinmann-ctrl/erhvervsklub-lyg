@@ -1,5 +1,5 @@
 /* ================================================================
-   Lyngbygaard Erhvervsklub — Service Worker v4.4
+   Lyngbygaard Erhvervsklub — Service Worker v7.0
 
    VERSIONSSTYRING:
    Skift CACHE_VERSION ved hver GitHub-upload.
@@ -11,24 +11,27 @@
    · Offline fallback → cached index.html
    ================================================================ */
 
-const CACHE_VERSION = 'lyg-erhverv-v4.6';
+const CACHE_VERSION = 'lyg-erhverv-v7.0-rc2';
 const BASE          = self.registration.scope;
 
 const PRECACHE_URLS = [
   BASE + 'index.html',
-  BASE + 'style.css?v=4.6',
-  BASE + 'app.js?v=4.6',
-  BASE + 'manifest.json?v=4.6',
+  BASE + 'style.css?v=7.0',
+  BASE + 'app.js?v=7.0',
+  BASE + 'manifest.json?v=7.0',
   BASE + 'icons/icon-192.png',
   BASE + 'icons/icon-512.png',
   BASE + 'images/golfer-1-address.png',
   BASE + 'images/golfer-2-backswing.png',
   BASE + 'images/golfer-3-impact.png',
   BASE + 'images/golfer-4-finish.png',
+  BASE + 'images/ek-arrangement.jpg',
+  BASE + 'images/klubhus-hero.jpg',
+  BASE + 'images/lyg-logo-transparent.png',
 ];
 
-/* Cache-first: statiske assets */
-const CACHE_FIRST_RE = /\/icons\/|\/images\/|unsplash\.com|\.(png|jpg|jpeg|webp|gif|svg|ico|woff2?)$/;
+/* Cache-first: statiske assets (Unsplash fjernet i v6.2 — ikke i brug) */
+const CACHE_FIRST_RE = /\/icons\/|\/images\/|\.(png|jpg|jpeg|webp|gif|svg|ico|woff2?)$/;
 
 /* ── INSTALL ── */
 self.addEventListener('install', event => {

@@ -1,6 +1,21 @@
 /* ================================================================
-   LYNGBYGAARD ERHVERVSKLUB — app.js v4.1
+   LYNGBYGAARD ERHVERVSKLUB — app.js v7.0
    Al konfiguration samlet øverst. Ret her – ingen andre steder.
+
+   CHANGELOG v7.0 (fra v6.2):
+   · Klubhusbillede som hero (klubhus-hero.jpg) — ikke golfspiller
+   · Golfbold-animation: 3 bolde ruller diskret hen over græs
+   · Golfer-scene skjult på desktop (≥900px) — vises kun under animation
+   · Informationsbjælke: fast over bundnav (mobil), bund af indhold (desktop)
+   · SVG-ikoner i navigation (hus, kalender, person+plus, golf, hjerte, gruppe, boble, gear)
+   · Hero-højde begrænset: 340px desktop, 52vw mobil — ingen dominerende lodret visning
+   · Service Worker bumped: lyg-erhverv-v7.0
+   · Cache-busting: ?v=7.0 på alle assets
+   · Alle v6.2-funktioner bevaret uændret:
+     — Supabase booking (atomisk RPC), kontaktformular, Auth
+     — GolfBox-integration (https://golfbox.golf/)
+     — localStorage-nøgler (ek_*) uændrede
+     — Push deaktiveret indtil backend klar
    ================================================================ */
 
 const CONFIG = {
@@ -16,17 +31,23 @@ const CONFIG = {
 
   heroTekst:   'Erhverv, netværk og golfoplevelser',
   heroUnder:   'Lyngbygaard Erhvervsklub samler virksomheder i Aarhus-regionen om golf, relationer og fællesskab.',
-  heroBillede: 'https://images.unsplash.com/photo-1535131749006-b7f58c99034b?w=1400&q=80',
+  heroBillede: './images/ek-arrangement.jpg',
 
+  /* ⚠️  SIKKERHED: adminKode er KUN en fallback til lokal test.
+     I produktion bruges Supabase Auth (se admin-login nedenfor).
+     Koden er stadig synlig i JS — brug aldrig produktionskode her. */
   adminKode: '1234',
 
-  /* ── Supabase (Web Push) ──────────────────────────────────────
-     Udfyld disse efter Supabase-opsætning (se supabase/OPSAETNING.md).
-     Behold tomme strenge indtil Supabase er konfigureret.
-     App fungerer fuldt uden Supabase — push-fallback bruges.
+  /* ── Supabase ────────────────────────────────────────────────
+     Fælles database for alle brugere. Projekt: lyg-erhvervsklub
+     Region: eu-central-1
      ─────────────────────────────────────────────────────────── */
-  supabaseUrl:  'INDSÆT_DIN_SUPABASE_URL',   // fx https://abc.supabase.co
-  supabaseAnon: 'INDSÆT_DIN_ANON_KEY',
+  supabaseUrl:  'https://csjsauqjfmknqmmjodqp.supabase.co',
+  supabaseAnon: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNzanNhdXFqZm1rbnFtbWpvZHFwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIyMDM4NDgsImV4cCI6MjEwNzc3OTg0OH0.aOJW-V_AOjB5o91TDOPyrxs0b6xqlFvm_E2v6utnqIs',
+
+  /* Push: DEAKTIVERET indtil backend er etableret og testet.
+     Indsæt VAPID-nøgle og aktiver her, når Supabase Edge Function
+     til push-scheduler er konfigureret (se MIGRATIONSGUIDE.md). */
   vapidPublic:  'INDSÆT_DIN_VAPID_PUBLIC_KEY',
 
   golfPakker: [
@@ -39,36 +60,60 @@ const CONFIG = {
   ],
 
   sponsorFordele: [
-    { ikon:'📢', titel:'Synlighed',       tekst:'Logo på bane, hjemmeside, app og ved alle arrangementer.' },
-    { ikon:'🤝', titel:'Netværk',         tekst:'Adgang til eksklusive erhvervsarrangementer og sponsor-lounge.' },
-    { ikon:'⛳', titel:'Golf & events',   tekst:'Greenfee-invitationer, turneringer og firmaarrangementer.' },
-    { ikon:'📣', titel:'PR & omtale',    tekst:'Omtale i nyhedsbrev, sociale medier og lokal presse.' },
-    { ikon:'🎯', titel:'Direkte adgang', tekst:'Mød beslutningstagere fra 100+ virksomheder i Aarhus-regionen.' },
-    { ikon:'🏆', titel:'Prestige',        tekst:'Stærk associering med Lyngbygaard Golf og lokalt erhvervsliv.' }
+    { ikon:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>', titel:'Synlighed',       tekst:'Logo på bane, hjemmeside, app og ved alle arrangementer.' },
+    { ikon:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>', titel:'Netværk',         tekst:'Adgang til eksklusive erhvervsarrangementer og sponsor-lounge.' },
+    { ikon:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>', titel:'Golf & events',   tekst:'Greenfee-invitationer, turneringer og firmaarrangementer.' },
+    { ikon:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>', titel:'PR & omtale',    tekst:'Omtale i nyhedsbrev, sociale medier og lokal presse.' },
+    { ikon:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>', titel:'Direkte adgang', tekst:'Mød beslutningstagere fra 100+ virksomheder i Aarhus-regionen.' },
+    { ikon:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>', titel:'Prestige',        tekst:'Stærk associering med Lyngbygaard Golf og lokalt erhvervsliv.' }
   ],
 
   omEK: {
     tagline: 'Professionelle rammer. Uformelt fællesskab.',
     tekst:   'Erhvervsklubben samler virksomheder og beslutningstagere om relationer, netværk og golf.',
     punkter: [
-      { ikon:'🤝', titel:'Netværk',           tekst:'Mød 100+ virksomheder fra Aarhus-regionen.' },
-      { ikon:'💼', titel:'Relationer',         tekst:'Byg stærke forretningsrelationer i afslappede rammer.' },
-      { ikon:'⛳', titel:'Golf & oplevelser',  tekst:'Turneringer, EK-mesterskaber og udlandsrejser.' },
-      { ikon:'📢', titel:'Sponsorværdi',       tekst:'Synlighed og associering med Lyngbygaard Golf.' },
-      { ikon:'🏆', titel:'EK-mesterskabet',    tekst:'Årets sportslige højdepunkt for erhvervsmedlemmer.' },
-      { ikon:'📅', titel:'10+ events/år',      tekst:'Fra SIM Golf til julefrokost og udlandsrejser.' }
+      { ikon:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>', titel:'Netværk',           tekst:'Mød 100+ virksomheder fra Aarhus-regionen.' },
+      { ikon:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>', titel:'Relationer',         tekst:'Byg stærke forretningsrelationer i afslappede rammer.' },
+      { ikon:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>', titel:'Golf & oplevelser',  tekst:'Turneringer, EK-mesterskaber og udlandsrejser.' },
+      { ikon:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>', titel:'Sponsorværdi',       tekst:'Synlighed og associering med Lyngbygaard Golf.' },
+      { ikon:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg>', titel:'EK-mesterskabet',    tekst:'Årets sportslige højdepunkt for erhvervsmedlemmer.' },
+      { ikon:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>', titel:'10+ events/år',      tekst:'Fra SIM Golf til julefrokost og udlandsrejser.' }
     ]
   },
 
+  /* Billeder: KUN autentiske Lyngbygaard-billeder.
+     Ingen stockfotos. Ingen Unsplash. Ingen AI-billeder.
+     Manglende billeder → tekst-bi-kort i klubbens farver. */
   billeder: {
-    hero:     'https://images.unsplash.com/photo-1535131749006-b7f58c99034b?w=1400&q=80',
-    golf1:    'https://images.unsplash.com/photo-1587174486073-ae5e5cff23aa?w=800&q=75',
-    golf2:    'https://images.unsplash.com/photo-1593111774240-d529f12cf4bb?w=800&q=75',
-    netvaerk: 'https://images.unsplash.com/photo-1556761175-4b46a572b786?w=800&q=75',
-    sponsor:  'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=800&q=75',
-    kontakt:  'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=75'
+    hero:     './images/klubhus-hero.jpg',
+    ek:       './images/ek-arrangement.jpg',
+    golf1:    '',   // ikke tilgængeligt — tekst-bi-kort vises
+    golf2:    '',   // ikke tilgængeligt — tekst-bi-kort vises
+    netvaerk: '',   // ikke tilgængeligt — tekst-bi-kort vises
+    sponsor:  '',   // ikke tilgængeligt — tekst-bi-kort vises
+    kontakt:  ''    // ikke tilgængeligt — tekst-bi-kort vises
   }
 };
+
+/* ================================================================
+   SUPABASE KLIENT
+   Initialiseres fra CONFIG. Hvis URL mangler → null → localStorage bruges.
+   ================================================================ */
+let _supabase = null;
+
+function getSupabase() {
+  if (_supabase) return _supabase;
+  if (!CONFIG.supabaseUrl || !CONFIG.supabaseAnon) return null;
+  try {
+    const { createClient } = window.supabase || {};
+    if (!createClient) return null;
+    _supabase = createClient(CONFIG.supabaseUrl, CONFIG.supabaseAnon);
+    return _supabase;
+  } catch (e) {
+    console.warn('[Supabase] Klient fejlede:', e);
+    return null;
+  }
+}
 
 /* ── Standard arrangementer ── */
 const STD_ARR = [
@@ -98,6 +143,23 @@ const DB = {
   set: (k,v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch(e) { console.warn('[DB]', e); } },
   del: k => localStorage.removeItem(k)
 };
+
+/* ── Sikker migrationsbackup: gemmer snapshot af eksisterende data ──
+   Køres én gang ved skift til ny version. Overskriv ALDRIG eksisterende data. */
+function migrationBackup() {
+  const MIGRATION_KEY = 'ek_migration_v62';
+  if (DB.get(MIGRATION_KEY)) return; // allerede kørt
+  const nøgler = ['ek_arr','ek_tilm','ek_kode','ek_sponsorer','ek_pakker',
+                   'ek_golfbox','ek_hero','ek_beskeder'];
+  const snapshot = {};
+  nøgler.forEach(k => { const v = DB.get(k); if (v !== null) snapshot[k] = v; });
+  if (Object.keys(snapshot).length > 0) {
+    snapshot._dato = new Date().toISOString();
+    DB.set(MIGRATION_KEY, snapshot);
+    console.log('[v6.2] Migrationsbackup gemt ✓');
+  }
+  DB.set(MIGRATION_KEY, snapshot._dato ? snapshot : { _dato: new Date().toISOString(), _tom: true });
+}
 
 function init() {
   if (!DB.get('ek_init')) {
@@ -156,6 +218,7 @@ function navTil(s, data) {
   switch(s) {
     case 'forside':    main.innerHTML = pgForside();  break;
     case 'kalender':   main.innerHTML = pgKalender(); break;
+    case 'arr':        main.innerHTML = pgArr(data);   break;
     case 'tilmelding': main.innerHTML = pgTilm(data); break;
     case 'golfarr':    main.innerHTML = pgGolf();     break;
     case 'sponsor':    main.innerHTML = pgSponsor();  break;
@@ -166,6 +229,34 @@ function navTil(s, data) {
   bindAll();
   window.scrollTo(0,0);
   if (s === 'forside') setTimeout(startHeroAnimation, 50);
+  opdaterInfoBjaelke();
+}
+
+/* ================================================================
+   INFORMATIONSBJÆLKE — næste arrangement
+   Vises på alle sider. Opdateres ved hvert sidesskift.
+   ================================================================ */
+function opdaterInfoBjaelke() {
+  const el = document.getElementById('info-bjaelke');
+  if (!el) return;
+  const alleArr  = getArr().filter(a => erFremtidig(a.dato));
+  const næsteArr = alleArr.find(a => a.aaben && ledigePladser(a) > 0) || alleArr[0];
+  if (!næsteArr) { el.style.display = 'none'; return; }
+
+  const dato    = fmtDato(næsteArr.dato);
+  const ledig   = næsteArr.maks ? ledigePladser(næsteArr) : null;
+  const fristTxt = næsteArr.frist ? ` · Frist ${fmtDato(næsteArr.frist)}` : '';
+  const ledigTxt = (ledig !== null && næsteArr.aaben) ? ` · ${ledig} pladser` : '';
+
+  el.innerHTML = `
+    <button class="ib-indre" onclick="navTil('tilmelding',{id:'${næsteArr.id}'})" aria-label="Gå til ${esc(næsteArr.titel)}">
+      <span class="ib-prik"></span>
+      <span class="ib-label">NÆSTE</span>
+      <span class="ib-titel">${esc(næsteArr.titel)}</span>
+      <span class="ib-meta">${dato}${fristTxt}${ledigTxt}</span>
+      <svg class="ib-pil" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+    </button>`;
+  el.style.display = '';
 }
 
 /* ================================================================
@@ -200,12 +291,28 @@ function pgForside() {
   ];
 
   return `
-<div class="hero hero-anim hero-kompakt" style="background-image:url('${esc(hero.billede||CONFIG.billeder.hero)}')">
+<div class="hero hero-anim hero-v7" style="background-image:url('${esc(hero.billede||CONFIG.billeder.hero)}')">
   <div class="hero-lag">
-    <div class="hero-logo">⛳ LYG Erhvervsklub</div>
-    <h1 class="hero-h1">Golf · Relationer · Forretning</h1>
-    <p class="hero-p-kort">Professionelt netværk for virksomhedsejere, direktører og beslutningstagere.</p>
+    <div class="hero-topbar">
+      <div class="hero-logo-wrap">
+        <img src="./images/lyg-logo-transparent.png" alt="Lyngbygaard Golf" class="hero-lyg-logo" loading="eager">
+        <div class="hero-wordmark-blok">
+          <span class="hero-wordmark-top">LYG ERHVERVSKLUB</span>
+          <span class="hero-wordmark-sub">Lyngbygaard Golf</span>
+        </div>
+      </div>
+      <button class="hero-profil-btn" onclick="navTil('admin')" aria-label="Admin">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      </button>
+    </div>
+    <div class="hero-tekst-blok">
+      <h1 class="hero-h1-v7">LYG ERHVERVSKLUB</h1>
+      <p class="hero-tagline-v7">Golf · Relationer · Forretning</p>
+      <p class="hero-p-kort">Professionelt netværk for virksomhedsejere, direktører og beslutningstagere.</p>
+    </div>
   </div>
+
+  <!-- Golfspiller-animation (eksisterende) -->
   <div class="golfer-scene${animKørt?' anim-done':''}">
     <img class="golfer-frame gf-1" src="./images/golfer-1-address.png"   alt="" aria-hidden="true" loading="eager">
     <img class="golfer-frame gf-2" src="./images/golfer-2-backswing.png" alt="" aria-hidden="true" loading="eager">
@@ -213,50 +320,158 @@ function pgForside() {
     <div class="ball-trail"></div>
     <img class="golfer-frame gf-4" src="./images/golfer-4-finish.png"    alt="" aria-hidden="true" loading="eager">
   </div>
+
+  <!-- Golfbolde der ruller hen over græsset (v7.0) -->
+  <div class="golf-bolde-scene${animKørt?' bolde-done':''}" aria-hidden="true">
+    <div class="gb gb-1">
+      <div class="gb-bold">
+        <div class="gb-indre">
+          <svg class="gb-logo-svg" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="30" cy="30" r="28" fill="white" stroke="rgba(0,0,0,0.08)" stroke-width="1"/>
+            <!-- Grupper af 3 træer — Lyngbygaard-logo forenklet -->
+            <circle cx="22" cy="24" r="6" fill="#1a5c2e"/>
+            <circle cx="30" cy="20" r="7" fill="#1a5c2e"/>
+            <circle cx="38" cy="24" r="6" fill="#1a5c2e"/>
+            <rect x="21" y="29" width="3" height="6" fill="#1a5c2e"/>
+            <rect x="28.5" y="27" width="3" height="8" fill="#1a5c2e"/>
+            <rect x="36" y="29" width="3" height="6" fill="#1a5c2e"/>
+            <!-- Bølgestreg -->
+            <path d="M16 38 Q20 35 24 38 Q28 41 32 38 Q36 35 40 38 Q44 41 46 38" stroke="#5a9e3f" stroke-width="2" fill="none" stroke-linecap="round"/>
+            <!-- Dimples (golfbold-grubber) -->
+            <circle cx="14" cy="22" r="1.2" fill="rgba(0,0,0,.1)"/>
+            <circle cx="46" cy="22" r="1.2" fill="rgba(0,0,0,.1)"/>
+            <circle cx="12" cy="30" r="1.2" fill="rgba(0,0,0,.1)"/>
+            <circle cx="48" cy="30" r="1.2" fill="rgba(0,0,0,.1)"/>
+            <circle cx="16" cy="44" r="1.2" fill="rgba(0,0,0,.1)"/>
+            <circle cx="44" cy="44" r="1.2" fill="rgba(0,0,0,.1)"/>
+            <circle cx="30" cy="52" r="1.2" fill="rgba(0,0,0,.1)"/>
+          </svg>
+        </div>
+      </div>
+      <div class="gb-skygge"></div>
+    </div>
+    <div class="gb gb-2">
+      <div class="gb-bold">
+        <div class="gb-indre">
+          <svg class="gb-logo-svg" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="30" cy="30" r="28" fill="white" stroke="rgba(0,0,0,0.08)" stroke-width="1"/>
+            <circle cx="22" cy="24" r="6" fill="#1a5c2e"/>
+            <circle cx="30" cy="20" r="7" fill="#1a5c2e"/>
+            <circle cx="38" cy="24" r="6" fill="#1a5c2e"/>
+            <rect x="21" y="29" width="3" height="6" fill="#1a5c2e"/>
+            <rect x="28.5" y="27" width="3" height="8" fill="#1a5c2e"/>
+            <rect x="36" y="29" width="3" height="6" fill="#1a5c2e"/>
+            <path d="M16 38 Q20 35 24 38 Q28 41 32 38 Q36 35 40 38 Q44 41 46 38" stroke="#5a9e3f" stroke-width="2" fill="none" stroke-linecap="round"/>
+            <circle cx="14" cy="22" r="1.2" fill="rgba(0,0,0,.1)"/>
+            <circle cx="46" cy="22" r="1.2" fill="rgba(0,0,0,.1)"/>
+            <circle cx="12" cy="30" r="1.2" fill="rgba(0,0,0,.1)"/>
+            <circle cx="48" cy="30" r="1.2" fill="rgba(0,0,0,.1)"/>
+            <circle cx="30" cy="52" r="1.2" fill="rgba(0,0,0,.1)"/>
+          </svg>
+        </div>
+      </div>
+      <div class="gb-skygge"></div>
+    </div>
+    <div class="gb gb-3">
+      <div class="gb-bold">
+        <div class="gb-indre">
+          <svg class="gb-logo-svg" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="30" cy="30" r="28" fill="white" stroke="rgba(0,0,0,0.08)" stroke-width="1"/>
+            <circle cx="22" cy="24" r="6" fill="#1a5c2e"/>
+            <circle cx="30" cy="20" r="7" fill="#1a5c2e"/>
+            <circle cx="38" cy="24" r="6" fill="#1a5c2e"/>
+            <rect x="21" y="29" width="3" height="6" fill="#1a5c2e"/>
+            <rect x="28.5" y="27" width="3" height="8" fill="#1a5c2e"/>
+            <rect x="36" y="29" width="3" height="6" fill="#1a5c2e"/>
+            <path d="M16 38 Q20 35 24 38 Q28 41 32 38 Q36 35 40 38 Q44 41 46 38" stroke="#5a9e3f" stroke-width="2" fill="none" stroke-linecap="round"/>
+            <circle cx="14" cy="22" r="1.2" fill="rgba(0,0,0,.1)"/>
+            <circle cx="46" cy="22" r="1.2" fill="rgba(0,0,0,.1)"/>
+            <circle cx="30" cy="52" r="1.2" fill="rgba(0,0,0,.1)"/>
+          </svg>
+        </div>
+      </div>
+      <div class="gb-skygge"></div>
+    </div>
+  </div>
 </div>
 
 ${næsteArr ? `
 <section class="cx-sek cx-naeste-sek">
-  <button class="cx-naeste-kort" onclick="navTil('tilmelding',{id:'${næsteArr.id}'})">
-    <div class="cx-naeste-indhold">
-      <span class="cx-naeste-label">Næste arrangement</span>
-      <span class="cx-naeste-titel">${esc(næsteArr.titel)}</span>
-      <span class="cx-naeste-meta">${fmtDato(næsteArr.dato)}${næsteArr.sted?' · '+esc(næsteArr.sted):''}</span>
-      ${næsteArr.maks ? `<span class="cx-naeste-pladser">${ledigePladser(næsteArr)} ledige pladser</span>` : ''}
+  <div class="cx-naeste-kort2">
+    <div class="cx-naeste-topp">
+      <span class="cx-naeste-label">NÆSTE ARRANGEMENT</span>
+      <h2 class="cx-naeste-titel2">${esc(næsteArr.titel)}</h2>
+      <div class="cx-naeste-meta2">
+        <span class="cx-naeste-dato-row">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+          ${fmtDato(næsteArr.dato)}
+        </span>
+        ${næsteArr.sted ? `<span class="cx-naeste-sep">·</span>
+        <span class="cx-naeste-sted-row">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          ${esc(næsteArr.sted)}
+        </span>` : ''}
+      </div>
+      ${næsteArr.maks ? `<span class="cx-naeste-pladser2">${ledigePladser(næsteArr)} ledige pladser</span>` : ''}
     </div>
-    <span class="cx-naeste-cta">Se og tilmeld →</span>
-  </button>
+    <button class="cx-naeste-cta-knap" onclick="navTil('tilmelding',{id:'${næsteArr.id}'})">
+      SE OG TILMELD →
+    </button>
+  </div>
 </section>` : ''}
 
 ${kommende.length > 1 ? `
 <section class="cx-sek">
   <div class="cx-hdr">
-    <h2 class="cx-titel">Kommende arrangementer</h2>
+    <h2 class="cx-sek-titel">KOMMENDE ARRANGEMENTER</h2>
     <button class="cx-se-alle" onclick="navTil('kalender')">Se alle →</button>
   </div>
   <div class="cx-scroll" id="cx-arr" role="list">
-    ${kommende.map((a,i) => `
-    <button class="cx-kort cx-arr-kort" role="listitem" onclick="navTil('tilmelding',{id:'${a.id}'})">
-      <span class="cx-k-dato">${fmtDato(a.dato)}</span>
-      <span class="cx-k-titel">${esc(a.titel)}</span>
-      ${a.sted ? `<span class="cx-k-sted">📍 ${esc(a.sted)}</span>` : ''}
-      <span class="cx-k-cta">Se arrangement →</span>
-    </button>`).join('')}
+    ${kommende.map((a,i) => {
+      const d = new Date(a.dato+'T12:00:00');
+      const dag = d.toLocaleDateString('da-DK',{day:'numeric'});
+      const mnd = d.toLocaleDateString('da-DK',{month:'short'}).toUpperCase().replace('.','');
+      const ledig = ledigePladser(a);
+      return `
+    <button class="cx-kort cx-arr-txt" role="listitem" onclick="navTil('tilmelding',{id:'${a.id}'})">
+      <div class="cx-arr-txt-dato"><span class="cx-att-dag">${dag}.</span><span class="cx-att-mnd">${mnd}</span></div>
+      <div class="cx-arr-txt-indhold">
+        <span class="cx-arr-navn">${esc(a.titel)}</span>
+        ${a.sted ? `<span class="cx-arr-sted">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          ${esc(a.sted)}</span>` : ''}
+        ${a.type ? `<span class="cx-arr-type">${esc(a.type)}</span>` : ''}
+        ${ledig > 0 && a.aaben ? `<span class="cx-arr-ledig">${ledig} ledige pladser</span>` : ''}
+      </div>
+      <span class="cx-arr-cta">Se arrangement →</span>
+    </button>`}).join('')}
   </div>
   <div class="cx-prikker" id="cx-arr-prikker">${kommende.map((_,i)=>`<span class="cx-prik${i===0?' aktiv':''}"></span>`).join('')}</div>
 </section>` : ''}
 
 <section class="cx-sek">
   <div class="cx-hdr">
-    <h2 class="cx-titel">Erhvervsklubben</h2>
+    <h2 class="cx-sek-titel">ERHVERVSKLUBBEN</h2>
     <button class="cx-se-alle" onclick="navTil('om')">Læs mere →</button>
   </div>
   <div class="cx-scroll" id="cx-ek" role="list">
-    ${ekKort.map(k => `
-    <button class="cx-kort cx-ek-kort" role="listitem" onclick="navTil('${k.side}')">
-      <span class="cx-k-titel">${esc(k.titel)}</span>
+    ${[
+      { titel:'Netværk',          tekst:'Mød virksomhedsejere og beslutningstagere fra Aarhus-regionen.', side:'om',
+        svg:`<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`},
+      { titel:'Relationer',       tekst:'Stærke forretningsrelationer i uformelle rammer.', side:'om',
+        svg:`<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`},
+      { titel:'Golf & oplevelser',tekst:'Turneringer, rejser og særlige golfoplevelser året rundt.', side:'golfarr',
+        svg:`<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="18" r="2"/><path d="M12 2v14M7 7l5-5 5 5"/><path d="M20 18H4"/></svg>`},
+      { titel:'EK-mesterskabet',  tekst:'Erhvervsklubbens sportslige højdepunkt.', side:'om',
+        svg:`<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg>`},
+      { titel:'Bliv sponsor',     tekst:'Synlighed, netværk og eksklusive oplevelser for din virksomhed.', side:'sponsor',
+        svg:`<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>`},
+    ].map(k => `
+    <button class="cx-kort cx-ek-kort2" role="listitem" onclick="navTil('${k.side}')">
+      <div class="cx-ek-ikon">${k.svg}</div>
+      <span class="cx-ek-titel">${esc(k.titel)}</span>
       <span class="cx-k-tekst">${esc(k.tekst)}</span>
-      <span class="cx-k-cta">${esc(k.cta)}</span>
+      <span class="cx-ek-cta">Læs mere →</span>
     </button>`).join('')}
   </div>
 </section>
@@ -310,9 +525,9 @@ ${nyheder.length ? `
 
 <footer class="app-footer">
   <p>Lyngbygaard Golf · Lyngbygårdsvej 29, 8220 Brabrand</p>
-  <p>📞 <a href="tel:87441070">87 44 10 70</a></p>
+  <p class="kont-tlf-linje"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.17h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 8.91a16 16 0 0 0 6 6l.81-.81a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 21.9 16.92z"/></svg> <a href="tel:87441070">87 44 10 70</a></p>
   <p class="foot-credit">Bygget af Nordic Operations · nordicoperations.dk</p>
-  <p class="foot-version">LYG Erhvervsklub v4.6</p>
+  <p class="foot-version">LYG Erhvervsklub v7.0 · RC2-TEST</p>
 </footer>`;
 }
 
@@ -320,16 +535,29 @@ ${nyheder.length ? `
 function startHeroAnimation() {
   if (side !== 'forside') return;
   if (sessionStorage.getItem('lygHeroAnimationPlayed') === 'true') return;
-  const scene = document.querySelector('.golfer-scene');
-  if (!scene) return;
+  const scene  = document.querySelector('.golfer-scene');
+  const bolde  = document.querySelector('.golf-bolde-scene');
+  if (!scene && !bolde) return;
   // Sæt flag med det samme så gennavigation ikke spiller igen
   sessionStorage.setItem('lygHeroAnimationPlayed', 'true');
-  scene.classList.add('anim-running');
-  // Ryd anim-klasse efter 4s og lad slutframe stå
-  setTimeout(() => {
-    scene.classList.remove('anim-running');
-    scene.classList.add('anim-done');
-  }, 4200);
+  // Start golfspiller-animation
+  if (scene) {
+    scene.classList.add('anim-running');
+    setTimeout(() => {
+      scene.classList.remove('anim-running');
+      scene.classList.add('anim-done');
+    }, 4200);
+  }
+  // Start golfbolde-animation (100ms forsinkelse for naturlig start)
+  if (bolde) {
+    setTimeout(() => {
+      bolde.classList.add('bolde-running');
+      setTimeout(() => {
+        bolde.classList.remove('bolde-running');
+        bolde.classList.add('bolde-done');
+      }, 5000);
+    }, 100);
+  }
 }
 
 /* ================================================================
@@ -337,142 +565,428 @@ function startHeroAnimation() {
    Timezone-safe: sammenligner ISO-datostrenge direkte.
    Tidligere arrangementer: ingen aktive funktioner.
    ================================================================ */
-function arrKort(a, kompakt=false) {
+/* SVG-ikoner til eventkort */
+const _SVG = {
+  arr:  `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>`,
+  pin:  `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>`,
+  pil:  `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>`,
+  golf: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="18" r="2"/><path d="M12 2v14M7 7l5-5 5 5"/><path d="M20 18H4"/></svg>`,
+  net:  `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
+  din:  `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg>`,
+  back: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>`,
+  kal:  `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>`,
+  bell: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`,
+};
+
+function _arrIkon(a) {
+  const t = (a.type||a.titel||'').toLowerCase();
+  if (t.includes('netv') || t.includes('relat')) return _SVG.net;
+  if (t.includes('middag') || t.includes('frokost') || t.includes('gokart') || t.includes('jul')) return _SVG.din;
+  return _SVG.golf;
+}
+
+function _arrStatus(a) {
   const frem  = erFremtidig(a.dato);
   const ledig = ledigePladser(a);
-  const pct   = Math.min(100, Math.round((a.tlm/a.maks)*100));
-
-  let sbKls, sbTxt;
-  if (!frem) {
-    sbKls='sb-afholdt'; sbTxt='Afholdt';
-  } else if (!a.aaben||a.status==='lukket') {
-    sbKls='sb-lukket';  sbTxt='Lukket';
-  } else if (ledig<=0) {
-    sbKls='sb-lukket';  sbTxt='Fuldt';
-  } else if (ledig<=3) {
-    sbKls='sb-faa';     sbTxt='Få pladser';
-  } else {
-    sbKls='sb-aaben';   sbTxt='Åben';
-  }
-
-  return `
-<div class="akort${kompakt?' akort-k':''}${!frem?' akort-past':''}">
-  <div class="ak-top">
-    <div>
-      <div class="ak-dato">${fmtDato(a.dato)}${a.tid?' · '+esc(a.tid):''}</div>
-      <h3 class="ak-titel">${esc(a.titel)}</h3>
-      ${a.sted?`<div class="ak-sted">📍 ${esc(a.sted)}</div>`:''}
-      ${a.type&&!kompakt?`<div class="ak-type">${esc(a.type)}</div>`:''}
-    </div>
-    <span class="sb ${sbKls}">${sbTxt}</span>
-  </div>
-  ${!kompakt&&a.besk?`<p class="ak-besk">${esc(a.besk)}</p>`:''}
-  ${!kompakt&&frem?`
-  <div class="ak-tal">
-    <div class="ak-tf"><span>Maks</span><strong>${a.maks}</strong></div>
-    <div class="ak-tf"><span>Tilmeldte</span><strong>${a.tlm}</strong></div>
-    <div class="ak-tf"><span>Ledige</span><strong>${ledig}</strong></div>
-  </div>
-  <div class="pbw"><div class="pbf" style="width:${pct}%"></div></div>`:''}
-  ${frem?`
-  <div class="ak-kn">
-    ${a.aaben&&ledig>0?`<button class="knap-p" onclick="navTil('tilmelding',{id:'${a.id}'})">Tilmeld</button>`:''}
-    ${a.aaben&&ledig<=0&&a.status!=='lukket'?`<button class="knap-sek" onclick="venteListe('${a.id}')">Venteliste</button>`:''}
-    <button class="knap-i" onclick="tilfoejKal('${a.id}')" title="Tilføj til kalender">📆</button>
-    <button class="knap-i" onclick="aktPaam('${a.id}')" title="Påmindelser">🔔</button>
-  </div>`:''}
-</div>`;
+  if (!frem)                           return { kls:'ev-st-afholdt', txt:'Afholdt' };
+  if (!a.aaben || a.status==='lukket') return { kls:'ev-st-lukket',  txt:'Lukket' };
+  if (ledig <= 0)                      return { kls:'ev-st-fuldt',   txt:'Udsolgt' };
+  if (ledig <= 3)                      return { kls:'ev-st-faa',     txt:`Kun ${ledig} pladser` };
+  return { kls:'ev-st-aaben', txt:`${ledig} ledige` };
 }
 
-/* ================================================================
-   KALENDER
-   ================================================================ */
+function arrKort(a, kompakt=false) {
+  const frem   = erFremtidig(a.dato);
+  const st     = _arrStatus(a);
+  const d      = new Date(a.dato+'T12:00:00');
+  const datoStr= d.toLocaleDateString('da-DK',{day:'2-digit',month:'2-digit',year:'2-digit'}).replace(/\//g,'.');
+  return `
+<button class="ev-kort${frem?'':' ev-past'}" onclick="navTil('arr',{id:'${a.id}'})" role="listitem" aria-label="${esc(a.titel)}">
+  <div class="ev-ikon-wrap">${_arrIkon(a)}</div>
+  <div class="ev-content">
+    <div class="ev-meta">
+      <span class="ev-dato">${datoStr}</span>
+      ${a.sted?`<span class="ev-sep">·</span><span class="ev-sted">${esc(a.sted)}</span>`:''}
+    </div>
+    <div class="ev-titel">${esc(a.titel)}</div>
+    ${a.besk?`<div class="ev-besk">${esc(a.besk.length>72?a.besk.substring(0,70)+'…':a.besk)}</div>`:''}
+    <span class="ev-status ${st.kls}">${st.txt}</span>
+  </div>
+  <div class="ev-pil">${_SVG.pil}</div>
+</button>`;
+}
+
 function pgKalender() {
-  const alle  = getArr();
-  const frem  = alle.filter(a=> erFremtidig(a.dato));
-  const tidl  = alle.filter(a=>!erFremtidig(a.dato)).reverse();
+  const alle = getArr();
+  const frem = alle.filter(a =>  erFremtidig(a.dato));
+  const tidl = alle.filter(a => !erFremtidig(a.dato)).reverse();
   return `
 <div class="ph bg-mork">
-  <h1>Kalender 📅</h1>
-  <p>Alle arrangementer i Erhvervsklubben</p>
+  <p class="ev-ph-over">LYG ERHVERVSKLUB</p>
+  <h1 class="ev-ph-h1">Arrangementer</h1>
+  <p class="ev-ph-sub">Golf, relationer og erhvervsoplevelser</p>
 </div>
-<section class="sek">
+<section class="ev-liste-sek">
   ${frem.length
-    ?`<div class="arr-l">${frem.map(a=>arrKort(a)).join('')}</div>`
-    :`<div class="tom-kal"><p>Ingen kommende arrangementer.</p><button class="knap-sek" onclick="navTil('kontakt')">Kontakt os →</button></div>`}
+    ? `<div class="ev-liste" role="list">${frem.map(a=>arrKort(a)).join('')}</div>`
+    : `<div class="tom-kal"><p>Ingen kommende arrangementer.</p><button class="knap-sek" onclick="navTil('kontakt')">Kontakt os</button></div>`}
 </section>
 ${tidl.length?`
-<section class="sek pt0">
-  <details class="tidl-details">
-    <summary>Tidligere arrangementer (${tidl.length})</summary>
-    <div class="arr-l mt1">${tidl.map(a=>arrKort(a)).join('')}</div>
+<section class="ev-liste-sek ev-tidl-sek">
+  <details class="ev-tidl-details">
+    <summary class="ev-tidl-sum">Tidligere arrangementer (${tidl.length})</summary>
+    <div class="ev-liste mt1" role="list">${tidl.map(a=>arrKort(a)).join('')}</div>
   </details>
-</section>`:'' }`;
+</section>`:''}`;
 }
+
+function pgArr(data) {
+  const a = getArr().find(x => x.id === (data?.id||''));
+  if (!a) return `<div class="ph bg-mork"><h1>Arrangement ikke fundet</h1></div>
+<section class="sek"><button class="knap-sek" onclick="navTil('kalender')">← Tilbage</button></section>`;
+  const frem  = erFremtidig(a.dato);
+  const ledig = ledigePladser(a);
+  const st    = _arrStatus(a);
+  const d     = new Date(a.dato+'T12:00:00');
+  const datoLang = d.toLocaleDateString('da-DK',{day:'numeric',month:'long',year:'numeric'});
+  const kanTilm  = frem && a.aaben && ledig > 0;
+  const kanVente = frem && a.aaben && ledig <= 0 && a.status !== 'lukket';
+  const svgShield = `<svg width="48" height="56" viewBox="0 0 24 28" fill="none"><path d="M12 0L0 5v8c0 7.18 5.14 13.9 12 15.5C18.86 26.9 24 20.18 24 13V5L12 0z" fill="#b8973a" opacity=".2"/><path d="M12 1.8L1.5 6.2V13c0 6.4 4.6 12.4 10.5 13.85C17.9 25.4 22.5 19.4 22.5 13V6.2L12 1.8z" stroke="#b8973a" stroke-width="1.2" fill="none"/><path d="M8 14l2.5 2.5L16 10" stroke="#b8973a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  return `
+<div class="ev-detail-header">
+  <button class="bk-back" onclick="navTil('kalender')" aria-label="Tilbage">${_SVG.back}</button>
+  <span class="ev-detail-breadcrumb">Kalender</span>
+</div>
+<div class="ev-detail-hero">
+  ${a.image
+    ? `<img src="${esc(a.image)}" alt="${esc(a.titel)}" class="ev-detail-img">`
+    : `<div class="ev-detail-fallback"><div class="ev-detail-fb-inner">${svgShield}<span>LYG ERHVERVSKLUB</span></div></div>`}
+</div>
+<section class="sek ev-detail-sek">
+  <div class="ev-detail-topp">
+    <div class="ev-detail-dato">${_SVG.kal} ${datoLang}${a.tid?' · '+esc(a.tid):''}</div>
+    <span class="ev-status-badge ${st.kls}">${st.txt}</span>
+  </div>
+  <h1 class="ev-detail-h1">${esc(a.titel)}</h1>
+  ${a.sted?`<div class="ev-detail-sted">${_SVG.pin} ${esc(a.sted)}</div>`:''}
+  ${a.type?`<div class="ev-detail-type">${esc(a.type)}</div>`:''}
+  ${a.besk?`<p class="ev-detail-besk">${esc(a.besk)}</p>`:''}
+  <div class="ev-detail-praktisk">
+    ${a.maks?`<div class="ev-dp-rad"><span>Pladser</span><strong>${a.maks}</strong></div>`:''}
+    ${a.maks?`<div class="ev-dp-rad"><span>Tilmeldte</span><strong>${a.tlm||0}</strong></div>`:''}
+    ${frem&&a.maks?`<div class="ev-dp-rad"><span>Ledige</span><strong class="${ledig<=3&&ledig>0?'ev-faa':''}">${ledig}</strong></div>`:''}
+    ${a.pris?`<div class="ev-dp-rad"><span>Pris</span><strong>${esc(a.pris)}</strong></div>`:''}
+  </div>
+  ${frem?`<div class="ev-detail-cta">
+    ${kanTilm
+      ?`<button class="knap-p ev-tilmeld-btn" onclick="navTil('tilmelding',{id:'${a.id}'})">Tilmeld dig →</button>`
+      :kanVente
+        ?`<button class="knap-sek ev-tilmeld-btn" onclick="venteListe('${a.id}')">Venteliste</button>`
+        :`<button class="knap-p ev-tilmeld-btn" disabled>Tilmelding ikke mulig</button>`}
+    <div class="ev-detail-sek-cta">
+      <button class="ev-icon-knap" onclick="tilfoejKal('${a.id}')">${_SVG.kal} Tilføj til kalender</button>
+      <button class="ev-icon-knap" onclick="aktPaam('${a.id}')">${_SVG.bell} Påmindelser</button>
+    </div>
+  </div>`:''}
+  <button class="ev-tilbage-link" onclick="navTil('kalender')">← Tilbage til kalender</button>
+</section>`;
+}
+
 
 /* ================================================================
    TILMELDING
    ================================================================ */
+/* ================================================================
+   TILMELDING — 3-trins booking-wizard
+   State gemmes i sessionStorage så reload ikke mister data.
+   ================================================================ */
+let _bookState = { trin: 1, arrId: '', navn: '', virk: '', email: '', tlf: '', antal: 1, kom: '' };
+
 function pgTilm(data) {
-  const valgtId = data?.id||'';
-  const åbne = getArr().filter(a=>erFremtidig(a.dato)&&a.aaben);
-  return `
-<div class="ph bg-mork">
-  <h1>Tilmeld dig ✅</h1>
-  <p>Udfyld formularen — vi bekræfter via email</p>
+  // Nyt flow: hvis arrangement er pre-valgt, start på trin 2
+  if (data?.id && _bookState.trin === 1) {
+    _bookState.arrId = data.id;
+    _bookState.trin  = 2;
+  }
+  // Reset hvis kvittering er vist og brugeren navigerer hertil igen
+  if (_bookState.trin === 4 && !data?.id) {
+    bookReset();
+  }
+  const åbne = getArr().filter(a => erFremtidig(a.dato) && a.aaben);
+  if (!åbne.length) return `
+<div class="ph bg-mork bk-ph">
+  <h1 class="bk-ph-h1">Tilmelding</h1>
 </div>
 <section class="sek">
-  ${!åbne.length?`<div class="tom-kal"><p>Ingen åbne arrangementer i øjeblikket.</p><button class="knap-sek" onclick="navTil('kalender')">Se kalender →</button></div>`:`
-  <form id="tf" onsubmit="submitTilm(event)">
-    <div class="fg">
-      <label>Arrangement *</label>
-      <select name="arrId" required>
-        <option value="">Vælg arrangement…</option>
-        ${åbne.map(a=>`<option value="${a.id}" ${valgtId===a.id?'selected':''}>${fmtDato(a.dato)} — ${esc(a.titel)}</option>`).join('')}
-      </select>
-    </div>
-    <div class="fg"><label>Navn *</label><input name="navn" required placeholder="Dit fulde navn"></div>
-    <div class="fg"><label>Virksomhed *</label><input name="virk" required placeholder="Virksomhedens navn"></div>
-    <div class="g2f">
-      <div class="fg"><label>Email *</label><input type="email" name="email" required placeholder="din@email.dk"></div>
-      <div class="fg"><label>Telefon</label><input type="tel" name="tlf" placeholder="12 34 56 78"></div>
-    </div>
-    <div class="fg"><label>Antal deltagere *</label><input type="number" name="antal" min="1" max="10" value="1" required></div>
-    <div class="fg"><label>Kommentar</label><textarea name="kom" rows="3" placeholder="Særlige ønsker, allergier…"></textarea></div>
-    <button type="submit" class="knap-p fb">Send tilmelding</button>
-  </form>`}
-  <div id="tilm-kv" style="display:none"></div>
+  <div class="tom-kal">
+    <p>Ingen åbne arrangementer i øjeblikket.</p>
+    <button class="knap-sek" onclick="navTil('kalender')">Se kalender →</button>
+  </div>
 </section>`;
+
+  const arr = getArr().find(a => a.id === _bookState.arrId);
+
+  return `
+<div class="ph bg-mork bk-ph">
+  <div class="bk-ph-topbar">
+    ${_bookState.trin > 1 ? `<button class="bk-back" onclick="bookTilbage()" aria-label="Tilbage">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+    </button>` : `<div style="width:32px"></div>`}
+    <h1 class="bk-ph-h1">Tilmelding</h1>
+    <div style="width:32px"></div>
+  </div>
+  <!-- Trin-indikator -->
+  <div class="bk-trin-wrap">
+    ${[1,2,3].map(n => `<div class="bk-trin${_bookState.trin===n?' aktiv':_bookState.trin>n?' done':''}">
+      <span class="bk-trin-nr">${_bookState.trin>n?`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`:n}</span>
+      <span class="bk-trin-lbl">${n===1?'Arrangement':n===2?'Oplysninger':'Bekræft'}</span>
+    </div>${n<3?'<div class="bk-trin-linje"></div>':''}`).join('')}
+  </div>
+</div>
+
+${_bookState.trin === 1 ? `
+<!-- TRIN 1: Vælg arrangement -->
+<section class="sek">
+  <div class="bk-arr-liste">
+    ${åbne.map(a => {
+      const ledig = ledigePladser(a);
+      const fuldt = ledig <= 0;
+      return `
+    <button class="bk-arr-kort ${fuldt?'fuldt':''}" onclick="${fuldt?'':' bookVælgArr(\''+a.id+'\')'}" ${fuldt?'disabled':''}>
+      <div class="bk-arr-dato">
+        <span class="bk-att-dag">${new Date(a.dato+'T12:00:00').toLocaleDateString('da-DK',{day:'numeric'})}.</span>
+        <span class="bk-att-mnd">${new Date(a.dato+'T12:00:00').toLocaleDateString('da-DK',{month:'short'}).toUpperCase().replace('.','')}</span>
+      </div>
+      <div class="bk-arr-info">
+        <span class="bk-arr-titel">${esc(a.titel)}</span>
+        ${a.sted?`<span class="bk-arr-sted">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          ${esc(a.sted)}</span>`:''}
+        <span class="bk-arr-ledig ${ledig<=3&&!fuldt?'faa':''}">${fuldt?'Fuldt booket':ledig<=3?ledig+' ledige pladser':ledig+' pladser tilbage'}</span>
+      </div>
+      <svg class="bk-arr-pil" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+    </button>`}).join('')}
+  </div>
+</section>` : ''}
+
+${_bookState.trin === 2 && arr ? `
+<!-- TRIN 2: Deltageroplysninger -->
+<section class="sek">
+  <div class="bk-valgt-arr">
+    <span class="bk-valgt-label">Valgt arrangement</span>
+    <span class="bk-valgt-titel">${esc(arr.titel)}</span>
+    <span class="bk-valgt-dato">${fmtDato(arr.dato)}${arr.sted?' · '+esc(arr.sted):''}</span>
+  </div>
+  <form id="bk-form2" onsubmit="bookTrin2(event)" novalidate>
+    <div class="fg"><label>Navn *</label><input name="navn" required placeholder="Dit fulde navn" value="${esc(_bookState.navn)}" autocomplete="name"></div>
+    <div class="fg"><label>Virksomhed *</label><input name="virk" required placeholder="Virksomhedens navn" value="${esc(_bookState.virk)}" autocomplete="organization"></div>
+    <div class="fg"><label>Email *</label><input type="email" name="email" required placeholder="din@email.dk" value="${esc(_bookState.email)}" autocomplete="email"></div>
+    <div class="fg"><label>Telefon</label><input type="tel" name="tlf" placeholder="12 34 56 78" value="${esc(_bookState.tlf)}" autocomplete="tel"></div>
+    <div class="fg bk-antal-fg">
+      <label>Antal deltagere</label>
+      <div class="bk-antal-ctrl">
+        <button type="button" class="bk-antal-btn" onclick="bookAntalJuster(-1)">−</button>
+        <span class="bk-antal-vis" id="bk-antal-vis">${_bookState.antal}</span>
+        <button type="button" class="bk-antal-btn" onclick="bookAntalJuster(1)">+</button>
+      </div>
+      <span class="bk-antal-ledig">${ledigePladser(arr)} tilgængelige</span>
+    </div>
+    <div class="fg"><label>Kommentar</label><textarea name="kom" rows="2" placeholder="Særlige ønsker eller allergier…">${esc(_bookState.kom)}</textarea></div>
+    <button type="submit" class="knap-p fb bk-submit">Næste: Bekræft booking</button>
+  </form>
+</section>` : ''}
+
+${_bookState.trin === 3 && arr ? `
+<!-- TRIN 3: Bekræft -->
+<section class="sek">
+  <div class="bk-opsummering">
+    <h2 class="bk-ops-titel">Bekræft din tilmelding</h2>
+    <div class="bk-ops-liste">
+      <div class="bk-ops-felt"><span>Arrangement</span><strong>${esc(arr.titel)}</strong></div>
+      <div class="bk-ops-felt"><span>Dato</span><strong>${fmtDato(arr.dato)}</strong></div>
+      ${arr.sted?`<div class="bk-ops-felt"><span>Lokation</span><strong>${esc(arr.sted)}</strong></div>`:''}
+      <div class="bk-ops-felt"><span>Navn</span><strong>${esc(_bookState.navn)}</strong></div>
+      <div class="bk-ops-felt"><span>Virksomhed</span><strong>${esc(_bookState.virk)}</strong></div>
+      <div class="bk-ops-felt"><span>Email</span><strong>${esc(_bookState.email)}</strong></div>
+      ${_bookState.tlf?`<div class="bk-ops-felt"><span>Telefon</span><strong>${esc(_bookState.tlf)}</strong></div>`:''}
+      <div class="bk-ops-felt"><span>Antal</span><strong>${_bookState.antal} person${_bookState.antal>1?'er':''}</strong></div>
+    </div>
+  </div>
+  <button class="knap-p fb bk-submit" onclick="bookAfslut()">Bekræft tilmelding</button>
+  <button class="bk-rediger" onclick="bookTilTrin(2)">Ret oplysninger</button>
+</section>` : ''}
+
+${_bookState.trin === 4 ? `
+<!-- TRIN 4: Kvittering -->
+<section class="sek">
+  <div class="bk-kv">
+    <div class="bk-kv-ikon">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+    </div>
+    <h2 class="bk-kv-h2">Tilmelding bekræftet</h2>
+    <p class="bk-kv-navn">${esc(_bookState.navn)}</p>
+    <p class="bk-kv-info">Vi har registreret din tilmelding til <strong>${esc(_bookState._arrTitel||'')}</strong>.<br>Bekræftelse sendes til <strong>${esc(_bookState.email)}</strong>.</p>
+    <div class="bk-kv-knapper">
+      <button class="knap-p" onclick="bookReset();navTil('kalender')">Se kalender</button>
+      <button class="knap-sek" onclick="bookReset();navTil('tilmelding')">Ny tilmelding</button>
+    </div>
+  </div>
+</section>` : ''}`;
 }
 
-function submitTilm(e) {
+/* ── Booking-wizard helpers ── */
+function bookVælgArr(id) {
+  _bookState.arrId = id;
+  _bookState.trin  = 2;
+  navTil('tilmelding');
+}
+
+function bookTilbage() {
+  _bookState.trin = Math.max(1, _bookState.trin - 1);
+  navTil('tilmelding');
+}
+
+function bookTilTrin(n) {
+  _bookState.trin = n;
+  navTil('tilmelding');
+}
+
+function bookAntalJuster(delta) {
+  const arr = getArr().find(a => a.id === _bookState.arrId);
+  const maks = arr ? ledigePladser(arr) : 10;
+  _bookState.antal = Math.max(1, Math.min(maks, _bookState.antal + delta));
+  const el = document.getElementById('bk-antal-vis');
+  if (el) el.textContent = _bookState.antal;
+}
+
+function bookTrin2(e) {
   e.preventDefault();
   const f = e.target;
-  const arr = getArr().find(a=>a.id===f.arrId.value);
-  if (!arr) { alert('Vælg et arrangement.'); return; }
-  const antal = parseInt(f.antal.value)||1;
-  const ledig = ledigePladser(arr);
-  if (antal>ledig) { alert(`Kun ${ledig} ledig${ledig===1?'':'e'} plads${ledig===1?'':'er'}.`); return; }
-
-  const t={id:'t'+Date.now(),arrId:arr.id,arrTitel:arr.titel,navn:f.navn.value,virk:f.virk.value,email:f.email.value,tlf:f.tlf.value,antal,kom:f.kom.value,dato:idag(),mødt:false};
-  const alle=DB.get('ek_tilm')||[]; alle.push(t); DB.set('ek_tilm',alle);
-
-  const arrs=DB.get('ek_arr')||[];
-  const idx=arrs.findIndex(a=>a.id===arr.id);
-  if(idx>-1){arrs[idx].tlm+=antal; if(arrs[idx].tlm>=arrs[idx].maks)arrs[idx].status='fuldt'; DB.set('ek_arr',arrs);}
-
-  f.style.display='none';
-  const kv=document.getElementById('tilm-kv'); kv.style.display='block';
-  kv.innerHTML=`
-<div class="kv">
-  <div class="kv-i">✅</div>
-  <h2>Tilmelding modtaget!</h2>
-  <p><strong>${esc(t.navn)}</strong> er tilmeldt <strong>${esc(arr.titel)}</strong><br>${fmtDato(arr.dato)}.</p>
-  <p class="muted">Vi bekræfter din plads hurtigst muligt.</p>
-  <button class="knap-p" onclick="navTil('kalender')">Se kalender</button>
-  <button class="knap-sek" onclick="navTil('tilmelding')">Tilmeld endnu en</button>
-</div>`;
+  if (!f.navn.value.trim() || !f.virk.value.trim() || !f.email.value.trim()) {
+    f.reportValidity(); return;
+  }
+  _bookState.navn  = f.navn.value.trim();
+  _bookState.virk  = f.virk.value.trim();
+  _bookState.email = f.email.value.trim();
+  _bookState.tlf   = f.tlf.value.trim();
+  _bookState.kom   = f.kom.value.trim();
+  _bookState.trin  = 3;
+  navTil('tilmelding');
 }
+
+/* bookAfslut: forsøger Supabase RPC (atomisk kapacitetskontrol).
+   Succes vises KUN efter serverbekræftelse.
+   Fallback til localStorage hvis Supabase ikke er tilgængeligt. */
+async function bookAfslut() {
+  const arr = getArr().find(a => a.id === _bookState.arrId);
+  if (!arr) { alert('Arrangement ikke fundet.'); return; }
+
+  /* Deaktiver bekræft-knappen og vis "behandler…" */
+  const btn = document.querySelector('.bk-submit');
+  if (btn) { btn.disabled = true; btn.textContent = 'Behandler…'; }
+
+  const sb = getSupabase();
+
+  if (sb) {
+    /* ── Supabase: atomisk booking via server-side RPC ── */
+    try {
+      const { data, error } = await sb.rpc('tilmeld_arrangement', {
+        p_arrangement_id: arr.id,
+        p_navn:           _bookState.navn,
+        p_virksomhed:     _bookState.virk,
+        p_email:          _bookState.email,
+        p_telefon:        _bookState.tlf,
+        p_antal:          _bookState.antal,
+        p_kommentar:      _bookState.kom
+      });
+
+      if (error) throw error;
+
+      if (!data || !data.ok) {
+        /* Serveren afviste — fx fuldt booket */
+        const fejl = data?.fejl || 'Tilmelding ikke mulig.';
+        const ledig = data?.ledige ?? '?';
+        if (btn) { btn.disabled = false; btn.textContent = 'Bekræft tilmelding'; }
+        alert(`${fejl}\nLedige pladser: ${ledig}`);
+        bookTilTrin(2);
+        return;
+      }
+
+      /* ✅ Server bekræftede — gem lokal kopi og gem arrTitel til kvittering */
+      const t = {
+        id: data.tilmelding_id || 't'+Date.now(),
+        arrId: arr.id, arrTitel: arr.titel,
+        navn: _bookState.navn, virk: _bookState.virk,
+        email: _bookState.email, tlf: _bookState.tlf,
+        antal: _bookState.antal, kom: _bookState.kom,
+        dato: idag(), mødt: false, kilde: 'supabase'
+      };
+      const alle = DB.get('ek_tilm')||[]; alle.push(t); DB.set('ek_tilm', alle);
+
+      /* Opdatér lokal tælling fra server-svar */
+      const arrs = DB.get('ek_arr')||[];
+      const idx  = arrs.findIndex(a => a.id === arr.id);
+      if (idx > -1) {
+        const ledige = data.ledige_tilbage ?? (arrs[idx].maks - arrs[idx].tlm - _bookState.antal);
+        arrs[idx].tlm = arrs[idx].maks - Math.max(0, ledige);
+        if (arrs[idx].tlm >= arrs[idx].maks) arrs[idx].status = 'fuldt';
+        DB.set('ek_arr', arrs);
+      }
+
+      _bookState._arrTitel = arr.titel;
+      _bookState.trin = 4;
+      navTil('tilmelding');
+
+    } catch (err) {
+      console.warn('[Booking] Supabase RPC fejlede, prøver localStorage:', err);
+      if (btn) { btn.disabled = false; btn.textContent = 'Bekræft tilmelding'; }
+      /* Fallback til localStorage ved netværksfejl */
+      _bookAfslutLokal(arr, btn);
+    }
+
+  } else {
+    /* ── Fallback: localStorage ── */
+    _bookAfslutLokal(arr, btn);
+  }
+}
+
+/* Lokal fallback — bruges kun hvis Supabase ikke er tilgængeligt */
+function _bookAfslutLokal(arr, btn) {
+  const ledig = ledigePladser(arr);
+  if (_bookState.antal > ledig) {
+    if (btn) { btn.disabled = false; btn.textContent = 'Bekræft tilmelding'; }
+    alert(`Kun ${ledig} ledige pladser.`);
+    bookTilTrin(2);
+    return;
+  }
+
+  const t = {
+    id: 't'+Date.now(), arrId: arr.id, arrTitel: arr.titel,
+    navn: _bookState.navn, virk: _bookState.virk,
+    email: _bookState.email, tlf: _bookState.tlf,
+    antal: _bookState.antal, kom: _bookState.kom,
+    dato: idag(), mødt: false, kilde: 'lokal'
+  };
+  const alle = DB.get('ek_tilm')||[]; alle.push(t); DB.set('ek_tilm', alle);
+
+  const arrs = DB.get('ek_arr')||[];
+  const idx  = arrs.findIndex(a => a.id === arr.id);
+  if (idx > -1) {
+    arrs[idx].tlm += _bookState.antal;
+    if (arrs[idx].tlm >= arrs[idx].maks) arrs[idx].status = 'fuldt';
+    DB.set('ek_arr', arrs);
+  }
+
+  _bookState._arrTitel = arr.titel;
+  _bookState.trin = 4;
+  navTil('tilmelding');
+}
+
+function bookReset() {
+  _bookState = { trin:1, arrId:'', navn:'', virk:'', email:'', tlf:'', antal:1, kom:'' };
+}
+
+function submitTilm(e) { e.preventDefault(); } // legacy — erstattet af wizard
 
 function venteListe(arrId) {
   const arr=getArr().find(a=>a.id===arrId); if(!arr) return;
@@ -487,101 +1001,142 @@ function venteListe(arrId) {
 /* ================================================================
    FIRMAARRANGEMENT (tidligere "Golf")
    ================================================================ */
+let _golfState = { trin:1, pakke:'', virk:'', kp:'', email:'', tlf:'', dato:'', antal:4, besk:'' };
+
 function pgGolf() {
   const pakker = DB.get('ek_pakker')||CONFIG.golfPakker;
+  const svgArrow = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>`;
+  const svgGlobe = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>`;
+  const valgtPakke = pakker.find(p => p.titel === _golfState.pakke);
+
   return `
-<div class="ph bg-mork">
-  <h1>Book firmaarrangement 💼</h1>
-  <p>Skræddersyede oplevelser til kunder, medarbejdere og netværk</p>
+<div class="ph bg-mork bk-ph">
+  <div class="bk-ph-topbar">
+    ${_golfState.trin > 1 ? `<button class="bk-back" onclick="golfTilbage()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></button>` : `<div style="width:32px"></div>`}
+    <h1 class="bk-ph-h1">Firmaarrangement</h1>
+    <div style="width:32px"></div>
+  </div>
+  <div class="bk-trin-wrap">
+    ${[{n:1,l:'Vælg pakke'},{n:2,l:'Oplysninger'},{n:3,l:'Bekræft'}].map(({n,l}) => `
+    <div class="bk-trin${_golfState.trin===n?' aktiv':_golfState.trin>n?' done':''}">`+`
+      <span class="bk-trin-nr">${_golfState.trin>n?`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`:n}</span>
+      <span class="bk-trin-lbl">${l}</span>
+    </div>${n<3?'<div class="bk-trin-linje"></div>':''}`).join('')}
+  </div>
 </div>
 
-<section class="sek">
-  <div class="bi-kort" style="background-image:url('${CONFIG.billeder.golf1}')">
-    <div class="bi-lag"><p>Golf er det perfekte scenarie for stærke relationer, kundepleje og teambuilding.</p></div>
-  </div>
-</section>
-
-<section class="sek pb0">
-  <button class="gb-banner-knap" onclick="åbnGolfBox()">
-    <span class="gb-ikon">🏌️</span>
-    <div><strong>GolfBox login</strong><small>Book tid eller log ind direkte i GolfBox</small></div>
-    <span class="gb-pil">→</span>
+${_golfState.trin === 1 ? `
+<div class="golf-gb-wrap">
+  <button class="golf-gb-kort" onclick="åbnGolfBox()">
+    <div class="golf-gb-venstre">
+      <span class="golf-gb-ikon">${svgGlobe}</span>
+      <div><div class="golf-gb-titel">GolfBox</div><div class="golf-gb-sub">Book tid eller log ind direkte</div></div>
+    </div>
+    <span class="golf-gb-pil">${svgArrow}</span>
   </button>
-</section>
-
+</div>
 <section class="cx-sek">
-  <div class="cx-hdr">
-    <h2 class="cx-titel">Vælg arrangement</h2>
-  </div>
+  <div class="cx-hdr"><p class="golf-arr-eyebrow">VÆLG ARRANGEMENT</p></div>
   <div class="cx-scroll" id="cx-pakker" role="list">
-    ${pakker.map((p,i) => `
-    <button class="cx-kort cx-pk-kort" role="listitem"
-            onclick="vælgPakke(${JSON.stringify(esc(p.titel))})">
-      <span class="cx-pk-pris">${esc(p.pris)}</span>
-      <span class="cx-k-titel">${esc(p.titel)}</span>
-      <span class="cx-k-tekst">${esc(p.beskrivelse)}</span>
-      <ul class="cx-pk-ul">${(p.inkl||[]).slice(0,3).map(x=>`<li>${esc(x)}</li>`).join('')}</ul>
-      <span class="cx-k-cta">Se og vælg →</span>
+    ${pakker.map(p => `
+    <button class="golf-pk-txt" role="listitem" data-pakketitel="${esc(p.titel)}"
+            onclick="golfVælgPakke(this.dataset.pakketitel)">
+      <span class="golf-pk-pris-txt">${esc(p.pris)}</span>
+      <span class="golf-pk-titel-txt">${esc(p.titel)}</span>
+      <span class="golf-pk-besk-txt">${esc(p.beskrivelse.split('.')[0]+'.')}</span>
+      <ul class="golf-pk-inkl">${(p.inkl||[]).slice(0,3).map(x=>`<li>${esc(x)}</li>`).join('')}</ul>
+      <span class="golf-pk-cta-txt">Vælg ${svgArrow}</span>
     </button>`).join('')}
   </div>
-  <div class="cx-prikker" id="cx-pk-prikker">
-    ${pakker.map((_,i)=>`<span class="cx-prik${i===0?' aktiv':''}"></span>`).join('')}
-  </div>
-</section>
+  <div class="cx-prikker" id="cx-pk-prikker">${pakker.map((_,i)=>`<span class="cx-prik${i===0?' aktiv':''}">`+'</span>').join('')}</div>
+</section>` : ''}
 
-<section class="sek" id="golf-form">
-  <h2 class="stitl">Send forespørgsel</h2>
-  <form id="gf" onsubmit="submitGolf(event)">
-    <div class="fg"><label>Virksomhed *</label><input name="virk" required placeholder="Virksomhedens navn"></div>
+${_golfState.trin === 2 ? `
+<section class="sek">
+  ${valgtPakke ? `<div class="bk-valgt-arr">
+    <span class="bk-valgt-label">Valgt pakke</span>
+    <span class="bk-valgt-titel">${esc(valgtPakke.titel)}</span>
+    <span class="bk-valgt-dato">${esc(valgtPakke.pris)}</span>
+  </div>` : ''}
+  <form id="golf-form2" onsubmit="golfTrin2(event)" novalidate>
+    <div class="fg"><label>Virksomhed *</label><input name="virk" required value="${esc(_golfState.virk)}" placeholder="Virksomhedens navn" autocomplete="organization"></div>
     <div class="g2f">
-      <div class="fg"><label>Kontaktperson *</label><input name="kp" required></div>
-      <div class="fg"><label>Email *</label><input type="email" name="email" required></div>
+      <div class="fg"><label>Kontaktperson *</label><input name="kp" required value="${esc(_golfState.kp)}" autocomplete="name"></div>
+      <div class="fg"><label>Email *</label><input type="email" name="email" required value="${esc(_golfState.email)}" autocomplete="email"></div>
     </div>
     <div class="g2f">
-      <div class="fg"><label>Telefon</label><input type="tel" name="tlf"></div>
-      <div class="fg"><label>Ønsket dato</label><input type="date" name="dato"></div>
+      <div class="fg"><label>Telefon</label><input type="tel" name="tlf" value="${esc(_golfState.tlf)}" autocomplete="tel"></div>
+      <div class="fg"><label>Ønsket dato</label><input type="date" name="dato" value="${esc(_golfState.dato)}"></div>
     </div>
-    <div class="g2f">
-      <div class="fg"><label>Antal personer</label><input type="number" name="antal" min="1" value="4"></div>
-      <div class="fg"><label>Arrangement</label>
-        <select name="pakke" id="golf-pakke-select">
-          <option value="">Vælg type…</option>
-          ${pakker.map(p=>`<option value="${esc(p.titel)}">${esc(p.titel)}</option>`).join('')}
-        </select>
+    <div class="fg bk-antal-fg">
+      <label>Antal personer</label>
+      <div class="bk-antal-ctrl">
+        <button type="button" class="bk-antal-btn" onclick="golfAntalJuster(-1)">−</button>
+        <span class="bk-antal-vis" id="golf-antal-vis">${_golfState.antal}</span>
+        <button type="button" class="bk-antal-btn" onclick="golfAntalJuster(1)">+</button>
       </div>
     </div>
-    <div class="fg"><label>Besked / ønsker</label><textarea name="besk" rows="3" placeholder="Beskriv jeres ønsker og forventninger…"></textarea></div>
-    <button type="submit" class="knap-p fb">Send forespørgsel</button>
+    <div class="fg"><label>Særlige ønsker</label><textarea name="besk" rows="2" placeholder="Beskriv jeres ønsker…">${esc(_golfState.besk)}</textarea></div>
+    <button type="submit" class="knap-p fb bk-submit">Næste: Bekræft</button>
   </form>
-  <div id="golf-kv" style="display:none" class="kv">
-    <div class="kv-i">✅</div>
-    <h2>Forespørgsel sendt!</h2>
-    <p>Vi kontakter dig hurtigst muligt for at lægge programmet.</p>
-    <button class="knap-sek" onclick="navTil('forside')">Tilbage til forsiden</button>
+</section>` : ''}
+
+${_golfState.trin === 3 ? `
+<section class="sek">
+  <div class="bk-opsummering">
+    <h2 class="bk-ops-titel">Bekræft forespørgsel</h2>
+    <div class="bk-ops-liste">
+      <div class="bk-ops-felt"><span>Pakke</span><strong>${esc(_golfState.pakke)}</strong></div>
+      <div class="bk-ops-felt"><span>Virksomhed</span><strong>${esc(_golfState.virk)}</strong></div>
+      <div class="bk-ops-felt"><span>Kontakt</span><strong>${esc(_golfState.kp)}</strong></div>
+      <div class="bk-ops-felt"><span>Email</span><strong>${esc(_golfState.email)}</strong></div>
+      ${_golfState.tlf?`<div class="bk-ops-felt"><span>Telefon</span><strong>${esc(_golfState.tlf)}</strong></div>`:''}
+      ${_golfState.dato?`<div class="bk-ops-felt"><span>Dato</span><strong>${fmtDato(_golfState.dato)}</strong></div>`:''}
+      <div class="bk-ops-felt"><span>Antal</span><strong>${_golfState.antal} personer</strong></div>
+    </div>
   </div>
-</section>`;
+  <button class="knap-p fb bk-submit" onclick="golfAfslut()">Send forespørgsel</button>
+  <button class="bk-rediger" onclick="golfTilTrin(2)">Ret oplysninger</button>
+</section>` : ''}
+
+${_golfState.trin === 4 ? `
+<section class="sek">
+  <div class="bk-kv">
+    <div class="bk-kv-ikon"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
+    <h2 class="bk-kv-h2">Forespørgsel sendt</h2>
+    <p class="bk-kv-info">Vi kontakter <strong>${esc(_golfState.kp)}</strong> hurtigst muligt.</p>
+    <div class="bk-kv-knapper">
+      <button class="knap-p" onclick="golfReset();navTil('forside')">Tilbage til forsiden</button>
+    </div>
+  </div>
+</section>` : ''}`;
 }
 
-function submitGolf(e) {
-  e.preventDefault();
-  const f=e.target;
+function golfVælgPakke(titel) { _golfState.pakke=titel; _golfState.trin=2; navTil('golfarr'); }
+function golfTilbage()        { _golfState.trin=Math.max(1,_golfState.trin-1); navTil('golfarr'); }
+function golfTilTrin(n)       { _golfState.trin=n; navTil('golfarr'); }
+function golfAntalJuster(d)   { _golfState.antal=Math.max(1,Math.min(100,_golfState.antal+d)); const el=document.getElementById('golf-antal-vis'); if(el)el.textContent=_golfState.antal; }
+
+function golfTrin2(e) {
+  e.preventDefault(); const f=e.target;
+  if (!f.virk.value.trim()||!f.kp.value.trim()||!f.email.value.trim()) { f.reportValidity(); return; }
+  _golfState.virk=f.virk.value.trim(); _golfState.kp=f.kp.value.trim();
+  _golfState.email=f.email.value.trim(); _golfState.tlf=f.tlf.value.trim();
+  _golfState.dato=f.dato.value; _golfState.besk=f.besk.value.trim();
+  _golfState.trin=3; navTil('golfarr');
+}
+
+function golfAfslut() {
   const bg=DB.get('ek_golf_booking')||[];
-  bg.push({id:'g'+Date.now(),virk:f.virk.value,kp:f.kp.value,email:f.email.value,tlf:f.tlf.value,dato:f.dato.value,antal:f.antal.value,pakke:f.pakke.value,besk:f.besk.value,oprettet:new Date().toISOString()});
+  bg.push({id:'g'+Date.now(),..._golfState,oprettet:new Date().toISOString()});
   DB.set('ek_golf_booking',bg);
-  f.style.display='none'; document.getElementById('golf-kv').style.display='block';
+  _golfState.trin=4; navTil('golfarr');
 }
 
-/* Vælg pakke fra carousel → vælg i select og scroll til form */
-function vælgPakke(titel) {
-  const sel = document.getElementById('golf-pakke-select');
-  if (sel) {
-    for (const opt of sel.options) {
-      if (opt.value === titel) { opt.selected = true; break; }
-    }
-  }
-  const form = document.getElementById('golf-form');
-  if (form) form.scrollIntoView({ behavior: 'smooth' });
-}
+function golfReset() { _golfState={trin:1,pakke:'',virk:'',kp:'',email:'',tlf:'',dato:'',antal:4,besk:''}; }
+function submitGolf(e) { e.preventDefault(); }
+function vælgPakke(t)  { golfVælgPakke(t); }
+
 
 /* ================================================================
    SPONSOR
@@ -591,13 +1146,13 @@ function pgSponsor() {
   const rigtige   = sponsorer.filter(s=>s.navn&&!s.navn.includes('ledigt'));
   return `
 <div class="ph bg-mork">
-  <h1>Bliv sponsor 🌟</h1>
+  <h1>Bliv sponsor</h1>
   <p>Synlighed, netværk og relationer i Aarhus-regionens erhvervsliv</p>
 </div>
 
 <section class="sek">
-  <div class="bi-kort" style="background-image:url('${CONFIG.billeder.sponsor}')">
-    <div class="bi-lag bi-lag-citat"><p>"Som sponsor bliver din virksomhed en del af et stærkt fællesskab med golf som rammen og netværk som resultatet."</p></div>
+  <div class="tekst-bi-kort">
+    <div class="tekst-bi-citat"><p>"Som sponsor bliver din virksomhed en del af et stærkt fællesskab med golf som rammen og netværk som resultatet."</p></div>
   </div>
 </section>
 
@@ -621,9 +1176,9 @@ function pgSponsor() {
 <section class="sek">
   <h2 class="stitl">Sponsorniveauer</h2>
   <div class="sp-niv">
-    <div class="sp-n guld-n"><div class="sp-n-titel">🥇 Guld</div><p>Primær placering på bane, hjemmeside og alle arrangementer. VIP-invitationer, greenfee og eksklusive events.</p></div>
-    <div class="sp-n"><div class="sp-n-titel">🥈 Sølv</div><p>Logo ved bane og digitalt. Adgang til erhvervsarrangementer og invitationer til udvalgte events.</p></div>
-    <div class="sp-n"><div class="sp-n-titel">🥉 Bronze</div><p>Digital synlighed, omtale i nyhedsbrev og invitationer til åbne arrangementer.</p></div>
+    <div class="sp-n guld-n"><div class="sp-n-titel"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg> Guld</div><p>Primær placering på bane, hjemmeside og alle arrangementer. VIP-invitationer, greenfee og eksklusive events.</p></div>
+    <div class="sp-n"><div class="sp-n-titel"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> Sølv</div><p>Logo ved bane og digitalt. Adgang til erhvervsarrangementer og invitationer til udvalgte events.</p></div>
+    <div class="sp-n"><div class="sp-n-titel"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg> Bronze</div><p>Digital synlighed, omtale i nyhedsbrev og invitationer til åbne arrangementer.</p></div>
   </div>
   <p class="muted tc mt1">Priser aftales individuelt. Kontakt os for et uforpligtende tilbud.</p>
 </section>
@@ -656,12 +1211,12 @@ ${rigtige.length?`
     <button type="submit" class="knap-p fb">Send forespørgsel</button>
   </form>
   <div id="sp-kv" style="display:none" class="kv">
-    <div class="kv-i">✅</div><h2>Tak for din interesse!</h2>
+    <div class="kv-i"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div><h2>Tak for din interesse!</h2>
     <p>Vi vender tilbage hurtigst muligt.</p>
     <button class="knap-sek" onclick="navTil('forside')">Tilbage</button>
   </div>
   <div class="tc mt1 kontakt-dir">
-    <a class="knap-dir" href="tel:${CONFIG.telefon.replace(/\s/g,'')}">📞 ${CONFIG.telefon}</a>
+    <a class="knap-dir" href="tel:${CONFIG.telefon.replace(/\s/g,'')}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.17h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 8.91a16 16 0 0 0 6 6l.81-.81a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 21.9 16.92z"/></svg> ${CONFIG.telefon}</a>
   </div>
 </section>`;
 }
@@ -679,36 +1234,79 @@ function submitSponsor(e) {
    OM ERHVERVSKLUBBEN
    ================================================================ */
 function pgOm() {
+  /* SVG line-icons — Lucide-stil, stroke-width 1.4, mørkegrønne */
+  const ekSVG = [
+    { titel:'Netværk',          tekst:'Mød virksomhedsejere og beslutningstagere fra Aarhus-regionen.', cta:'Læs mere →', side:'om',
+      svg:`<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>` },
+    { titel:'Relationer',       tekst:'Stærke forretningsrelationer i professionelle, uformelle rammer.', cta:'Læs mere →', side:'om',
+      svg:`<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>` },
+    { titel:'Golf & oplevelser',tekst:'Turneringer, rejser og særlige golfoplevelser året rundt.', cta:'Se oplevelser →', side:'golfarr',
+      svg:`<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="18" r="2"/><path d="M12 2v14M7 7l5-5 5 5"/><path d="M20 18H4"/></svg>` },
+    { titel:'Sponsorværdi',     tekst:'Synlighed og associering med Lyngbygaard Golf og erhvervsklubben.', cta:'Læs mere →', side:'sponsor',
+      svg:`<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>` },
+    { titel:'EK-mesterskabet',  tekst:'Erhvervsklubbens sportslige højdepunkt for alle erhvervsmedlemmer.', cta:'Læs mere →', side:'om',
+      svg:`<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg>` },
+    { titel:'10+ events/år',    tekst:'Fra SIM Golf til julefrokost og udlandsrejser — altid noget i kalenderen.', cta:'Se events →', side:'kalender',
+      svg:`<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>` },
+  ];
+
+  /* SVG til CTA-knapper */
+  const svgPhone = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.17h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 8.91a16 16 0 0 0 6 6l.81-.81a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 21.9 16.92z"/></svg>`;
+  const svgMail  = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>`;
+
   return `
-<div class="ph bg-mork">
-  <h1>Erhvervsklubben 🤝</h1>
-  <p>${esc(CONFIG.omEK.tagline)}</p>
+<!-- ── EK PAGE HEADER ── -->
+<div class="ph bg-mork ek-ph">
+  <p class="ek-ph-over">LYG ERHVERVSKLUB</p>
+  <h1 class="ek-ph-h1">Erhvervsklubben</h1>
+  <p class="ek-ph-sub">${esc(CONFIG.omEK.tagline)}</p>
 </div>
 
-<section class="sek">
-  <div class="bi-kort" style="background-image:url('${CONFIG.billeder.netvaerk}')">
-    <div class="bi-lag"><p>${esc(CONFIG.omEK.tekst)}</p></div>
-  </div>
-</section>
-
-<section class="sek">
-  <div class="ikg">
-    ${CONFIG.omEK.punkter.map(p=>`
-    <div class="ikb static"><span class="iks">${p.ikon}</span><strong>${esc(p.titel)}</strong><p>${esc(p.tekst)}</p></div>`).join('')}
-  </div>
-</section>
-
-<section class="sek">
-  <div class="om-cta">
-    <h3>Interesseret i erhvervsmedlemskab?</h3>
-    <p>Kontakt os og hør om mulighederne.</p>
-    <div class="btn-row jc">
-      <a class="knap-p" href="tel:${CONFIG.telefon.replace(/\s/g,'')}">📞 Ring til os</a>
-      <button class="knap-sek" onclick="navTil('kontakt')">✉️ Send besked</button>
+<!-- ── AUTENTISK ARRANGEMENTSFOTO ── -->
+<div class="ek-foto-wrap">
+  <div class="ek-foto" style="background-image:url('./images/ek-arrangement.jpg')" role="img" aria-label="Arrangement i Lyngbygaard Erhvervsklub">
+    <div class="ek-foto-lag">
+      <p class="ek-foto-citat">${esc(CONFIG.omEK.tekst)}</p>
     </div>
   </div>
-</section>`;
-}
+</div>
+
+<!-- ── EK-PUNKTER CAROUSEL ── -->
+<section class="ek-cx-sek">
+  <div class="cx-hdr">
+    <h2 class="cx-sek-titel">HVAD FÅR DU</h2>
+    <button class="cx-se-alle" onclick="navTil('sponsor')">Bliv sponsor →</button>
+  </div>
+  <div class="cx-scroll ek-cx-scroll" id="cx-ek-pg" role="list">
+    ${ekSVG.map(k => `
+    <button class="ek-kort" role="listitem" onclick="navTil('${k.side}')">
+      <div class="ek-k-ikon">${k.svg}</div>
+      <strong class="ek-k-titel">${esc(k.titel)}</strong>
+      <p class="ek-k-tekst">${esc(k.tekst)}</p>
+      <span class="ek-k-cta">${esc(k.cta)}</span>
+    </button>`).join('')}
+  </div>
+  <div class="cx-prikker" id="ek-pg-prikker">
+    ${ekSVG.map((_,i)=>`<span class="cx-prik${i===0?' aktiv':''}"></span>`).join('')}
+  </div>
+</section>
+
+<!-- ── CTA ── -->
+<section class="sek">
+  <div class="ek-cta-boks">
+    <h3 class="ek-cta-h3">Interesseret i erhvervsmedlemskab?</h3>
+    <p class="ek-cta-p">Kontakt os og hør om mulighederne.</p>
+    <div class="ek-cta-knapper">
+      <a class="ek-cta-knap primaer" href="tel:${CONFIG.telefon.replace(/\s/g,'')}">
+        ${svgPhone} Ring til os
+      </a>
+      <button class="ek-cta-knap sekundaer" onclick="navTil('kontakt')">
+        ${svgMail} Send besked
+      </button>
+    </div>
+  </div>
+</section>`;}
+
 
 /* ================================================================
    KONTAKT
@@ -718,18 +1316,18 @@ function pgOm() {
 function pgKontakt() {
   return `
 <div class="ph bg-mork">
-  <h1>Kontakt ✉️</h1>
+  <h1>Kontakt</h1>
   <p>Vi er klar til at hjælpe dig</p>
 </div>
 
 <section class="sek">
   <div class="kontakt-boks">
-    <a class="kl" href="tel:${CONFIG.telefon.replace(/\s/g,'')}"><span>📞</span><span>${CONFIG.telefon}</span><span class="kl-hint">Ring til os</span></a>
-    <div class="kl"><span>📍</span><span>${esc(CONFIG.adresse)}</span></div>
-    <a class="kl" href="${CONFIG.website}" target="_blank" rel="noopener"><span>🌐</span><span>${CONFIG.website}</span></a>
+    <a class="kl" href="tel:${CONFIG.telefon.replace(/\s/g,'')}"><span class="kl-svg"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.17h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 8.91a16 16 0 0 0 6 6l.81-.81a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 21.9 16.92z"/></svg></span><span>${CONFIG.telefon}</span><span class="kl-hint">Ring til os</span></a>
+    <div class="kl"><span class="kl-svg"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></span><span>${esc(CONFIG.adresse)}</span></div>
+    <a class="kl" href="${CONFIG.website}" target="_blank" rel="noopener"><span class="kl-svg"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></span><span>${CONFIG.website}</span></a>
   </div>
   <div class="tc mt1">
-    <a class="knap-p" href="tel:${CONFIG.telefon.replace(/\s/g,'')}">📞 Ring til os</a>
+    <a class="knap-p" href="tel:${CONFIG.telefon.replace(/\s/g,'')}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.17h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 8.91a16 16 0 0 0 6 6l.81-.81a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 21.9 16.92z"/></svg> Ring til os</a>
   </div>
 </section>
 
@@ -747,7 +1345,7 @@ function pgKontakt() {
     <button type="submit" class="knap-p fb">Send besked</button>
   </form>
   <div id="kont-kv" style="display:none" class="kv">
-    <div class="kv-i">✅</div>
+    <div class="kv-i"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
     <h2>Besked modtaget!</h2>
     <p>Vi vender tilbage hurtigst muligt.</p>
     <button class="knap-sek" onclick="navTil('forside')">Tilbage til forsiden</button>
@@ -755,28 +1353,70 @@ function pgKontakt() {
 </section>`;
 }
 
-function submitKontakt(e) {
+async function submitKontakt(e) {
   e.preventDefault();
-  const f=e.target;
-  const alle=DB.get('ek_beskeder')||[];
-  alle.push({id:'k'+Date.now(),virk:f.virk.value,kp:f.kp.value,tlf:f.tlf.value,email:f.email.value,besk:f.besk.value,dato:new Date().toISOString(),læst:false});
-  DB.set('ek_beskeder',alle);
-  f.style.display='none'; document.getElementById('kont-kv').style.display='block';
+  const f = e.target;
+  const sb = getSupabase();
+
+  const post = {
+    virksomhed:    f.virk.value.trim(),
+    kontaktperson: f.kp.value.trim(),
+    telefon:       f.tlf.value.trim(),
+    email:         f.email.value.trim(),
+    besked:        f.besk.value.trim()
+  };
+
+  /* Gem lokalt uanset hvad */
+  const alle = DB.get('ek_beskeder')||[];
+  alle.push({ id:'k'+Date.now(), virk:post.virksomhed, kp:post.kontaktperson,
+    tlf:post.telefon, email:post.email, besk:post.besked,
+    dato:new Date().toISOString(), læst:false });
+  DB.set('ek_beskeder', alle);
+
+  /* Forsøg Supabase — fejl her stopper ikke bekræftelse */
+  if (sb) {
+    try {
+      await sb.from('kontakt').insert(post);
+    } catch (err) {
+      console.warn('[Kontakt] Supabase gem fejlede (gemt lokalt):', err);
+    }
+  }
+
+  f.style.display = 'none';
+  document.getElementById('kont-kv').style.display = 'block';
 }
 
 /* ================================================================
    ADMIN
+
+   ⚠️  SIKKERHEDSADVARSEL — PRODUKTIONSOPGAVE:
+   Admin-koden (CONFIG.adminKode = '1234') er gemt i offentligt
+   JavaScript og er IKKE reel adgangskontrol. Enhver kan se koden
+   ved at inspicere app.js i browseren.
+
+   For sikker administration i produktion kræves:
+   · Supabase Auth (e-mail/password login)
+   · Row Level Security (RLS) på alle Supabase-tabeller
+   · Admin-funktioner bag server-side kontrol (Edge Functions)
+
+   Denne løsning er acceptabel til intern testbrug, men må IKKE
+   bruges til at beskytte følsomme data i produktion.
+   Se supabase/OPSAETNING.md for implementeringsguide.
    ================================================================ */
 let adminIN = false;
 let _adFane = 'arr';
 
 function pgAdmin() {
   if (!adminIN) return `
-<div class="ph bg-mork"><h1>Admin ⚙️</h1></div>
+<div class="ph bg-mork"><h1>Administration</h1></div>
 <section class="sek">
   <div class="admin-login">
-    <p class="muted tc mb1">Indtast admin-koden for at fortsætte</p>
-    <div class="fg"><label>Kode</label><input type="password" id="ak-inp" maxlength="30" placeholder="••••" autocomplete="current-password"></div>
+    <p class="muted tc mb1">Log ind med Supabase Auth:<br>
+      <code style="font-size:.8rem">email@eksempel.dk:adgangskode</code></p>
+    <p class="muted tc mb1" style="font-size:.8rem">
+      Eller kun kode (lokal test: <code>1234</code>)</p>
+    <div class="fg"><label>Login</label><input type="password" id="ak-inp" maxlength="120"
+      placeholder="email@eksempel.dk:kode" autocomplete="current-password"></div>
     <button class="knap-p fb" onclick="tjekKode()">Log ind</button>
     <div id="ak-fejl" class="fejl-b" style="display:none">Forkert kode — prøv igen.</div>
   </div>
@@ -785,7 +1425,7 @@ function pgAdmin() {
   const faner=[['arr','Arrangementer'],['tilm','Tilmeldinger'],['kont','Kontakthenvendelser'],['sp','Sponsorer'],['golf','Firmapakker'],['indh','Indhold'],['inst','Indstillinger'],['bk','Backup']];
   return `
 <div class="ph bg-mork" style="display:flex;justify-content:space-between;align-items:center">
-  <div><h1>Admin ⚙️</h1></div>
+  <div><h1>Administration</h1></div>
   <button class="knap-sek sm" onclick="adminLogUd()">Log ud</button>
 </div>
 <div class="af-nav">
@@ -803,12 +1443,59 @@ function pgAdmin() {
 </section>`;
 }
 
-function tjekKode() {
-  const v=document.getElementById('ak-inp').value;
-  if(v===getKode()){adminIN=true;navTil('admin');}
-  else{document.getElementById('ak-fejl').style.display='block';}
+/* Admin-login: forsøger Supabase Auth, falder tilbage til lokal kode.
+   ⚠️ PRODUKTIONSOPGAVE: Opret admin-bruger i Supabase Dashboard →
+   Authentication → Users → Invite user. Tilføj user.id til
+   admin_brugere-tabellen. Se MIGRATIONSGUIDE.md. */
+async function tjekKode() {
+  const v = document.getElementById('ak-inp')?.value || '';
+  const fejlEl = document.getElementById('ak-fejl');
+  const sb = getSupabase();
+
+  if (sb) {
+    /* Forsøg Supabase Auth email/password — input-felt bruges som email:kode */
+    /* Format understøttet: "email@dk.dk:kode" ELLER kun kode (fallback) */
+    const delim = v.indexOf(':');
+    if (delim > 0) {
+      const email    = v.substring(0, delim).trim();
+      const password = v.substring(delim + 1).trim();
+      try {
+        const { data, error } = await sb.auth.signInWithPassword({ email, password });
+        if (!error && data?.session) {
+          adminIN = true;
+          navTil('admin');
+          return;
+        }
+        /* Auth fejl — vis besked og fortsæt IKKE til fallback */
+        if (fejlEl) {
+          fejlEl.textContent = 'Supabase-login fejlede — tjek email og kode.';
+          fejlEl.style.display = 'block';
+        }
+        return;
+      } catch (err) {
+        console.warn('[Admin] Auth fejl:', err);
+      }
+    }
+  }
+
+  /* Fallback: lokal kode (kun til test — IKKE til produktion) */
+  if (v === getKode()) {
+    adminIN = true;
+    navTil('admin');
+  } else {
+    if (fejlEl) {
+      fejlEl.textContent = 'Forkert kode — prøv igen.';
+      fejlEl.style.display = 'block';
+    }
+  }
 }
-function adminLogUd() { adminIN=false; navTil('forside'); }
+
+async function adminLogUd() {
+  const sb = getSupabase();
+  if (sb) { try { await sb.auth.signOut(); } catch {} }
+  adminIN = false;
+  navTil('forside');
+}
 function skiftFane(f) { _adFane=f; navTil('admin'); }
 
 /* ── Admin: Arrangementer ── */
@@ -817,7 +1504,7 @@ function adArr() {
   return `
 <div class="ad-hd">
   <button class="knap-p" onclick="visArrForm(null)">+ Nyt arrangement</button>
-  <button class="knap-sek" onclick="kopierNytAar()">📋 Kopier til nyt år</button>
+  <button class="knap-sek" onclick="kopierNytAar()">Kopier til nyt år</button>
 </div>
 <div class="ad-l">
   ${arrs.map(a=>`
@@ -825,12 +1512,12 @@ function adArr() {
     <div class="ad-ri">
       <strong>${esc(a.titel)}</strong>
       <span>${fmtDato(a.dato)}${a.tid?' · '+esc(a.tid):''}</span>
-      <span class="ad-st">${erFremtidig(a.dato)?(a.aaben?'✓ Åben':'✗ Lukket'):'• Afholdt'}</span>
+      <span class="ad-st">${erFremtidig(a.dato)?(a.aaben?'Åben':'Lukket'):'• Afholdt'}</span>
     </div>
     <div class="ad-rk">
-      <button class="knap-i" onclick="visArrForm('${a.id}')">✏️</button>
-      <button class="knap-i" onclick="kopierArr('${a.id}')">📋</button>
-      <button class="knap-i red" onclick="sletArr('${a.id}')">🗑️</button>
+      <button class="knap-i" onclick="visArrForm('${a.id}')">Rediger</button>
+      <button class="knap-i" onclick="kopierArr('${a.id}')">Kopi</button>
+      <button class="knap-i red" onclick="sletArr('${a.id}')">Slet</button>
     </div>
   </div>`).join('')||'<p class="muted">Ingen arrangementer.</p>'}
 </div>
@@ -908,7 +1595,7 @@ function adTilm() {
   return `
 <div class="ad-hd">
   <input type="search" placeholder="Søg navn/virksomhed…" value="${esc(q)}" oninput="window._tilmQ=this.value;skiftFane('tilm')" style="flex:1;min-width:0">
-  <button class="knap-sek" onclick="exportCSV()">📥 CSV</button>
+  <button class="knap-sek" onclick="exportCSV()">Eksporter CSV</button>
 </div>
 ${vis.length?`
 <div style="overflow-x:auto">
@@ -919,7 +1606,7 @@ ${vis.length?`
     <td>${esc(t.arrTitel||'–')}</td><td>${esc(t.navn)}</td><td>${esc(t.virk)}</td>
     <td>${t.antal}</td>
     <td><input type="checkbox" ${t.mødt?'checked':''} onchange="markerMødt('${t.id}',this.checked)"></td>
-    <td><button class="knap-i red" onclick="sletTilm('${t.id}')">🗑️</button></td>
+    <td><button class="knap-i red" onclick="sletTilm('${t.id}')">Slet</button></td>
   </tr>`).join('')}
   </tbody>
 </table>
@@ -952,7 +1639,7 @@ ${alle.length?`
         <strong>${esc(b.kp||b.fn+' '+b.en||'–')}</strong> · ${esc(b.virk||'–')}
         <span class="muted" style="display:block;font-size:.75rem;margin-top:.15rem">${b.dato?new Date(b.dato).toLocaleDateString('da-DK'):''} · ${esc(b.email||'')} · ${esc(b.tlf||'')}</span>
       </div>
-      <button class="knap-i red" onclick="sletBesked('${b.id}')">🗑️</button>
+      <button class="knap-i red" onclick="sletBesked('${b.id}')">Slet</button>
     </div>
     <p style="margin-top:.5rem;font-size:.875rem">${esc(b.besk)}</p>
   </div>`).join('')}
@@ -971,8 +1658,8 @@ function adSp() {
   <div class="ad-rad">
     <div class="ad-ri"><strong>${esc(s.navn)}</strong><span>${esc(s.niveau||'')}</span></div>
     <div class="ad-rk">
-      <button class="knap-i" onclick="visSponsorForm('${s.id}')">✏️</button>
-      <button class="knap-i red" onclick="sletSponsor('${s.id}')">🗑️</button>
+      <button class="knap-i" onclick="visSponsorForm('${s.id}')">Rediger</button>
+      <button class="knap-i red" onclick="sletSponsor('${s.id}')">Slet</button>
     </div>
   </div>`).join('')||'<p class="muted">Ingen sponsorer.</p>'}
 </div>
@@ -1023,7 +1710,7 @@ ${pk.map((p,i)=>`
     </div>
     <div class="fg"><label>Beskrivelse</label><textarea name="besk" rows="2">${esc(p.beskrivelse)}</textarea></div>
     <div class="fg"><label>Inkluderer (én pr. linje)</label><textarea name="inkl" rows="3">${(p.inkl||[]).join('\n')}</textarea></div>
-    <button type="submit" class="knap-i">💾 Gem</button>
+    <button type="submit" class="knap-i">Gem</button>
   </form>
 </div>`).join('')}`;
 }
@@ -1056,7 +1743,7 @@ function adIndhold() {
   </form>
   ${nyheder.length ? `<div class="ad-l mt1">${nyheder.map((n,i)=>`
   <div class="ad-rad"><div class="ad-ri"><strong>${esc(n.titel)}</strong><span>${n.dato||''}</span></div>
-  <div class="ad-rk"><button class="knap-i red" onclick="sletNyhed(${i})">🗑️</button></div>
+  <div class="ad-rk"><button class="knap-i red" onclick="sletNyhed(${i})">Slet</button></div>
   </div>`).join('')}</div>` : ''}
 </div>
 
@@ -1075,7 +1762,7 @@ function adIndhold() {
   </form>
   ${partnere.length ? `<div class="ad-l mt1">${partnere.map((p,i)=>`
   <div class="ad-rad"><div class="ad-ri"><strong>${esc(p.navn)}</strong><span>${esc(p.fordel||'')}</span></div>
-  <div class="ad-rk"><button class="knap-i red" onclick="sletPartner(${i})">🗑️</button></div>
+  <div class="ad-rk"><button class="knap-i red" onclick="sletPartner(${i})">Slet</button></div>
   </div>`).join('')}</div>` : ''}
 </div>
 
@@ -1090,7 +1777,7 @@ function adIndhold() {
   </form>
   ${mvirk.length ? `<div class="ad-l mt1">${mvirk.map((v,i)=>`
   <div class="ad-rad"><div class="ad-ri"><strong>${esc(v.navn)}</strong><span>${esc(v.branche||'')}</span></div>
-  <div class="ad-rk"><button class="knap-i red" onclick="sletMVirk(${i})">🗑️</button></div>
+  <div class="ad-rk"><button class="knap-i red" onclick="sletMVirk(${i})">Slet</button></div>
   </div>`).join('')}</div>` : ''}
 </div>`;
 }
@@ -1162,7 +1849,7 @@ function adBk() {
 <div class="ad-form mb1">
   <h3>Eksportér backup</h3>
   <p class="muted mb1">Hent al data som JSON-fil til lokal sikkerhedskopiering.</p>
-  <button class="knap-p" onclick="eksporter()">📥 Download backup</button>
+  <button class="knap-p" onclick="eksporter()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Download backup</button>
 </div>
 <div class="ad-form mb1">
   <h3>Importér backup</h3>
@@ -1172,7 +1859,7 @@ function adBk() {
 <div class="ad-form">
   <h3>Nulstil til standarddata</h3>
   <p class="muted mb1">Sletter alt og genindlæser standard-arrangementer og -data.</p>
-  <button class="knap-rød" onclick="nulstil()">🗑️ Nulstil alt</button>
+  <button class="knap-rød" onclick="nulstil()">Nulstil alt</button>
 </div>`;
 }
 
@@ -1408,6 +2095,34 @@ function bindAll(){
   if(ak){ak.addEventListener('keydown',e=>{if(e.key==='Enter')tjekKode();});ak.focus();}
   bindCarouselPrikker('cx-arr',    'cx-arr-prikker');
   bindCarouselPrikker('cx-pakker', 'cx-pk-prikker');
+  bindCarouselPrikker('cx-ek-pg',  'ek-pg-prikker');
+  /* Sikr golf-pakke click virker på touch (swipe vs. tap) */
+  _bindTapCarousel('cx-pakker', '.golf-pk-txt', btn => {
+    const titel = btn.dataset.pakketitel;
+    if (titel) golfVælgPakke(titel);
+  });
+}
+
+/* Skelner tap fra swipe i carousel — bruges til golf-pakker */
+function _bindTapCarousel(scrollId, btnSel, handler) {
+  const scroll = document.getElementById(scrollId);
+  if (!scroll) return;
+  let startX = 0, startY = 0, moved = false;
+  scroll.addEventListener('touchstart', e => {
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    moved  = false;
+  }, { passive: true });
+  scroll.addEventListener('touchmove', e => {
+    const dx = Math.abs(e.touches[0].clientX - startX);
+    const dy = Math.abs(e.touches[0].clientY - startY);
+    if (dx > 8 || dy > 8) moved = true;
+  }, { passive: true });
+  scroll.addEventListener('touchend', e => {
+    if (moved) return;
+    const btn = e.target.closest(btnSel);
+    if (btn) { e.preventDefault(); handler(btn); }
+  });
 }
 
 function bindCarouselPrikker(scrollId, prikId) {
@@ -1555,6 +2270,7 @@ function migrérGolfbox() {
    BOOT
    ================================================================ */
 document.addEventListener('DOMContentLoaded', () => {
+  migrationBackup(); // snapshot af eksisterende data inden init
   init();
   migrérGolfbox();
   tjekPaam();

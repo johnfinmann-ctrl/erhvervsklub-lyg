@@ -20,9 +20,12 @@
 
   <title>Lyngbygaard Erhvervsklub</title>
 
-  <!-- v4.4 — skift versionsnummer her og i service-worker.js ved opdatering -->
-  <link rel="manifest"   href="./manifest.json?v=4.6">
-  <link rel="stylesheet" href="./style.css?v=4.6">
+  <!-- v7.0 — skift versionsnummer her og i service-worker.js ved opdatering -->
+  <link rel="manifest"   href="./manifest.json?v=7.0">
+  <link rel="stylesheet" href="./style.css?v=7.0">
+
+  <!-- Supabase JS — fælles database for alle brugere -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 
   <!-- Preload golfer-frames til animation -->
   <link rel="preload" as="image" href="./images/golfer-1-address.png">
@@ -48,7 +51,14 @@
 <body>
 
 <div id="splash">
-  <div class="s-logo">⛳</div>
+  <div class="s-logo">
+    <svg width="48" height="56" viewBox="0 0 24 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 0L0 5v8c0 7.18 5.14 13.9 12 15.5C18.86 26.9 24 20.18 24 13V5L12 0z" fill="#b8973a" opacity=".2"/>
+      <path d="M12 1.8L1.5 6.2V13c0 6.4 4.6 12.4 10.5 13.85C17.9 25.4 22.5 19.4 22.5 13V6.2L12 1.8z" stroke="#b8973a" stroke-width="1.2" fill="none"/>
+      <path d="M8 14l2.5 2.5L16 10" stroke="#b8973a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="12" cy="9" r="2" stroke="#b8973a" stroke-width="1" fill="none"/>
+    </svg>
+  </div>
   <div class="s-navn">LYG Erhvervsklub</div>
   <div class="s-sub">Lyngbygaard Golf</div>
 </div>
@@ -57,27 +67,45 @@
 
   <!-- Opdateringsbesked (vises når SW registrerer ny version) -->
   <div id="update-banner" style="display:none" role="alert">
-    <span>🔄 Ny version tilgængelig</span>
+    <span>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:5px"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+      Ny version tilgængelig
+    </span>
     <button onclick="opdaterApp()">Opdater app</button>
-    <button class="luk-banner" onclick="document.getElementById('update-banner').style.display='none'" aria-label="Luk">✕</button>
+    <button class="luk-banner" onclick="document.getElementById('update-banner').style.display='none'" aria-label="Luk">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
   </div>
 
   <!-- Installér-banner (Android/Chrome via beforeinstallprompt) -->
   <div id="install-banner" style="display:none" role="banner">
-    <span>📲 Installér appen på din enhed</span>
+    <span>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:5px"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="10" x2="12" y2="16"/><polyline points="9 13 12 16 15 13"/></svg>
+      Installér appen på din enhed
+    </span>
     <button onclick="installApp()">Installér</button>
-    <button class="luk-banner" onclick="afvisInstall()" aria-label="Luk">✕</button>
+    <button class="luk-banner" onclick="afvisInstall()" aria-label="Luk">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
   </div>
 
   <!-- iOS installér-guide (vises én gang på iPhone/iPad i Safari) -->
   <div id="ios-install-modal" style="display:none" role="dialog" aria-modal="true">
     <div class="ios-modal-boks">
-      <div class="ios-modal-ikon">⛳</div>
+      <div class="ios-modal-ikon">
+        <!-- Golf flag SVG -->
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#b8973a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="19" r="2"/>
+          <path d="M12 3v14"/>
+          <path d="M12 3l7 4-7 4"/>
+          <path d="M6 21h12"/>
+        </svg>
+      </div>
       <h2>Installer som app</h2>
       <p><strong>Lyngbygaard Erhvervsklub</strong></p>
       <p>Få hurtig adgang til kalender, tilmelding, GolfBox og erhvervsarrangementer.</p>
       <div class="ios-guide">
-        <div class="ios-trin"><span>1</span><p>Tryk på <strong>del-knappen</strong> <span class="ios-ikon">⬆️</span> nederst i Safari</p></div>
+        <div class="ios-trin"><span>1</span><p>Tryk på <strong>del-knappen</strong> <span class="ios-ikon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg></span> nederst i Safari</p></div>
         <div class="ios-trin"><span>2</span><p>Vælg <strong>»Føj til hjemmeskærm«</strong></p></div>
         <div class="ios-trin"><span>3</span><p>Tryk <strong>»Tilføj«</strong></p></div>
       </div>
@@ -89,7 +117,13 @@
   <!-- Push-notifikation dialog — vises første gang -->
   <div id="push-modal" style="display:none" role="dialog" aria-modal="true" aria-labelledby="push-modal-titel">
     <div class="push-modal-boks">
-      <div class="push-modal-ikon">🔔</div>
+      <div class="push-modal-ikon">
+        <!-- Bell SVG -->
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#b8973a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+          <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+        </svg>
+      </div>
       <h2 id="push-modal-titel">Vil du modtage påmindelser?</h2>
       <p>Få besked 14, 7 og 3 dage før kommende arrangementer i Erhvervsklubben.</p>
       <div class="push-modal-knapper">
@@ -101,19 +135,54 @@
 
   <main id="main-content" role="main" aria-live="polite" aria-atomic="false"></main>
 
+  <!-- Informationsbjælke: næste arrangement — vises på alle sider -->
+  <div id="info-bjaelke" role="complementary" aria-label="Næste arrangement" style="display:none"></div>
+
   <nav id="bottom-nav" role="navigation" aria-label="Hovedmenu">
-    <button class="nav-item active" data-side="forside"    aria-label="Forside">  <span class="nav-ikon">🏠</span><span class="nav-lbl">Forside</span>  </button>
-    <button class="nav-item"        data-side="kalender"   aria-label="Kalender"> <span class="nav-ikon">📅</span><span class="nav-lbl">Kalender</span> </button>
-    <button class="nav-item"        data-side="tilmelding" aria-label="Tilmeld">  <span class="nav-ikon">✅</span><span class="nav-lbl">Tilmeld</span>  </button>
-    <button class="nav-item"        data-side="golfarr"    aria-label="Golf">     <span class="nav-ikon">⛳</span><span class="nav-lbl">Golf</span>     </button>
-    <button class="nav-item"        data-side="sponsor"    aria-label="Sponsor">  <span class="nav-ikon">🌟</span><span class="nav-lbl">Sponsor</span>  </button>
-    <button class="nav-item"        data-side="om"         aria-label="EK">       <span class="nav-ikon">🤝</span><span class="nav-lbl">EK</span>       </button>
-    <button class="nav-item"        data-side="kontakt"    aria-label="Kontakt">  <span class="nav-ikon">✉️</span><span class="nav-lbl">Kontakt</span>  </button>
-    <button class="nav-item nav-admin" data-side="admin"   aria-label="Admin">    <span class="nav-ikon">⚙️</span><span class="nav-lbl">Admin</span>    </button>
+    <!-- Forside: hus -->
+    <button class="nav-item active" data-side="forside" aria-label="Forside">
+      <span class="nav-ikon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z"/><polyline points="9 21 9 13 15 13 15 21"/></svg></span>
+      <span class="nav-lbl">Forside</span>
+    </button>
+    <!-- Kalender: simpel kalender -->
+    <button class="nav-item" data-side="kalender" aria-label="Kalender">
+      <span class="nav-ikon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>
+      <span class="nav-lbl">Kalender</span>
+    </button>
+    <!-- Tilmeld: person + plus -->
+    <button class="nav-item" data-side="tilmelding" aria-label="Tilmeld">
+      <span class="nav-ikon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="16" y1="11" x2="22" y2="11"/></svg></span>
+      <span class="nav-lbl">Tilmeld</span>
+    </button>
+    <!-- Golf: bold + flagstang -->
+    <button class="nav-item" data-side="golfarr" aria-label="Golf">
+      <span class="nav-ikon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="19" r="2"/><path d="M14 4v14"/><path d="M14 4l6 3-6 3"/><path d="M2 21h10"/></svg></span>
+      <span class="nav-lbl">Golf</span>
+    </button>
+    <!-- Sponsor: håndtryk -->
+    <button class="nav-item" data-side="sponsor" aria-label="Sponsor">
+      <span class="nav-ikon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></span>
+      <span class="nav-lbl">Sponsor</span>
+    </button>
+    <!-- EK: netværk/gruppe -->
+    <button class="nav-item" data-side="om" aria-label="EK">
+      <span class="nav-ikon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+      <span class="nav-lbl">EK</span>
+    </button>
+    <!-- Kontakt: taleboble -->
+    <button class="nav-item" data-side="kontakt" aria-label="Kontakt">
+      <span class="nav-ikon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
+      <span class="nav-lbl">Kontakt</span>
+    </button>
+    <!-- Admin: tandhjul -->
+    <button class="nav-item nav-admin" data-side="admin" aria-label="Admin">
+      <span class="nav-ikon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
+      <span class="nav-lbl">Admin</span>
+    </button>
   </nav>
 
 </div>
 
-<script src="./app.js?v=4.6"></script>
+<script src="./app.js?v=7.0"></script>
 </body>
 </html>
