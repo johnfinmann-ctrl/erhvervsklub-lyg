@@ -1,5 +1,5 @@
 /* ================================================================
-   Lyngbygaard Erhvervsklub — Service Worker v7.2
+   Lyngbygaard Erhvervsklub — Service Worker v7.3
 
    VERSIONSSTYRING:
    Skift CACHE_VERSION ved hver GitHub-upload.
@@ -11,21 +11,21 @@
    · Offline fallback → cached index.html
    ================================================================ */
 
-const CACHE_VERSION = 'lyg-erhverv-v7.2';
+const CACHE_VERSION = 'lyg-erhverv-v8.0';
 const BASE          = self.registration.scope;
 
 const PRECACHE_URLS = [
   BASE + 'index.html',
-  BASE + 'style.css?v=7.2',
-  BASE + 'app.js?v=7.2',
-  BASE + 'manifest.json?v=7.2',
+  BASE + 'style.css?v=7.4',
+  BASE + 'app.js?v=7.4',
+  BASE + 'manifest.json?v=7.4',
   BASE + 'icons/icon-192.png',
   BASE + 'icons/icon-512.png',
   BASE + 'images/golfer-1-address.png',
   BASE + 'images/golfer-2-backswing.png',
   BASE + 'images/golfer-3-impact.png',
   BASE + 'images/golfer-4-finish.png',
-  BASE + 'images/ek-arrangement.jpg',
+  BASE + 'images/ek-klubhus.jpg',
   BASE + 'images/klubhus-hero.jpg',
   BASE + 'images/lyg-logo-transparent.png',
 ];

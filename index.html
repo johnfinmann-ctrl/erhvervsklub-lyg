@@ -20,9 +20,9 @@
 
   <title>Lyngbygaard Erhvervsklub</title>
 
-  <!-- v7.2 — skift versionsnummer her og i service-worker.js ved opdatering -->
-  <link rel="manifest"   href="./manifest.json?v=7.2">
-  <link rel="stylesheet" href="./style.css?v=7.2">
+  <!-- v8.0 — skift versionsnummer her og i service-worker.js ved opdatering -->
+  <link rel="manifest"   href="./manifest.json?v=8.0">
+  <link rel="stylesheet" href="./style.css?v=8.0">
 
   <!-- Supabase JS — fælles database for alle brugere -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
@@ -133,14 +133,42 @@
     </div>
   </div>
 
+  <!-- Ken Burns intro-animation (v8.0) — vises kun ved første besøg i sessionen -->
+  <div id="intro-overlay" role="dialog" aria-modal="true" aria-label="Introduktion" style="display:none">
+    <div class="intro-bg"></div>
+    <button class="intro-skip" onclick="springIntroOver()" aria-label="Spring intro over">Spring over</button>
+    <div class="intro-tekst-wrap">
+      <p class="intro-over">LYNGBYGAARD GOLF</p>
+      <h1 class="intro-titel">ERHVERVSKLUBBEN</h1>
+      <p class="intro-sub">Golf · Relationer · Forretning</p>
+    </div>
+  </div>
+
+  <!-- Næste arrangement popup (v8.0) -->
+  <div id="arr-popup" role="dialog" aria-modal="true" aria-label="Næste arrangement" style="display:none">
+    <div class="arr-popup-boks">
+      <button class="arr-popup-luk" onclick="lukkArrPopup()" aria-label="Luk">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+      <p class="arr-popup-label">NÆSTE ARRANGEMENT</p>
+      <h2 class="arr-popup-titel" id="arr-popup-titel"></h2>
+      <div class="arr-popup-meta" id="arr-popup-meta"></div>
+      <button class="arr-popup-cta" id="arr-popup-cta">SE OG TILMELD →</button>
+    </div>
+  </div>
+
   <main id="main-content" role="main" aria-live="polite" aria-atomic="false"></main>
 
   <!-- Informationsbjælke: næste arrangement — vises på alle sider -->
   <div id="info-bjaelke" role="complementary" aria-label="Næste arrangement" style="display:none"></div>
 
-  <!-- Mere-overlay: Sponsor, Kontakt, Admin — åbnes fra Mere-knap på mobil -->
+  <!-- Oversigt-overlay: Golf, Sponsor, Kontakt, Admin — åbnes fra Oversigt-knap på mobil -->
   <div id="mere-baggrund" onclick="lukkMere()"></div>
-  <div id="mere-overlay" role="dialog" aria-label="Mere navigation">
+  <div id="mere-overlay" role="dialog" aria-label="Oversigt navigation">
+    <button class="mere-knap" onclick="lukkMere();navTil('golfarr')" aria-label="Golf">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="19" r="2"/><path d="M14 4v14M14 4l6 3-6 3M2 21h10"/></svg>
+      Golf
+    </button>
     <button class="mere-knap" onclick="lukkMere();navTil('sponsor')" aria-label="Sponsor">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
       Sponsor
@@ -176,8 +204,8 @@
       <span class="nav-ikon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
       <span class="nav-lbl">EK</span>
     </button>
-    <!-- Golf -->
-    <button class="nav-item" data-side="golfarr" aria-label="Golf">
+    <!-- Golf: synlig på alle skærmstørrelser i v8.0 -->
+    <button class="nav-item" data-side="golfarr" aria-label="Golf" id="nav-golf-desk">
       <span class="nav-ikon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="19" r="2"/><path d="M14 4v14"/><path d="M14 4l6 3-6 3"/><path d="M2 21h10"/></svg></span>
       <span class="nav-lbl">Golf</span>
     </button>
@@ -191,15 +219,15 @@
       <span class="nav-ikon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
       <span class="nav-lbl">Kontakt</span>
     </button>
-    <!-- Mere: åbner overlay på mobil / Admin på desktop -->
-    <button class="nav-item nav-admin" data-side="admin" aria-label="Admin" id="nav-mere-btn">
-      <span class="nav-ikon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
-      <span class="nav-lbl" id="nav-mere-lbl">Admin</span>
+    <!-- Oversigt: åbner overlay på mobil / Admin på desktop -->
+    <button class="nav-item nav-admin" data-side="admin" aria-label="Oversigt" id="nav-mere-btn">
+      <span class="nav-ikon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></span>
+      <span class="nav-lbl" id="nav-mere-lbl">Oversigt</span>
     </button>
   </nav>
 
 </div>
 
-<script src="./app.js?v=7.2"></script>
+<script src="./app.js?v=8.0"></script>
 </body>
 </html>

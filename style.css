@@ -1,5 +1,5 @@
 /* ================================================================
-   LYNGBYGAARD ERHVERVSKLUB — style.css v7.2
+   LYNGBYGAARD ERHVERVSKLUB — style.css v8.0
    Mobil-først · Erhvervslook · Grøn #0d2b1a · Guld #b8973a
    ================================================================ */
 
@@ -1366,7 +1366,7 @@ details.tidl-details[open] summary::before{content:'▾  '}
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
   padding: 0 1rem .25rem;
-  /* Lad bruger se næste kort delvist */
+  scroll-padding-left: 1rem;
 }
 .cx-scroll::-webkit-scrollbar { display: none; }
 
@@ -2657,7 +2657,7 @@ details.tidl-details[open] summary::before{content:'▾  '}
 
 /* ── Golf pakke tekst-kort (ingen stockfotos) ── */
 .golf-pk-txt {
-  flex: 0 0 78%;
+  flex: 0 0 calc(100% - 2rem);
   scroll-snap-align: start;
   background: var(--hvid);
   border: none;
@@ -4161,10 +4161,8 @@ textarea:focus-visible {
   max-width: 100%;
 }
 
-/* Admin-knap: skjules på mobil (tilgås via Mere-overlay) */
-@media (max-width: 639px) {
-  .nav-admin { display: none !important; }
-}
+/* v7.3: Oversigt-knap vises altid på mobil (åbner overlay) */
+/* .nav-admin skjules IKKE — det er nu Oversigt-knappen */
 
 /* Mere-overlay: vises over navigationen */
 #mere-overlay {
@@ -4275,3 +4273,489 @@ textarea:focus-visible {
   .hero-v7 { min-height: 50vw; max-height: 300px; }
 }
 
+
+/* ================================================================
+   V7.3 — KRITISK MOBILRETTELSE
+   ================================================================ */
+
+/* ── 1. EK-FOTO: autentisk klubhusfoto med stærk overlay ── */
+.ek-foto-wrap { position: relative; overflow: hidden; border-radius: 0; margin: 0; }
+.ek-foto {
+  min-height: 220px;
+  background-size: cover;
+  background-position: center 40%;
+  background-repeat: no-repeat;
+  position: relative;
+}
+.ek-foto-lag {
+  position: absolute; inset: 0;
+  background: linear-gradient(to bottom,
+    rgba(5,20,10,.45) 0%,
+    rgba(5,20,10,.65) 50%,
+    rgba(5,20,10,.88) 100%) !important;
+  display: flex; align-items: flex-end;
+  padding: 1.5rem 1.25rem !important;
+}
+.ek-foto-citat {
+  font-size: .9rem !important;
+  color: #fff !important;
+  font-style: italic;
+  line-height: 1.55;
+  text-shadow: 0 1px 6px rgba(0,0,0,.6);
+  margin: 0;
+}
+
+/* ── 2. KONTRAST: ERHVERVSKLUBBEN-overskrift og sektioner ── */
+/* cx-ek-kort2 (forside): hvid baggrund → mørkegrøn tekst */
+.cx-ek-kort2 {
+  background: var(--hvid) !important;
+}
+.cx-ek-titel {
+  color: var(--p) !important;
+  font-weight: 800;
+}
+.cx-k-tekst {
+  color: #374151 !important; /* mørkere end var(--mut) for bedre kontrast */
+}
+.cx-ek-cta {
+  color: var(--g) !important;
+  font-weight: 700;
+}
+.cx-ek-ikon {
+  color: var(--p) !important;
+}
+
+/* ek-kort (EK-side): hvid baggrund → mørkegrøn tekst */
+.ek-kort {
+  background: var(--hvid) !important;
+}
+.ek-k-titel {
+  color: var(--p) !important;
+  font-weight: 800;
+}
+.ek-k-tekst {
+  color: #374151 !important;
+}
+.ek-k-cta {
+  color: var(--g) !important;
+}
+.ek-k-ikon {
+  color: var(--p) !important;
+}
+
+/* EK CTA-boks: hvid baggrund */
+.ek-cta-boks {
+  background: var(--hvid) !important;
+  border-radius: 14px;
+  padding: 1.5rem 1.25rem;
+  box-shadow: var(--s1);
+}
+.ek-cta-h3 {
+  color: var(--p) !important;
+  font-size: 1.1rem;
+  font-weight: 800;
+  margin: 0 0 .4rem;
+}
+.ek-cta-p {
+  color: #374151 !important;
+  margin: 0 0 1rem;
+}
+
+/* cx-sek-titel (overskrifter som ERHVERVSKLUBBEN, HVAD FÅR DU) */
+.cx-sek-titel {
+  color: var(--p) !important;
+  font-weight: 800;
+}
+
+/* Sponsor side kontrast */
+.sp-n-titel { color: var(--p) !important; }
+.sp-n p     { color: #374151 !important; }
+
+/* ── 3. GOLF PAKKER: ét kort pr. swipe ── */
+/* golf-pk-txt: kilden rettet til calc(100% - 2rem) — ingen override nødvendig */
+/* ek-kort: lidt bredere på small screens */
+@media (max-width: 639px) {
+  .ek-kort {
+    flex: 0 0 calc(100vw - 3rem) !important;
+  }
+}
+
+/* ── 4. INFO-BJÆLKE: forbedret tekst-håndtering ── */
+/* Forhindre at tekst klippes ved midtlinjeskift */
+.ib-marquee-txt {
+  white-space: nowrap;
+  word-break: keep-all;
+  overflow-wrap: normal;
+  padding-right: 3rem; /* luft mellem loop-gentagelser */
+}
+/* Titel + meta på desktop: vist direkte */
+@media (min-width: 640px) {
+  .ib-titel { color: rgba(255,255,255,.92) !important; }
+  .ib-meta  { color: rgba(255,255,255,.6) !important; }
+}
+
+/* ── 5. NAVIGATION: Oversigt-knap og ensartede ikoner ── */
+/* Oversigt-label — vis altid på mobil */
+#nav-mere-btn .nav-lbl { font-size: .58rem !important; }
+
+/* Nav-items: bredere touch-targets */
+.nav-item {
+  min-height: 54px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Mere-overlay: nu 4 items (Golf, Sponsor, Kontakt, Admin) */
+#mere-overlay {
+  display: none;
+  position: fixed;
+  bottom: calc(var(--nav) + 2px);
+  left: 0; right: 0;
+  background: var(--p);
+  border-top: 1px solid rgba(184,151,58,.35);
+  border-radius: 16px 16px 0 0;
+  z-index: 199;
+  padding: .8rem .6rem .5rem;
+}
+#mere-overlay.vis {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  justify-content: center;
+}
+.mere-knap {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 12px;
+  color: rgba(255,255,255,.9);
+  padding: .7rem 1.1rem .6rem;
+  font-size: .72rem; font-weight: 600;
+  cursor: pointer;
+  min-width: 76px;
+  -webkit-tap-highlight-color: transparent;
+}
+.mere-knap svg { width: 22px; height: 22px; }
+.mere-knap:active { background: rgba(255,255,255,.15); }
+
+/* ── 6. HERO GRADIENT: tekst altid læsbar ── */
+.hero-anim.hero-v7::after {
+  background: linear-gradient(
+    to top,
+    rgba(5,15,8,.97) 0%,
+    rgba(5,15,8,.78) 35%,
+    rgba(5,15,8,.35) 65%,
+    rgba(5,15,8,.08) 100%
+  ) !important;
+}
+
+/* ── 7. PAGE HEADER: mørkegrøn baggrund → hvid tekst (altid korrekt) ── */
+.ph.bg-mork, .ek-ph {
+  background: var(--p);
+  color: #fff;
+}
+.ph.bg-mork h1, .ek-ph h1,
+.ph.bg-mork .ek-ph-h1,
+.ek-ph-h1 { color: #fff !important; }
+.ph.bg-mork p, .ek-ph p,
+.ek-ph-over, .ek-ph-sub { color: rgba(255,255,255,.75) !important; }
+
+/* ── 8. PADDING BOTTOM: indhold skjules aldrig bag bjælker ── */
+#main-content {
+  padding-bottom: calc(var(--nav) + 58px) !important;
+}
+@media (min-width: 900px) {
+  #main-content { padding-bottom: calc(50px + 1.5rem) !important; }
+}
+
+/* ── 9. INFO-BJÆLKE positionering ── */
+#info-bjaelke {
+  position: fixed;
+  bottom: var(--nav);
+  left: 0; right: 0;
+  z-index: 150;
+  background: var(--p2);
+  border-top: 1px solid rgba(184,151,58,.25);
+}
+@media (min-width: 900px) {
+  #info-bjaelke {
+    left: 220px;
+    bottom: 0;
+    border-top: 1px solid rgba(184,151,58,.3);
+  }
+}
+
+/* ── 10. DESKTOP: Oversigt-knap = Admin ── */
+@media (min-width: 640px) {
+  .nav-admin { display: flex !important; }
+  #mere-overlay, #mere-baggrund { display: none !important; }
+}
+
+/* ── V7.3: INFO-BJÆLKE — statisk truncated tekst på mobil (ingen marquee-klip) ── */
+@media (max-width: 639px) {
+  .ib-marquee-wrap { display: none !important; }
+  .ib-titel {
+    display: block !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+    min-width: 0;
+    font-size: .78rem;
+    font-weight: 700;
+    color: rgba(255,255,255,.95);
+  }
+  .ib-meta {
+    display: block !important;
+    font-size: .68rem;
+    color: rgba(255,255,255,.6);
+    flex-shrink: 0;
+    white-space: nowrap;
+    max-width: 40%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+/* ================================================================
+   INTRO-ANIMATION v8.0 (Ken Burns)
+   ================================================================ */
+#intro-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: #0d2b1a;
+  opacity: 0;
+  transition: opacity .5s ease;
+}
+#intro-overlay.intro-aktiv {
+  opacity: 1;
+}
+#intro-overlay.intro-ud {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Ken Burns baggrundsbillede */
+.intro-bg {
+  position: absolute;
+  inset: -10%;   /* lidt større for Ken Burns-bevægelse */
+  background: url('./images/klubhus-hero.jpg') center center / cover no-repeat;
+  animation: kenBurns 7s ease-in-out forwards;
+}
+@keyframes kenBurns {
+  0%   { transform: scale(1.0) translate(0, 0); }
+  100% { transform: scale(1.12) translate(-2%, -1%); }
+}
+
+/* Mørkegrønt lag over billedet for læsbarhed */
+.intro-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(13,43,26,.4) 0%,
+    rgba(13,43,26,.55) 50%,
+    rgba(13,43,26,.8) 100%
+  );
+}
+
+/* Skip-knap */
+.intro-skip {
+  position: absolute;
+  top: 1.2rem;
+  right: 1.2rem;
+  background: rgba(0,0,0,.35);
+  color: rgba(255,255,255,.85);
+  border: 1px solid rgba(255,255,255,.25);
+  border-radius: 2rem;
+  padding: .4rem 1rem;
+  font-size: .8rem;
+  font-family: inherit;
+  cursor: pointer;
+  z-index: 2;
+  backdrop-filter: blur(4px);
+  transition: background .2s, color .2s;
+}
+.intro-skip:hover, .intro-skip:focus {
+  background: rgba(184,151,58,.85);
+  color: #fff;
+  outline: none;
+}
+
+/* Tekst-blok */
+.intro-tekst-wrap {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  padding: 2rem 1.5rem;
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity .9s ease, transform .9s ease;
+}
+.intro-tekst-wrap.intro-tekst-synlig {
+  opacity: 1;
+  transform: translateY(0);
+}
+.intro-over {
+  color: var(--g, #b8973a);
+  font-size: .85rem;
+  font-weight: 700;
+  letter-spacing: .2em;
+  margin: 0 0 .5rem;
+  text-transform: uppercase;
+  font-family: -apple-system, sans-serif;
+}
+.intro-titel {
+  color: #fff;
+  font-size: clamp(2rem, 7vw, 3.5rem);
+  font-weight: 900;
+  letter-spacing: .06em;
+  margin: 0 0 .6rem;
+  line-height: 1.1;
+  font-family: -apple-system, sans-serif;
+  text-shadow: 0 2px 12px rgba(0,0,0,.5);
+}
+.intro-sub {
+  color: rgba(255,255,255,.8);
+  font-size: clamp(.9rem, 2.5vw, 1.1rem);
+  letter-spacing: .08em;
+  margin: 0;
+  font-family: -apple-system, sans-serif;
+}
+
+/* Respekter reduceret bevægelse */
+@media (prefers-reduced-motion: reduce) {
+  .intro-bg { animation: none; }
+  .intro-tekst-wrap { transition: none; }
+}
+
+/* ================================================================
+   ARRANGEMENT-POPUP v8.0
+   ================================================================ */
+#arr-popup {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,.55);
+  backdrop-filter: blur(3px);
+  opacity: 0;
+  transition: opacity .35s ease;
+  padding: 1.5rem;
+  box-sizing: border-box;
+}
+#arr-popup.arr-popup-synlig {
+  opacity: 1;
+}
+
+.arr-popup-boks {
+  background: var(--p, #0d2b1a);
+  border: 1px solid rgba(184,151,58,.35);
+  border-radius: 1.2rem;
+  padding: 2rem 1.5rem 1.75rem;
+  max-width: 400px;
+  width: 100%;
+  position: relative;
+  box-shadow: 0 20px 60px rgba(0,0,0,.55);
+  transform: translateY(12px);
+  transition: transform .35s ease;
+}
+#arr-popup.arr-popup-synlig .arr-popup-boks {
+  transform: translateY(0);
+}
+
+.arr-popup-luk {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: rgba(255,255,255,.08);
+  border: none;
+  border-radius: 50%;
+  width: 2.2rem;
+  height: 2.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: rgba(255,255,255,.7);
+  transition: background .2s;
+}
+.arr-popup-luk:hover { background: rgba(255,255,255,.18); }
+
+.arr-popup-label {
+  color: var(--g, #b8973a);
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .18em;
+  margin: 0 0 .6rem;
+  text-transform: uppercase;
+}
+.arr-popup-titel {
+  color: #fff;
+  font-size: 1.35rem;
+  font-weight: 800;
+  margin: 0 0 .75rem;
+  line-height: 1.25;
+  padding-right: 2rem;
+}
+.arr-popup-meta {
+  color: rgba(255,255,255,.65);
+  font-size: .85rem;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+}
+.arr-popup-cta {
+  display: block;
+  width: 100%;
+  background: var(--g, #b8973a);
+  color: #0d2b1a;
+  font-weight: 800;
+  font-size: .95rem;
+  letter-spacing: .06em;
+  border: none;
+  border-radius: .75rem;
+  padding: .95rem 1.5rem;
+  cursor: pointer;
+  transition: background .2s, transform .15s;
+  font-family: inherit;
+}
+.arr-popup-cta:hover, .arr-popup-cta:active {
+  background: #c9a84c;
+  transform: scale(.98);
+}
+
+/* ================================================================
+   NAV v8.0 — Golf synlig på alle skærmstørrelser
+   Fjerner bredde-begrænsning der skjulte 5. knap på mobil
+   ================================================================ */
+#bottom-nav {
+  /* 5 knapper altid synlige — sørg for de passer */
+  display: flex;
+}
+#bottom-nav .nav-item {
+  /* Giv plads til 5 knapper inkl. Golf */
+  flex: 1 1 0;
+  min-width: 0;
+}
+#bottom-nav .nav-item .nav-lbl {
+  font-size: .62rem; /* lidt smallere ved 5 punkter på smal mobil */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+@media (min-width: 400px) {
+  #bottom-nav .nav-item .nav-lbl {
+    font-size: .7rem;
+  }
+}

@@ -1,5 +1,5 @@
 /* ================================================================
-   LYNGBYGAARD ERHVERVSKLUB — app.js v7.2
+   LYNGBYGAARD ERHVERVSKLUB — app.js v8.0
    Al konfiguration samlet øverst. Ret her – ingen andre steder.
 
    CHANGELOG v7.0 (fra v6.2):
@@ -31,7 +31,7 @@ const CONFIG = {
 
   heroTekst:   'Erhverv, netværk og golfoplevelser',
   heroUnder:   'Lyngbygaard Erhvervsklub samler virksomheder i Aarhus-regionen om golf, relationer og fællesskab.',
-  heroBillede: './images/ek-arrangement.jpg',
+  heroBillede: './images/ek-klubhus.jpg',
 
   /* ⚠️  SIKKERHED: adminKode er KUN en fallback til lokal test.
      I produktion bruges Supabase Auth (se admin-login nedenfor).
@@ -86,7 +86,7 @@ const CONFIG = {
      Manglende billeder → tekst-bi-kort i klubbens farver. */
   billeder: {
     hero:     './images/klubhus-hero.jpg',
-    ek:       './images/ek-arrangement.jpg',
+    ek:       './images/ek-klubhus.jpg',
     golf1:    '',   // ikke tilgængeligt — tekst-bi-kort vises
     golf2:    '',   // ikke tilgængeligt — tekst-bi-kort vises
     netvaerk: '',   // ikke tilgængeligt — tekst-bi-kort vises
@@ -542,7 +542,7 @@ ${nyheder.length ? `
   <p>Lyngbygaard Golf · Lyngbygårdsvej 29, 8220 Brabrand</p>
   <p class="kont-tlf-linje"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.17h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 8.91a16 16 0 0 0 6 6l.81-.81a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 21.9 16.92z"/></svg> <a href="tel:87441070">87 44 10 70</a></p>
   <p class="foot-credit">Bygget af Nordic Operations · nordicoperations.dk</p>
-  <p class="foot-version">LYG Erhvervsklub v7.2</p>
+  <p class="foot-version">LYG Erhvervsklub v8.0</p>
 </footer>`;
 }
 
@@ -1280,7 +1280,7 @@ function pgOm() {
 
 <!-- ── AUTENTISK ARRANGEMENTSFOTO ── -->
 <div class="ek-foto-wrap">
-  <div class="ek-foto" style="background-image:url('./images/ek-arrangement.jpg')" role="img" aria-label="Arrangement i Lyngbygaard Erhvervsklub">
+  <div class="ek-foto" style="background-image:url('./images/ek-klubhus.jpg')" role="img" aria-label="Lyngbygaard Erhvervsklub - klubhuset">
     <div class="ek-foto-lag">
       <p class="ek-foto-citat">${esc(CONFIG.omEK.tekst)}</p>
     </div>
@@ -2343,24 +2343,28 @@ document.addEventListener('DOMContentLoaded', () => {
   /* ── NAVIGATION: mobil "Mere"-overlay + desktop vis alle knapper ── */
   const isMobilNav = () => window.innerWidth < 640;
 
-  /* Skift Mere-knap til "Mere" på mobil / "Admin" på desktop */
+  /* Skift Oversigt-knap til "Oversigt" på mobil / "Admin" på desktop */
   function opdaterNavLayout() {
     const mobil = isMobilNav();
     const mereLbl = document.getElementById('nav-mere-lbl');
     const mereBtn = document.getElementById('nav-mere-btn');
     const sponsorBtn = document.getElementById('nav-sponsor-desk');
     const kontaktBtn = document.getElementById('nav-kontakt-desk');
+    const golfBtn   = document.getElementById('nav-golf-desk');
     if (!mereBtn) return;
     if (mobil) {
-      if (mereLbl) mereLbl.textContent = 'Mere';
-      mereBtn.dataset.side = ''; /* ikke direkte nav på mobil */
+      if (mereLbl) mereLbl.textContent = 'Oversigt';
+      mereBtn.dataset.side = ''; /* åbner overlay — ikke direkte nav */
       if (sponsorBtn) sponsorBtn.style.display = 'none';
       if (kontaktBtn) kontaktBtn.style.display = 'none';
+      /* v8.0: Golf er synlig på mobil som 5. nav-punkt */
+      if (golfBtn)   golfBtn.style.display = '';
     } else {
       if (mereLbl) mereLbl.textContent = 'Admin';
       mereBtn.dataset.side = 'admin';
       if (sponsorBtn) sponsorBtn.style.display = '';
       if (kontaktBtn) kontaktBtn.style.display = '';
+      if (golfBtn)   golfBtn.style.display = '';
     }
   }
   opdaterNavLayout();
@@ -2386,4 +2390,163 @@ document.addEventListener('DOMContentLoaded', () => {
 
   /* Push-notifikation dialog */
   visPushDialog();
+
+  /* v8.0: Intro-animation (Ken Burns) — kun ved første besøg */
+  startIntroAnimation();
 });
+
+/* ================================================================
+   INTRO-ANIMATION v8.0 (Ken Burns)
+   - Første besøg i sessionen (sessionStorage-flag)
+   - Varer 6 sekunder i alt; kan springes over
+   - Respekterer prefers-reduced-motion
+   ================================================================ */
+function startIntroAnimation() {
+  const overlay = document.getElementById('intro-overlay');
+  if (!overlay) return;
+
+  /* Allerede set denne session */
+  if (sessionStorage.getItem('lygIntroSpillet') === '1') return;
+
+  /* Reduceret bevægelse: spring direkte over og vis popup */
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    sessionStorage.setItem('lygIntroSpillet', '1');
+    setTimeout(() => visArrPopup(), 500);
+    return;
+  }
+
+  sessionStorage.setItem('lygIntroSpillet', '1');
+
+  /* Vis overlay */
+  overlay.style.display = 'flex';
+  overlay.classList.add('intro-aktiv');
+
+  /* Fade tekst ind efter 3s */
+  setTimeout(() => {
+    const tw = overlay.querySelector('.intro-tekst-wrap');
+    if (tw) tw.classList.add('intro-tekst-synlig');
+  }, 3000);
+
+  /* Afslut intro efter 6s */
+  setTimeout(() => lukIntro(), 6200);
+}
+
+function springIntroOver() {
+  lukIntro();
+}
+
+function lukIntro() {
+  const overlay = document.getElementById('intro-overlay');
+  if (!overlay || overlay.style.display === 'none') {
+    visArrPopup();
+    return;
+  }
+  overlay.classList.add('intro-ud');
+  setTimeout(() => {
+    overlay.style.display = 'none';
+    overlay.classList.remove('intro-aktiv', 'intro-ud');
+    visArrPopup();
+  }, 500);
+}
+
+/* ================================================================
+   ARRANGEMENT-POPUP v8.0
+   - Vises efter intro (eller direkte ved genbesøg hvis nyt arr)
+   - Automatisk: næste arrangement med åben tilmelding
+   - Admin kan sætte manuel popup via Supabase (ek_popup_config)
+   - Vises maks. én gang pr. arrangement pr. bruger (localStorage)
+   ================================================================ */
+function visArrPopup() {
+  const overlay = document.getElementById('arr-popup');
+  if (!overlay) return;
+
+  /* Hent evt. admin-konfigureret popup (Supabase) */
+  _hentPopupConfig().then(cfg => {
+    if (cfg && cfg.aktiv) {
+      /* Manuel popup fra admin */
+      _visPopupMedData({
+        titel:  cfg.titel  || 'Besked fra Erhvervsklubben',
+        meta:   cfg.tekst  || '',
+        arrId:  cfg.arr_id || null,
+        noegle: 'popup_manuel_' + (cfg.id || '1'),
+      });
+      return;
+    }
+
+    /* Automatisk: næste arrangement med åben tilmelding */
+    const næste = getArr()
+      .filter(a => erFremtidig(a.dato) && a.aaben && a.status !== 'lukket')
+      .sort((a,b) => a.dato.localeCompare(b.dato))[0];
+
+    if (!næste) return; /* ingen arrangementer — ingen popup */
+
+    const noegle = 'popup_arr_' + næste.id;
+    _visPopupMedData({
+      titel: næste.titel,
+      meta:  _popupMetaTekst(næste),
+      arrId: næste.id,
+      noegle,
+    });
+  });
+}
+
+function _popupMetaTekst(a) {
+  const dele = [];
+  if (a.dato) {
+    const d = new Date(a.dato + 'T12:00:00');
+    dele.push(d.toLocaleDateString('da-DK', { weekday:'long', day:'numeric', month:'long' }));
+  }
+  if (a.tid)   dele.push('Kl. ' + a.tid);
+  if (a.sted)  dele.push(a.sted);
+  if (a.frist) dele.push('Tilmelding senest: ' + fmtDato(a.frist));
+  const ledig = ledigePladser(a);
+  if (a.maks && ledig >= 0) dele.push(ledig + ' ledige pladser');
+  return dele.join(' · ');
+}
+
+function _visPopupMedData({ titel, meta, arrId, noegle }) {
+  /* Allerede set? */
+  if (localStorage.getItem(noegle) === '1') return;
+
+  const overlay = document.getElementById('arr-popup');
+  if (!overlay) return;
+
+  document.getElementById('arr-popup-titel').textContent = titel;
+  document.getElementById('arr-popup-meta').textContent  = meta;
+
+  const cta = document.getElementById('arr-popup-cta');
+  if (arrId) {
+    cta.onclick = () => { lukkArrPopup(); navTil('tilmelding', { id: arrId }); };
+    cta.style.display = '';
+  } else {
+    cta.style.display = 'none';
+  }
+
+  overlay.style.display = 'flex';
+  setTimeout(() => overlay.classList.add('arr-popup-synlig'), 20);
+}
+
+function lukkArrPopup() {
+  const overlay = document.getElementById('arr-popup');
+  if (!overlay) return;
+  overlay.classList.remove('arr-popup-synlig');
+  setTimeout(() => { overlay.style.display = 'none'; }, 350);
+  /* Gem at bruger har set popup — sæt flag baseret på nuværende arr */
+  const næste = getArr()
+    .filter(a => erFremtidig(a.dato) && a.aaben)
+    .sort((a,b) => a.dato.localeCompare(b.dato))[0];
+  if (næste) localStorage.setItem('popup_arr_' + næste.id, '1');
+}
+
+async function _hentPopupConfig() {
+  /* Forsøger at hente admin-konfigureret popup fra Supabase */
+  if (!window._sb) return null;
+  try {
+    const { data } = await window._sb
+      .from('ek_popup_config')
+      .select('*')
+      .eq('aktiv', true)
+      .maybeSingle();
+    return data;
+  } catch { return null; }
+}
