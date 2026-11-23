@@ -16,9 +16,9 @@ const BASE          = self.registration.scope;
 
 const PRECACHE_URLS = [
   BASE + 'index.html',
-  BASE + 'style.css?v=7.4',
-  BASE + 'app.js?v=7.4',
-  BASE + 'manifest.json?v=7.4',
+  BASE + 'style.css?v=8.0',
+  BASE + 'app.js?v=8.0',
+  BASE + 'manifest.json?v=8.0',
   BASE + 'icons/icon-192.png',
   BASE + 'icons/icon-512.png',
   BASE + 'images/golfer-1-address.png',
