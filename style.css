@@ -4941,3 +4941,247 @@ textarea:focus-visible {
   font-size: inherit;
   font-family: inherit;
 }
+
+/* ================================================================
+   v8.4 — STATS BJÆLKE (forside)
+   ================================================================ */
+.cx-stats-sek {
+  background: var(--p);
+  padding: 1.25rem 1rem;
+}
+.cx-stats-grid {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  max-width: 540px;
+  margin: 0 auto;
+}
+.cx-stat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .2rem;
+  text-align: center;
+  color: var(--hvid);
+}
+.cx-stat-tal {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--g);
+  line-height: 1.1;
+  letter-spacing: -.01em;
+}
+.cx-stat-lbl {
+  font-size: .72rem;
+  opacity: .8;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  line-height: 1.3;
+}
+.cx-stat-div {
+  width: 1px;
+  height: 2.5rem;
+  background: rgba(255,255,255,.2);
+  flex-shrink: 0;
+  margin: 0 1rem;
+}
+
+/* ================================================================
+   v8.4 — GOLF CTA BOKS
+   ================================================================ */
+.golf-cta-boks {
+  background: var(--p);
+  color: var(--hvid);
+  border-radius: 12px;
+  padding: 1.75rem 1.5rem;
+  text-align: center;
+  margin: 0 auto;
+  max-width: 520px;
+}
+.ek-cta-h3 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--g);
+  margin: 0 0 .5rem;
+}
+.ek-cta-p {
+  font-size: .9rem;
+  opacity: .88;
+  margin: 0 0 1.25rem;
+  line-height: 1.5;
+}
+.ek-cta-knapper {
+  display: flex;
+  gap: .75rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.ek-cta-knap {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  padding: .65rem 1.25rem;
+  border-radius: 8px;
+  font-size: .88rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  transition: opacity .15s;
+}
+.ek-cta-knap:hover { opacity: .85; }
+.ek-cta-knap.primaer  { background: var(--g); color: var(--p); }
+.ek-cta-knap.sekundaer { background: rgba(255,255,255,.12); color: var(--hvid); border: 1px solid rgba(255,255,255,.25); }
+
+/* ================================================================
+   v8.4 — IKONKORT (statiske — bruges af pgMøder og pgOm)
+   ================================================================ */
+.ikg {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+.ikb {
+  background: #f8f9fa;
+  border-radius: 10px;
+  padding: 1.1rem 1rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: .35rem;
+}
+.ikb.static { pointer-events: none; }
+.iks {
+  color: var(--p);
+  margin-bottom: .2rem;
+  display: flex;
+}
+.ikb strong { font-size: .95rem; color: var(--txt); }
+.ikb p { font-size: .84rem; color: var(--mut); line-height: 1.5; margin: 0; }
+
+/* ================================================================
+   v8.4 — MEDLEMSKATALOG
+   ================================================================ */
+.mk-soeg-wrap {
+  margin-bottom: .75rem;
+}
+.mk-soeg {
+  width: 100%;
+  padding: .6rem .9rem;
+  border: 1.5px solid #d1d5db;
+  border-radius: 8px;
+  font-size: .9rem;
+  font-family: inherit;
+  color: var(--txt);
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color .15s;
+}
+.mk-soeg:focus { border-color: var(--p); }
+.mk-liste {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  overflow: hidden;
+}
+.mk-rad {
+  display: flex;
+  align-items: center;
+  padding: .6rem .9rem;
+  gap: .75rem;
+  border-bottom: 1px solid #f3f4f6;
+  transition: background .1s;
+}
+.mk-rad:last-child { border-bottom: none; }
+.mk-rad:nth-child(even) { background: #fafafa; }
+.mk-info {
+  flex: 1;
+  min-width: 0;
+}
+.mk-navn {
+  display: block;
+  font-size: .88rem;
+  color: var(--txt);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mk-branche {
+  font-size: .78rem;
+  color: var(--mut);
+}
+.mk-link {
+  color: var(--p);
+  font-size: .9rem;
+  text-decoration: none;
+  padding: .2rem .4rem;
+  border-radius: 4px;
+  transition: background .1s;
+  flex-shrink: 0;
+}
+.mk-link:hover { background: rgba(13,43,26,.08); }
+.mk-link-ph { width: 1.5rem; flex-shrink: 0; }
+
+/* ================================================================
+   v8.4 — NYHEDER
+   ================================================================ */
+.ny-liste {
+  display: flex;
+  flex-direction: column;
+  gap: .75rem;
+}
+.ny-kort {
+  background: #f8f9fa;
+  border-radius: 10px;
+  padding: .9rem 1rem;
+  border-left: 3px solid var(--p);
+}
+.ny-meta {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  margin-bottom: .3rem;
+}
+.ny-dato {
+  font-size: .78rem;
+  color: var(--mut);
+}
+.ny-kilde {
+  font-size: .75rem;
+  background: var(--p);
+  color: var(--hvid);
+  padding: .1rem .45rem;
+  border-radius: 4px;
+  opacity: .8;
+}
+.ny-titel {
+  font-size: .95rem;
+  color: var(--txt);
+  margin: 0 0 .3rem;
+  font-weight: 600;
+}
+.ny-tekst {
+  font-size: .85rem;
+  color: var(--mut);
+  margin: 0 0 .4rem;
+  line-height: 1.5;
+}
+.ny-link {
+  font-size: .82rem;
+  color: var(--p);
+  text-decoration: none;
+  font-weight: 500;
+}
+.ny-link:hover { text-decoration: underline; }
+
+/* ================================================================
+   v8.4 — MØDER OVERSIGT-MENU (mere-overlay udvidelse)
+   ================================================================ */
+#mere-overlay {
+  display: flex;
+  flex-wrap: wrap;
+}

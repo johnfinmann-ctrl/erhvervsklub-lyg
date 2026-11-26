@@ -1,6 +1,20 @@
 /* ================================================================
-   LYNGBYGAARD ERHVERVSKLUB — app.js v8.3.1
+   LYNGBYGAARD ERHVERVSKLUB — app.js v8.4
    Al konfiguration samlet øverst. Ret her – ingen andre steder.
+
+   CHANGELOG v8.4 (fra v8.3.1):
+   · Forside: overskrift "MERE END GOLF", undertekst "Relationer. Netværk. Forretning."
+   · Forside: stats-bjælke — knap 100 virksomheder, 8-9 arrangementer/år, EK-Golf onsdage
+   · Firmaarrangement: opdigtede priser fjernet — erstattet med kontakt-til-tilbud
+   · Ny funktion pgMøder(): møder og konferencer (Pejsestuen, 50 pers., Brasseriet)
+   · Ny funktion pgNyheder(): nyheder med admin-godkendelse og kilde-angivelse
+   · pgOm(): opdateret med verificeret EK-indhold (netværk, virksomhedsbesøg, rejser, EK-Golf)
+   · pgOm(): professionelt medlemskatalog med 97 verificerede virksomheder og søgning
+   · pgSponsor(): opdateret uden priser — individuelt tilpassede partnerskaber
+   · pgGolf(): opdateret som professionelt firmaarrangement-afsnit uden opdigtede pakker/priser
+   · Router: 'moeder' og 'nyheder' tilføjet
+   · Navigation: Oversigt-menu inkluderer Møder og Nyheder
+   · Footer: v8.4
 
    CHANGELOG v8.3 (fra v8.2):
    · Supabase-push-kode fjernet (registrerPushSubscription, synkroniserArrangementer, urlBase64ToUint8Array)
@@ -52,14 +66,18 @@ const CONFIG = {
      Erstat pladsholder med din REQUEST_TOKEN-værdi. */
   requestToken: 'INDSÆT_REQUEST_TOKEN',
 
-  golfPakker: [
-    { id:'gp1', titel:'Kundearrangement',   pris:'Fra 2.800 kr./hold',     beskrivelse:'Eksklusiv oplevelse til jeres vigtigste kunder. Golf, VIP-service og middag i professionelle rammer.',  inkl:['9 eller 18 huller golf','VIP-velkomst','Middag på klubhuset','Fotoservice'] },
-    { id:'gp2', titel:'Medarbejderdag',     pris:'Fra 1.900 kr./person',   beskrivelse:'Giv dine medarbejdere en dag de husker — med golf, samvær og god stemning.',                            inkl:['9 huller golf','Forfriskninger undervejs','Afslutningsfest','Overraskelser'] },
-    { id:'gp3', titel:'Netværksdag',        pris:'Fra 1.500 kr./person',   beskrivelse:'Bring dine samarbejdspartnere sammen i uformelle, professionelle rammer med golf som omdrejningspunkt.', inkl:['Golf eller aktivitet','Frokost og netværk','Opfølgningsmuligheder','Fleksibelt program'] },
-    { id:'gp4', titel:'Møde + Golf',        pris:'Fra 2.200 kr./hold',     beskrivelse:'Kombinér et kort strategimøde med en runde golf. Ideelt til bestyrelsesdage og ledergrupper.',           inkl:['Mødelokale 2 timer','9 huller golf','Forplejning','Fleksibel dagorden'] },
-    { id:'gp5', titel:'Company Day',        pris:'Fra 4.500 kr./hold',     beskrivelse:'En hel dag på banen med morgenmad, frokost og 18 huller. Perfekt til teambuilding og kundepleje.',      inkl:['18 huller golf','Morgenmad & frokost','Golfvogn inkl.','Priser & diplomer'] },
-    { id:'gp6', titel:'VIP-arrangement',    pris:'Tilbud på forespørgsel', beskrivelse:'Skræddersyet VIP-oplevelse til særlige gæster, jubilæer eller eksklusive anledninger.',                inkl:['Fuld personlig service','Gourmetmiddag','Eksklusivt program','Caddie inkl.'] }
+  /* v8.4: Ingen opdigtede priser — alle forespørgsler håndteres individuelt */
+  golfArrangementer: [
+    { id:'ga1', titel:'Company Day',         beskrivelse:'En hel dag for din virksomhed — golf, forplejning og fællesskab i professionelle rammer.',         inkl:['Golf på Lyngbygaard-banen','Forplejning tilpasset jeres ønsker','Fleksibelt program','Professionel tilrettelæggelse'] },
+    { id:'ga2', titel:'VIP-arrangement',     beskrivelse:'Skræddersyet oplevelse for jeres vigtigste gæster — eksklusivt, professionelt og uforglemmelig.', inkl:['Personlig service','Eksklusiv oplevelse','Tilpasset program','Præmier og diplomer'] },
+    { id:'ga3', titel:'Kundearrangement',    beskrivelse:'Styrk relationen til jeres kunder med golf og netværk i naturskønne omgivelser.',                  inkl:['Golf for alle niveauer','Frokost og netværk','Professionel afholdelse','Fleksibel dato'] },
+    { id:'ga4', titel:'Medarbejderarrangement', beskrivelse:'Giv jeres team en dag at huske — med golf, samvær og god stemning på banen.',                   inkl:['Golf for alle niveauer','Teambuilding-elementer','Forplejning','Sociale aktiviteter'] },
+    { id:'ga5', titel:'Møde + Golf',         beskrivelse:'Kombinér et produktivt møde med golf. Ideelt til bestyrelsesdage, ledergrupper og partnermøder.', inkl:['Mødelokale med AV-udstyr','Golf på banen','Forplejning fra Brasseriet','Fleksibel dagorden'] },
+    { id:'ga6', titel:'Golfoplevelse',       beskrivelse:'Bliv introduceret til golf i trygge rammer — skræddersyet til begyndere og garvede spillere.',    inkl:['Introduktion til golf','Professionel vejledning','Udstyr til rådighed','Hyggelig stemning'] }
   ],
+
+  /* Legacy alias — bruges stadig af admin-fanerne (ek_pakker i localStorage) */
+  golfPakker: [],
 
   sponsorFordele: [
     { ikon:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>', titel:'Synlighed',       tekst:'Logo på bane, hjemmeside, app og ved alle arrangementer.' },
@@ -196,6 +214,14 @@ function init() {
     console.log('[v8.3] Migrationsmarkør sat ✓');
   }
 
+  /* ── v8.4: Markér migration — fjern golfPakker med priser ── */
+  if (!DB.get('ek_v84_upgrade')) {
+    /* Ryd evt. gamle golf-pakker med priser (erstattet af golfArrangementer uden priser) */
+    DB.set('ek_pakker', []);
+    DB.set('ek_v84_upgrade', { dato: new Date().toISOString(), fra: 'v8.3.1' });
+    console.log('[v8.4] Migrationsmarkør sat — golfpakker med priser ryddet ✓');
+  }
+
   /* ── v8.1: Arkivér 2026-arrangementer ──
      Flyt afholdte 2026-arr til ek_arr_arkiv (bevares).
      Fjern dem fra aktiv liste ek_arr.
@@ -286,6 +312,8 @@ function navTil(s, data) {
     case 'golfarr':    main.innerHTML = pgGolf();     break;
     case 'sponsor':    main.innerHTML = pgSponsor();  break;
     case 'om':         main.innerHTML = pgOm();       break;
+    case 'moeder':     main.innerHTML = pgMøder();    break;
+    case 'nyheder':    main.innerHTML = pgNyheder();  break;
     case 'kontakt':    main.innerHTML = pgKontakt();  break;
     case 'admin':      main.innerHTML = pgAdmin();    break;
   }
@@ -431,9 +459,9 @@ function pgForside() {
       </button>
     </div>
     <div class="hero-tekst-blok">
-      <h1 class="hero-h1-v7">LYG ERHVERVSKLUB</h1>
-      <p class="hero-tagline-v7">Golf · Relationer · Forretning</p>
-      <p class="hero-p-kort">Professionelt netværk for virksomhedsejere, direktører og beslutningstagere.</p>
+      <h1 class="hero-h1-v7">MERE END GOLF</h1>
+      <p class="hero-tagline-v7">Relationer. Netværk. Forretning.</p>
+      <p class="hero-p-kort">Professionelt erhvervsnetværk for virksomhedsejere, direktører og beslutningstagere i Aarhus-regionen.</p>
     </div>
   </div>
 
@@ -474,6 +502,25 @@ function pgForside() {
     </div>
   </div>
 </div>
+
+<section class="cx-sek cx-stats-sek">
+  <div class="cx-stats-grid">
+    <div class="cx-stat">
+      <strong class="cx-stat-tal">~100</strong>
+      <span class="cx-stat-lbl">medlemsvirksomheder</span>
+    </div>
+    <div class="cx-stat-div"></div>
+    <div class="cx-stat">
+      <strong class="cx-stat-tal">8–9</strong>
+      <span class="cx-stat-lbl">arrangementer om året</span>
+    </div>
+    <div class="cx-stat-div"></div>
+    <div class="cx-stat">
+      <strong class="cx-stat-tal">EK-Golf</strong>
+      <span class="cx-stat-lbl">onsdage i sæsonen</span>
+    </div>
+  </div>
+</section>
 
 ${næsteArr ? `
 <section class="cx-sek cx-naeste-sek">
@@ -607,7 +654,7 @@ ${nyheder.length ? `
   <p>Lyngbygaard Golf · Lyngbygårdsvej 29, 8220 Brabrand</p>
   <p class="kont-tlf-linje"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.17h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 8.91a16 16 0 0 0 6 6l.81-.81a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 21.9 16.92z"/></svg> <a href="tel:87441070">87 44 10 70</a></p>
   <p class="foot-credit">Bygget af Nordic Operations · nordicoperations.dk</p>
-  <p class="foot-version">LYG Erhvervsklub v8.3.1</p>
+  <p class="foot-version">LYG Erhvervsklub v8.4</p>
 </footer>`;
 }
 
@@ -1080,60 +1127,27 @@ async function venteListe(arrId) {
 let _golfState = { trin:1, pakke:'', virk:'', kp:'', email:'', tlf:'', dato:'', antal:4, besk:'' };
 
 function pgGolf() {
-  const pakker = DB.get('ek_pakker')||CONFIG.golfPakker;
+  /* v8.4: Professionelt firmaarrangement-afsnit — ingen opdigtede priser */
+  const arrangementer = CONFIG.golfArrangementer;
   const svgArrow = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>`;
   const svgGlobe = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>`;
-  const valgtPakke = pakker.find(p => p.titel === _golfState.pakke);
+  const svgPhone = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.17h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 8.91a16 16 0 0 0 6 6l.81-.81a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 21.9 16.92z"/></svg>`;
 
-  return `
+  /* Forespørgselsskema — 2-trins flow: oplysninger → kvittering */
+  if (_golfState.trin >= 2) {
+    return `
 <div class="ph bg-mork bk-ph">
   <div class="bk-ph-topbar">
-    ${_golfState.trin > 1 ? `<button class="bk-back" onclick="golfTilbage()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></button>` : `<div style="width:32px"></div>`}
+    ${_golfState.trin === 2 ? `<button class="bk-back" onclick="golfReset();navTil('golfarr')" aria-label="Tilbage"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></button>` : `<div style="width:32px"></div>`}
     <h1 class="bk-ph-h1">Firmaarrangement</h1>
     <div style="width:32px"></div>
   </div>
-  <div class="bk-trin-wrap">
-    ${[{n:1,l:'Vælg pakke'},{n:2,l:'Oplysninger'},{n:3,l:'Bekræft'}].map(({n,l}) => `
-    <div class="bk-trin${_golfState.trin===n?' aktiv':_golfState.trin>n?' done':''}">`+`
-      <span class="bk-trin-nr">${_golfState.trin>n?`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`:n}</span>
-      <span class="bk-trin-lbl">${l}</span>
-    </div>${n<3?'<div class="bk-trin-linje"></div>':''}`).join('')}
-  </div>
 </div>
-
-${_golfState.trin === 1 ? `
-<div class="golf-gb-wrap">
-  <button class="golf-gb-kort" onclick="åbnGolfBox()">
-    <div class="golf-gb-venstre">
-      <span class="golf-gb-ikon">${svgGlobe}</span>
-      <div><div class="golf-gb-titel">GolfBox</div><div class="golf-gb-sub">Book tid eller log ind direkte</div></div>
-    </div>
-    <span class="golf-gb-pil">${svgArrow}</span>
-  </button>
-</div>
-<section class="cx-sek">
-  <div class="cx-hdr"><p class="golf-arr-eyebrow">VÆLG ARRANGEMENT</p></div>
-  <div class="cx-scroll" id="cx-pakker" role="list">
-    ${pakker.map(p => `
-    <button class="golf-pk-txt" role="listitem" data-pakketitel="${esc(p.titel)}"
-            onclick="golfVælgPakke(this.dataset.pakketitel)">
-      <span class="golf-pk-pris-txt">${esc(p.pris)}</span>
-      <span class="golf-pk-titel-txt">${esc(p.titel)}</span>
-      <span class="golf-pk-besk-txt">${esc(p.beskrivelse.split('.')[0]+'.')}</span>
-      <ul class="golf-pk-inkl">${(p.inkl||[]).slice(0,3).map(x=>`<li>${esc(x)}</li>`).join('')}</ul>
-      <span class="golf-pk-cta-txt">Vælg ${svgArrow}</span>
-    </button>`).join('')}
-  </div>
-  <div class="cx-prikker" id="cx-pk-prikker">${pakker.map((_,i)=>`<span class="cx-prik${i===0?' aktiv':''}">`+'</span>').join('')}</div>
-</section>` : ''}
 
 ${_golfState.trin === 2 ? `
 <section class="sek">
-  ${valgtPakke ? `<div class="bk-valgt-arr">
-    <span class="bk-valgt-label">Valgt pakke</span>
-    <span class="bk-valgt-titel">${esc(valgtPakke.titel)}</span>
-    <span class="bk-valgt-dato">${esc(valgtPakke.pris)}</span>
-  </div>` : ''}
+  <h2 class="stitl">Forespørgsel — ${esc(_golfState.pakke)}</h2>
+  <p class="muted mb1">Vi vender tilbage med et skræddersyet tilbud til jeres arrangement.</p>
   <form id="golf-form2" onsubmit="golfTrin2(event)" novalidate>
     <div class="fg"><label>Virksomhed *</label><input name="virk" required value="${esc(_golfState.virk)}" placeholder="Virksomhedens navn" autocomplete="organization"></div>
     <div class="g2f">
@@ -1152,27 +1166,9 @@ ${_golfState.trin === 2 ? `
         <button type="button" class="bk-antal-btn" onclick="golfAntalJuster(1)">+</button>
       </div>
     </div>
-    <div class="fg"><label>Særlige ønsker</label><textarea name="besk" rows="2" placeholder="Beskriv jeres ønsker…">${esc(_golfState.besk)}</textarea></div>
-    <button type="submit" class="knap-p fb bk-submit">Næste: Bekræft</button>
+    <div class="fg"><label>Særlige ønsker eller spørgsmål</label><textarea name="besk" rows="3" placeholder="Beskriv jeres ønsker, antal golfers, ønsket dato mv…">${esc(_golfState.besk)}</textarea></div>
+    <button type="submit" class="knap-p fb bk-submit">Send forespørgsel</button>
   </form>
-</section>` : ''}
-
-${_golfState.trin === 3 ? `
-<section class="sek">
-  <div class="bk-opsummering">
-    <h2 class="bk-ops-titel">Bekræft forespørgsel</h2>
-    <div class="bk-ops-liste">
-      <div class="bk-ops-felt"><span>Pakke</span><strong>${esc(_golfState.pakke)}</strong></div>
-      <div class="bk-ops-felt"><span>Virksomhed</span><strong>${esc(_golfState.virk)}</strong></div>
-      <div class="bk-ops-felt"><span>Kontakt</span><strong>${esc(_golfState.kp)}</strong></div>
-      <div class="bk-ops-felt"><span>Email</span><strong>${esc(_golfState.email)}</strong></div>
-      ${_golfState.tlf?`<div class="bk-ops-felt"><span>Telefon</span><strong>${esc(_golfState.tlf)}</strong></div>`:''}
-      ${_golfState.dato?`<div class="bk-ops-felt"><span>Dato</span><strong>${fmtDato(_golfState.dato)}</strong></div>`:''}
-      <div class="bk-ops-felt"><span>Antal</span><strong>${_golfState.antal} personer</strong></div>
-    </div>
-  </div>
-  <button class="knap-p fb bk-submit" onclick="golfAfslut()">Send forespørgsel</button>
-  <button class="bk-rediger" onclick="golfTilTrin(2)">Ret oplysninger</button>
 </section>` : ''}
 
 ${_golfState.trin === 4 ? `
@@ -1180,15 +1176,75 @@ ${_golfState.trin === 4 ? `
   <div class="bk-kv">
     <div class="bk-kv-ikon"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
     <h2 class="bk-kv-h2">Forespørgsel sendt</h2>
-    <p class="bk-kv-info">Vi kontakter <strong>${esc(_golfState.kp)}</strong> hurtigst muligt.</p>
+    <p class="bk-kv-info">Vi kontakter <strong>${esc(_golfState.kp)}</strong> hurtigst muligt med et skræddersyet tilbud.</p>
     <div class="bk-kv-knapper">
       <button class="knap-p" onclick="golfReset();navTil('forside')">Tilbage til forsiden</button>
+      <button class="knap-sek" onclick="golfReset();navTil('golfarr')">Nyt arrangement</button>
     </div>
   </div>
 </section>` : ''}`;
+  }
+
+  /* Trin 1: Oversigt over arrangementstyper */
+  return `
+<div class="ph bg-mork">
+  <p class="ek-ph-over">LYG ERHVERVSKLUB</p>
+  <h1 class="ek-ph-h1">Firmaarrangementer</h1>
+  <p class="ek-ph-sub">Skræddersyede golf- og netværksoplevelser for virksomheder</p>
+</div>
+
+<section class="sek">
+  <div class="tekst-bi-kort">
+    <div class="tekst-bi-citat"><p>"Lyngbygaard Golf tilbyder professionelle rammer for alle typer virksomhedsarrangementer — fra eksklusiv Company Day til uformelle kundeoplevelser."</p></div>
+  </div>
+</section>
+
+<section class="cx-sek">
+  <div class="cx-hdr">
+    <h2 class="cx-sek-titel">ARRANGEMENTSTYPER</h2>
+  </div>
+  <div class="cx-scroll" id="cx-golfarr" role="list">
+    ${arrangementer.map(a => `
+    <button class="golf-pk-txt" role="listitem" onclick="golfVælgPakke('${esc(a.titel)}')">
+      <span class="golf-pk-titel-txt">${esc(a.titel)}</span>
+      <span class="golf-pk-besk-txt">${esc(a.beskrivelse)}</span>
+      <ul class="golf-pk-inkl">${(a.inkl||[]).map(x=>`<li>${esc(x)}</li>`).join('')}</ul>
+      <span class="golf-pk-cta-txt">Forespørg ${svgArrow}</span>
+    </button>`).join('')}
+  </div>
+  <div class="cx-prikker" id="cx-golfarr-prikker">${arrangementer.map((_,i)=>`<span class="cx-prik${i===0?' aktiv':''}"></span>`).join('')}</div>
+</section>
+
+<section class="sek">
+  <div class="golf-cta-boks">
+    <h3 class="ek-cta-h3">Ønsker I et tilbud?</h3>
+    <p class="ek-cta-p">Kontakt os direkte — vi tilrettelægger et arrangement der passer præcis til jeres ønsker og budget.</p>
+    <div class="ek-cta-knapper">
+      <a class="ek-cta-knap primaer" href="tel:${CONFIG.telefon.replace(/\s/g,'')}">
+        ${svgPhone} Ring til os
+      </a>
+      <button class="ek-cta-knap sekundaer" onclick="navTil('kontakt')">
+        Send en forespørgsel
+      </button>
+    </div>
+  </div>
+</section>
+
+<section class="sek">
+  <div class="golf-gb-wrap">
+    <button class="golf-gb-kort" onclick="åbnGolfBox()">
+      <div class="golf-gb-venstre">
+        <span class="golf-gb-ikon">${svgGlobe}</span>
+        <div><div class="golf-gb-titel">GolfBox</div><div class="golf-gb-sub">Book tid eller log ind direkte</div></div>
+      </div>
+      <span class="golf-gb-pil">${svgArrow}</span>
+    </button>
+  </div>
+</section>`;
 }
 
 function golfVælgPakke(titel) { _golfState.pakke=titel; _golfState.trin=2; navTil('golfarr'); }
+
 function golfTilbage()        { _golfState.trin=Math.max(1,_golfState.trin-1); navTil('golfarr'); }
 function golfTilTrin(n)       { _golfState.trin=n; navTil('golfarr'); }
 function golfAntalJuster(d)   { _golfState.antal=Math.max(1,Math.min(100,_golfState.antal+d)); const el=document.getElementById('golf-antal-vis'); if(el)el.textContent=_golfState.antal; }
@@ -1199,7 +1255,8 @@ function golfTrin2(e) {
   _golfState.virk=f.virk.value.trim(); _golfState.kp=f.kp.value.trim();
   _golfState.email=f.email.value.trim(); _golfState.tlf=f.tlf.value.trim();
   _golfState.dato=f.dato.value; _golfState.besk=f.besk.value.trim();
-  _golfState.trin=3; navTil('golfarr');
+  /* v8.4: send direkte uden separat bekræftelsestrin */
+  golfAfslut();
 }
 
 async function golfAfslut() {
@@ -1278,13 +1335,32 @@ function pgSponsor() {
 </section>
 
 <section class="sek">
-  <h2 class="stitl">Sponsorniveauer</h2>
+  <h2 class="stitl">Individuelt tilpassede partnerskaber</h2>
+  <p class="muted mb1">Vi tilbyder ikke faste sponsorpakker med fastsatte priser. Hvert samarbejde tilrettelægges individuelt, så det matcher jeres virksomheds mål, budget og ønsker.</p>
   <div class="sp-niv">
-    <div class="sp-n guld-n"><div class="sp-n-titel"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg> Guld</div><p>Primær placering på bane, hjemmeside og alle arrangementer. VIP-invitationer, greenfee og eksklusive events.</p></div>
-    <div class="sp-n"><div class="sp-n-titel"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> Sølv</div><p>Logo ved bane og digitalt. Adgang til erhvervsarrangementer og invitationer til udvalgte events.</p></div>
-    <div class="sp-n"><div class="sp-n-titel"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg> Bronze</div><p>Digital synlighed, omtale i nyhedsbrev og invitationer til åbne arrangementer.</p></div>
+    <div class="sp-n guld-n">
+      <div class="sp-n-titel">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Netværk og relationer
+      </div>
+      <p>Adgang til eksklusive erhvervsarrangementer. Mød beslutningstagere fra hele Aarhus-regionen og byg stærke forretningsrelationer.</p>
+    </div>
+    <div class="sp-n">
+      <div class="sp-n-titel">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        Synlighed og profilering
+      </div>
+      <p>Logo og omtale på bane, hjemmeside, app og ved arrangementer. Stærk associering med Lyngbygaard Golf og det lokale erhvervsliv.</p>
+    </div>
+    <div class="sp-n">
+      <div class="sp-n-titel">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+        Kunde- og medarbejderoplevelser
+      </div>
+      <p>Greenfee-invitationer, firmaarrangementer og adgang til eksklusive oplevelser for jeres vigtigste kunder og medarbejdere.</p>
+    </div>
   </div>
-  <p class="muted tc mt1">Priser aftales individuelt. Kontakt os for et uforpligtende tilbud.</p>
+  <p class="muted tc mt1">Kontakt os for et uforpligtende og individuelt tilpasset tilbud.</p>
 </section>
 
 ${rigtige.length?`
@@ -1335,71 +1411,203 @@ function submitSponsor(e) {
 }
 
 /* ================================================================
-   OM ERHVERVSKLUBBEN
+   OM ERHVERVSKLUBBEN (v8.4)
    ================================================================ */
 function pgOm() {
-  /* SVG line-icons — Lucide-stil, stroke-width 1.4, mørkegrønne */
-  const ekSVG = [
-    { titel:'Netværk',          tekst:'Mød virksomhedsejere og beslutningstagere fra Aarhus-regionen.', cta:'Læs mere →', side:'om',
-      svg:`<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>` },
-    { titel:'Relationer',       tekst:'Stærke forretningsrelationer i professionelle, uformelle rammer.', cta:'Læs mere →', side:'om',
-      svg:`<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>` },
-    { titel:'Golf & oplevelser',tekst:'Turneringer, rejser og særlige golfoplevelser året rundt.', cta:'Se oplevelser →', side:'golfarr',
-      svg:`<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="18" r="2"/><path d="M12 2v14M7 7l5-5 5 5"/><path d="M20 18H4"/></svg>` },
-    { titel:'Sponsorværdi',     tekst:'Synlighed og associering med Lyngbygaard Golf og erhvervsklubben.', cta:'Læs mere →', side:'sponsor',
-      svg:`<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>` },
-    { titel:'EK-mesterskabet',  tekst:'Erhvervsklubbens sportslige højdepunkt for alle erhvervsmedlemmer.', cta:'Læs mere →', side:'om',
-      svg:`<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg>` },
-    { titel:'10+ events/år',    tekst:'Fra SIM Golf til julefrokost og udlandsrejser — altid noget i kalenderen.', cta:'Se events →', side:'kalender',
-      svg:`<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>` },
-  ];
-
-  /* SVG til CTA-knapper */
   const svgPhone = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.17h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 8.91a16 16 0 0 0 6 6l.81-.81a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 21.9 16.92z"/></svg>`;
   const svgMail  = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>`;
 
+  /* EK-fordele — verificeret indhold */
+  const ekFordele = [
+    { titel:'Netværk på tværs af brancher',
+      tekst:'Erhvervsklubben samler virksomheder fra alle brancher i Aarhus-regionen. Her mødes beslutningstagere på tværs og skaber forbindelser, der rækker ud over golfbanen.',
+      svg:`<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>` },
+    { titel:'Relationer mellem beslutningstagere',
+      tekst:'Erhvervsklubben er et rum for stærke og langvarige forretningsrelationer. Mød direktører, ejere og ledere i uformelle men professionelle rammer.',
+      svg:`<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>` },
+    { titel:'Virksomhedsbesøg og faglige arrangementer',
+      tekst:'Vi arrangerer virksomhedsbesøg hos medlemsvirksomheder og faglige arrangementer, der kombinerer ny viden, indsigt og netværk i autentiske rammer.',
+      svg:`<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>` },
+    { titel:'Golfrejser og sociale oplevelser',
+      tekst:'Erhvervsklubben arrangerer golfrejser til destinationer som Skotland og Timmendorfer Strand. Sociale oplevelser der styrker fællesskab og skaber minder.',
+      svg:`<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>` },
+    { titel:'EK-Golf — onsdage i sæsonen',
+      tekst:'Hver onsdag i golfgæsonen, undtagen juli, afholdes EK-Golf for erhvervsmedlemmer. Et fast ugentligt socialt og sportsligt tilbud på Lyngbygaard Golf.',
+      svg:`<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="19" r="2"/><path d="M14 4v14M14 4l6 3-6 3M2 21h10"/></svg>` },
+    { titel:'Nye samarbejder og forretningsforbindelser',
+      tekst:'Mange af vores medlemmer har indledt nye forretningssamarbejder gennem Erhvervsklubben. Et naturligt netværk giver naturlige muligheder.',
+      svg:`<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="23" y1="11" x2="17" y2="11"/><line x1="20" y1="8" x2="20" y2="14"/></svg>` },
+  ];
+
+  /* Verificerede medlemsvirksomheder (lyg.dk/members/) */
+  const MEDLEMMER = [
+    {navn:'4Service A/S',branche:'Facility management',web:'https://4service.dk'},
+    {navn:'Advokatfirmaet Energi & Miljø',branche:'Jura',web:'https://energiogmiljo.dk'},
+    {navn:'Aiding',branche:'IT & digital',web:'https://aiding.dk'},
+    {navn:'AK Byggeservice',branche:'Byggeri',web:''},
+    {navn:'Alm. Brand',branche:'Forsikring & finans',web:'https://almbrand.dk'},
+    {navn:'Alssund Gruppen',branche:'Erhvervsejendomme',web:''},
+    {navn:'Amplex',branche:'Telekommunikation',web:'https://amplex.dk'},
+    {navn:'Ankjær-Jensen Advokater',branche:'Jura',web:'https://ankjaer-jensen.dk'},
+    {navn:'AP Pension',branche:'Pension & forsikring',web:'https://appension.dk'},
+    {navn:'Aros Erhverv',branche:'Erhvervsservice',web:''},
+    {navn:'Aros Forsikring',branche:'Forsikring',web:'https://arosforsikring.dk'},
+    {navn:'Arriva',branche:'Transport',web:'https://arriva.dk'},
+    {navn:'Artha Kapitalforvaltning',branche:'Finans',web:'https://artha.dk'},
+    {navn:'Atkins (SNC-Lavalin)',branche:'Ingeniør & rådgivning',web:''},
+    {navn:'Audi Aarhus',branche:'Bilforhandler',web:'https://audi-aarhus.dk'},
+    {navn:'Autoriseret El-installatør',branche:'El-installation',web:''},
+    {navn:'Balder',branche:'Ejendomme',web:'https://balder.com'},
+    {navn:'Bankdata',branche:'IT & finans',web:'https://bankdata.dk'},
+    {navn:'BDO',branche:'Revision & rådgivning',web:'https://bdo.dk'},
+    {navn:'Bella Hospitality',branche:'Hotel & konference',web:''},
+    {navn:'Bravida',branche:'Teknisk service',web:'https://bravida.dk'},
+    {navn:'Brdr. A & O Johansen',branche:'Byggeri & VVS',web:'https://ao.dk'},
+    {navn:'ByBI',branche:'Erhvervsudvikling',web:''},
+    {navn:'C.W. Obel Ejendomme',branche:'Ejendomme',web:''},
+    {navn:'Carpe Diem Kommunikation',branche:'Kommunikation',web:''},
+    {navn:'CGI',branche:'IT-konsulenter',web:'https://cgi.com'},
+    {navn:'Dahl Advokatfirma',branche:'Jura',web:'https://dahllaw.dk'},
+    {navn:'Dansk Byggeri',branche:'Brancheorganisation',web:'https://danskbyggeri.dk'},
+    {navn:'Deloitte',branche:'Revision & konsulenter',web:'https://deloitte.dk'},
+    {navn:'Den Blå Planet (Naturama)',branche:'Oplevelse',web:''},
+    {navn:'DS Norden',branche:'Shipping',web:'https://ds-norden.com'},
+    {navn:'DXC Technology',branche:'IT-konsulenter',web:'https://dxc.com'},
+    {navn:'EG',branche:'IT & software',web:'https://eg.dk'},
+    {navn:'Egon Zehner',branche:'Executive search',web:'https://egonzehnder.com'},
+    {navn:'Eldan Recycling',branche:'Industri & miljø',web:'https://eldan-recycling.com'},
+    {navn:'Euromaster',branche:'Bilservice',web:'https://euromaster.dk'},
+    {navn:'FH Byg',branche:'Byggeri',web:''},
+    {navn:'Finanshuset i Aarhus',branche:'Finans',web:''},
+    {navn:'Formuepleje',branche:'Kapitalforvaltning',web:'https://formuepleje.dk'},
+    {navn:'GPV Group',branche:'Industri',web:'https://gpv.com'},
+    {navn:'Grant Thornton',branche:'Revision & rådgivning',web:'https://grantthornton.dk'},
+    {navn:'GreenMobility',branche:'Mobilitet',web:'https://greenmobility.com'},
+    {navn:'Grundfos',branche:'Pumper & vandteknologi',web:'https://grundfos.com'},
+    {navn:'Hans Just',branche:'Medier',web:''},
+    {navn:'Heidricks & Struggles',branche:'Executive search',web:'https://heidrick.com'},
+    {navn:'Himmerland Business Club',branche:'Erhvervsklub',web:''},
+    {navn:'Homesolution',branche:'Ejendomsmægler',web:'https://homesolution.dk'},
+    {navn:'Horsens Erhvervsråd',branche:'Erhvervsudvikling',web:''},
+    {navn:'HP',branche:'IT & teknologi',web:'https://hp.com'},
+    {navn:'HOFOR',branche:'Forsyning',web:'https://hofor.dk'},
+    {navn:'IBM',branche:'IT & teknologi',web:'https://ibm.com'},
+    {navn:'IDA (Ingeniørforeningen)',branche:'Brancheorganisation',web:'https://ida.dk'},
+    {navn:'Ikano Bank',branche:'Finans & bank',web:'https://ikanobank.dk'},
+    {navn:'IKEA',branche:'Retail',web:'https://ikea.com/dk'},
+    {navn:'Inventio.IT',branche:'IT-konsulenter',web:'https://inventio.it'},
+    {navn:'JF Fabricius',branche:'Byggeri',web:''},
+    {navn:'Jyske Bank',branche:'Bank & finans',web:'https://jyskebank.dk'},
+    {navn:'Jørgensen Enterprice',branche:'Byggeri & anlæg',web:''},
+    {navn:'KPMG',branche:'Revision & konsulenter',web:'https://kpmg.com/dk'},
+    {navn:'Kuehne+Nagel',branche:'Logistik',web:'https://kuehne-nagel.com'},
+    {navn:'Lantmännen Unibake',branche:'Fødevarer',web:'https://lantmannenunibake.com'},
+    {navn:'LB Forsikring',branche:'Forsikring',web:'https://lb.dk'},
+    {navn:'Leftovers',branche:'Madvarer & bæredygtighed',web:''},
+    {navn:'Lessor',branche:'HR & løn software',web:'https://lessor.dk'},
+    {navn:'Lidl Danmark',branche:'Retail',web:'https://lidl.dk'},
+    {navn:'Linde Gas',branche:'Industrigas',web:'https://linde.com'},
+    {navn:'Lloyds Register',branche:'Certificering & inspektion',web:'https://lr.org'},
+    {navn:'Lotus IT Group',branche:'IT-løsninger',web:''},
+    {navn:'Lundgaard & Tranberg Arkitekter',branche:'Arkitektur',web:''},
+    {navn:'Lyngbygaard Golf',branche:'Golf & erhverv',web:'https://lyg.dk'},
+    {navn:'Mærsk',branche:'Shipping & logistik',web:'https://maersk.com'},
+    {navn:'Martin Professional',branche:'Lys & scene',web:'https://martin.com'},
+    {navn:'Mellbye',branche:'Advokater',web:''},
+    {navn:'Microsoft',branche:'IT & software',web:'https://microsoft.com/da-dk'},
+    {navn:'Midtjyske Medier',branche:'Medier',web:''},
+    {navn:'Molslinjen',branche:'Transport & færge',web:'https://molslinjen.dk'},
+    {navn:'Møller & Grønborg',branche:'Arkitektur & ingeniør',web:'https://mg.dk'},
+    {navn:'NCC Danmark',branche:'Byggeri & anlæg',web:'https://ncc.dk'},
+    {navn:'Niras',branche:'Rådgivende ingeniører',web:'https://niras.dk'},
+    {navn:'Nordea',branche:'Bank & finans',web:'https://nordea.dk'},
+    {navn:'Novo Nordisk',branche:'Farmaceutisk industri',web:'https://novonordisk.com'},
+    {navn:'Orbicon | WSP',branche:'Rådgivende ingeniører',web:''},
+    {navn:'Pandrup Murer & Tømrerfirma',branche:'Byggeri',web:''},
+    {navn:'PensionDanmark',branche:'Pension',web:'https://pensionDanmark.dk'},
+    {navn:'PFA',branche:'Pension & forsikring',web:'https://pfa.dk'},
+    {navn:'Praxis',branche:'IT & konsulenter',web:''},
+    {navn:'PwC',branche:'Revision & konsulenter',web:'https://pwc.dk'},
+    {navn:'Rambøll',branche:'Rådgivende ingeniører',web:'https://ramboll.com'},
+    {navn:'Randers FC',branche:'Sport',web:'https://randersfc.dk'},
+    {navn:'Rejseplanen',branche:'Transport & IT',web:'https://rejseplanen.dk'},
+    {navn:'Revisorgruppen Danmark',branche:'Revision',web:''},
+    {navn:'Santander Consumer Bank',branche:'Bank & finans',web:'https://santanderconsumer.dk'},
+    {navn:'Scan-Global Logistics',branche:'Logistik',web:'https://scan-globallogistics.com'},
+    {navn:'Signal',branche:'Kommunikation',web:''},
+    {navn:'Siemens',branche:'Teknologi & industri',web:'https://siemens.com/dk'},
+    {navn:'Solar',branche:'Distribution & teknik',web:'https://solar.dk'},
+    {navn:'Sparekassen Kronjylland',branche:'Bank',web:'https://sparekassenkronjylland.dk'},
+    {navn:'Stena Recycling',branche:'Genbrug & miljø',web:'https://stenarecycling.dk'},
+    {navn:'Sydbank',branche:'Bank & finans',web:'https://sydbank.dk'},
+    {navn:'TDC Erhverv',branche:'Telekommunikation',web:''},
+    {navn:'Telmore',branche:'Telekommunikation',web:'https://telmore.dk'},
+    {navn:'Thorsen Partners',branche:'Rekruttering',web:''},
+    {navn:'TotalEnergies',branche:'Energi',web:'https://totalenergies.dk'},
+    {navn:'Toyota Material Handling',branche:'Truckudstyr',web:''},
+    {navn:'Trafikkonsortiet',branche:'Transport',web:''},
+    {navn:'Tryg Forsikring',branche:'Forsikring',web:'https://tryg.dk'},
+    {navn:'Unicon',branche:'Beton & byggeri',web:''},
+    {navn:'Vestas',branche:'Vindenergi',web:'https://vestas.com'},
+    {navn:'Viborg HK',branche:'Sport',web:'https://viborghk.dk'},
+    {navn:'Visible',branche:'Marketing & kommunikation',web:''},
+    {navn:'Waygu',branche:'Fødevarer',web:''},
+    {navn:'YouSee',branche:'Telekommunikation',web:'https://yousee.dk'},
+  ];
+
+  const katalogHtml = `
+<section class="sek" id="om-katalog-sek">
+  <h2 class="stitl">Medlemsvirksomheder</h2>
+  <p class="muted mb1">Knap 100 virksomheder fra Aarhus-regionen er tilknyttet Lyngbygaard Erhvervsklub.</p>
+  <div class="mk-soeg-wrap">
+    <input class="mk-soeg" id="mk-soeg" type="search" placeholder="Søg virksomhed eller branche…" oninput="filterMK(this.value)" aria-label="Søg i medlemskatalog">
+  </div>
+  <div class="mk-liste" id="mk-liste">
+    ${MEDLEMMER.map(m=>`
+    <div class="mk-rad" data-soeg="${esc((m.navn+' '+m.branche).toLowerCase())}">
+      <div class="mk-info">
+        <strong class="mk-navn">${esc(m.navn)}</strong>
+        <span class="mk-branche">${esc(m.branche)}</span>
+      </div>
+      ${m.web ? `<a class="mk-link" href="${esc(m.web)}" target="_blank" rel="noopener" aria-label="Besøg ${esc(m.navn)}">↗</a>` : '<span class="mk-link-ph"></span>'}
+    </div>`).join('')}
+  </div>
+  <p class="muted tc mt1" style="font-size:.8rem" id="mk-ingen" style="display:none"></p>
+</section>`;
+
   return `
-<!-- ── EK PAGE HEADER ── -->
 <div class="ph bg-mork ek-ph">
   <p class="ek-ph-over">LYG ERHVERVSKLUB</p>
   <h1 class="ek-ph-h1">Erhvervsklubben</h1>
-  <p class="ek-ph-sub">${esc(CONFIG.omEK.tagline)}</p>
+  <p class="ek-ph-sub">Netværk, relationer og golf for virksomheder i Aarhus-regionen</p>
 </div>
 
-<!-- ── AUTENTISK ARRANGEMENTSFOTO ── -->
 <div class="ek-foto-wrap">
   <div class="ek-foto" style="background-image:url('./images/ek-klubhus.jpg')" role="img" aria-label="Lyngbygaard Erhvervsklub - klubhuset">
     <div class="ek-foto-lag">
-      <p class="ek-foto-citat">${esc(CONFIG.omEK.tekst)}</p>
+      <p class="ek-foto-citat">"Erhvervsklubben er et levende fællesskab af virksomheder, der mødes om golf, netværk og nye muligheder."</p>
     </div>
   </div>
 </div>
 
-<!-- ── EK-PUNKTER CAROUSEL ── -->
-<section class="ek-cx-sek">
-  <div class="cx-hdr">
-    <h2 class="cx-sek-titel">HVAD FÅR DU</h2>
-    <button class="cx-se-alle" onclick="navTil('sponsor')">Bliv sponsor →</button>
-  </div>
-  <div class="cx-scroll ek-cx-scroll" id="cx-ek-pg" role="list">
-    ${ekSVG.map(k => `
-    <button class="ek-kort" role="listitem" onclick="navTil('${k.side}')">
-      <div class="ek-k-ikon">${k.svg}</div>
-      <strong class="ek-k-titel">${esc(k.titel)}</strong>
-      <p class="ek-k-tekst">${esc(k.tekst)}</p>
-      <span class="ek-k-cta">${esc(k.cta)}</span>
-    </button>`).join('')}
-  </div>
-  <div class="cx-prikker" id="ek-pg-prikker">
-    ${ekSVG.map((_,i)=>`<span class="cx-prik${i===0?' aktiv':''}"></span>`).join('')}
+<section class="sek">
+  <h2 class="stitl">Hvad tilbyder erhvervsklubben?</h2>
+  <div class="ikg">
+    ${ekFordele.map(f=>`
+    <div class="ikb static">
+      <span class="iks">${f.svg}</span>
+      <strong>${esc(f.titel)}</strong>
+      <p>${esc(f.tekst)}</p>
+    </div>`).join('')}
   </div>
 </section>
 
-<!-- ── CTA ── -->
+${katalogHtml}
+
 <section class="sek">
   <div class="ek-cta-boks">
     <h3 class="ek-cta-h3">Interesseret i erhvervsmedlemskab?</h3>
-    <p class="ek-cta-p">Kontakt os og hør om mulighederne.</p>
+    <p class="ek-cta-p">Kontakt os og hør om mulighederne for jeres virksomhed.</p>
     <div class="ek-cta-knapper">
       <a class="ek-cta-knap primaer" href="tel:${CONFIG.telefon.replace(/\s/g,'')}">
         ${svgPhone} Ring til os
@@ -1411,10 +1619,24 @@ function pgOm() {
   </div>
 </section>
 
-<!-- ── INSTALLÉR SOM APP (v8.3) ── -->
 <section class="sek pwa-sek" id="pwa-install-sek">
   ${_pwaInstallHtml()}
-</section>`;}
+</section>`;
+}
+
+function filterMK(q) {
+  const v = (q||'').toLowerCase().trim();
+  const rader = document.querySelectorAll('#mk-liste .mk-rad');
+  let n = 0;
+  rader.forEach(r => {
+    const vis = !v || r.dataset.soeg.includes(v);
+    r.style.display = vis ? '' : 'none';
+    if (vis) n++;
+  });
+  const ingen = document.getElementById('mk-ingen');
+  if (ingen) ingen.textContent = n === 0 ? 'Ingen virksomheder matcher søgningen.' : '';
+}
+
 
 
 /* ================================================================
@@ -1630,6 +1852,106 @@ async function submitKontakt(e) {
 
   f.style.display = 'none';
   document.getElementById('kont-kv').style.display = 'block';
+}
+
+/* ================================================================
+   MØDER OG KONFERENCER (v8.4)
+   ================================================================ */
+function pgMøder() {
+  const svgPhone = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.17h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 8.91a16 16 0 0 0 6 6l.81-.81a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 21.9 16.92z"/></svg>`;
+  const svgCheck = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+
+  const faciliteter = [
+    { titel:'Op til 50 personer', tekst:'Pejsestuen rummer komfortabelt 50 deltagere i fleksibel opstilling.', svg:`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>` },
+    { titel:'Professionelt AV-udstyr', tekst:'Projektor, skærm, trådløs mikrofon og whiteboard inkluderet.', svg:`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>` },
+    { titel:'Fleksibel indretning', tekst:'Opstilles efter jeres behov — klasseromsform, U-form, teateropstilling eller konferencebord.', svg:`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>` },
+    { titel:'Naturskøn udsigt', tekst:'Mødelokalet har udsigt over Lyngbygaard Golfs smukke bane — inspirerende rammer for kreative processer.', svg:`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>` },
+    { titel:'Forplejning fra Brasseriet', tekst:'Kaffe, frokost og forplejning tilrettelægges af Brasseriets erfarne køkken efter jeres ønsker.', svg:`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>` },
+    { titel:'Gratis parkering', tekst:'Stor parkeringsplads direkte ved klubhuset — bekvem ankomst for alle deltagere.', svg:`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>` },
+  ];
+
+  return `
+<div class="ph bg-mork">
+  <p class="ek-ph-over">LYNGBYGAARD GOLF</p>
+  <h1 class="ek-ph-h1">Møder og konferencer</h1>
+  <p class="ek-ph-sub">Professionelle rammer med naturskøn udsigt og fuld forplejning</p>
+</div>
+
+<div class="ek-foto-wrap">
+  <div class="ek-foto" style="background-image:url('./images/ek-klubhus.jpg')" role="img" aria-label="Pejsestuen — mødelokale hos Lyngbygaard Golf">
+    <div class="ek-foto-lag">
+      <p class="ek-foto-citat">"Professionelle møderammer med udsigt over banen — og forplejning fra Brasseriets erfarne køkken."</p>
+    </div>
+  </div>
+</div>
+
+<section class="sek">
+  <h2 class="stitl">Pejsestuen</h2>
+  <p class="muted mb1">Vores mødelokale Pejsestuen tilbyder inspirerende rammer til alle typer møder — fra bestyrelsesmøder og kurser til workshops og konferencer.</p>
+  <div class="ikg">
+    ${faciliteter.map(f=>`
+    <div class="ikb static">
+      <span class="iks">${f.svg}</span>
+      <strong>${esc(f.titel)}</strong>
+      <p>${esc(f.tekst)}</p>
+    </div>`).join('')}
+  </div>
+</section>
+
+<section class="sek">
+  <div class="golf-cta-boks">
+    <h3 class="ek-cta-h3">Ønsker I et tilbud?</h3>
+    <p class="ek-cta-p">Vi tilrettelægger mødet fra A til Z — lokale, forplejning og eventuelle golfelementer. Kontakt os for et uforpligtende tilbud.</p>
+    <div class="ek-cta-knapper">
+      <a class="ek-cta-knap primaer" href="tel:${CONFIG.telefon.replace(/\s/g,'')}">
+        ${svgPhone} Ring til os
+      </a>
+      <button class="ek-cta-knap sekundaer" onclick="navTil('kontakt')">
+        Send forespørgsel
+      </button>
+    </div>
+  </div>
+</section>`;
+}
+
+/* ================================================================
+   NYHEDER (v8.4)
+   Kompakt nyhedsfunktion. Nyheder godkendes af admin før offentliggørelse.
+   Kilde og dato vises altid.
+   ================================================================ */
+function pgNyheder() {
+  const nyheder = (DB.get('ek_nyheder') || [])
+    .filter(n => n.godkendt !== false)   // kun admin-godkendte
+    .sort((a,b) => (b.dato||'').localeCompare(a.dato||''))
+    .slice(0, 20);
+
+  return `
+<div class="ph bg-mork">
+  <p class="ek-ph-over">LYG ERHVERVSKLUB</p>
+  <h1 class="ek-ph-h1">Nyheder</h1>
+  <p class="ek-ph-sub">Seneste nyt fra Lyngbygaard Golf og Erhvervsklubben</p>
+</div>
+
+<section class="sek">
+  ${nyheder.length === 0 ? `
+  <div class="tom-kal">
+    <p>Ingen nyheder i øjeblikket.</p>
+    <p class="muted" style="font-size:.85rem">Nyheder offentliggøres løbende fra Lyngbygaard Golf og Erhvervsklubben.</p>
+    <button class="knap-sek mt1" onclick="navTil('kalender')">Se kalender →</button>
+  </div>` : `
+  <div class="ny-liste">
+    ${nyheder.map(n => `
+    <article class="ny-kort">
+      <div class="ny-meta">
+        <span class="ny-dato">${n.dato ? fmtDato(n.dato) : ''}</span>
+        ${n.kilde ? `<span class="ny-kilde">${esc(n.kilde)}</span>` : ''}
+      </div>
+      <h3 class="ny-titel">${esc(n.titel)}</h3>
+      ${n.tekst ? `<p class="ny-tekst">${esc(n.tekst)}</p>` : ''}
+      ${n.link ? `<a class="ny-link" href="${esc(n.link)}" target="_blank" rel="noopener">Læs mere →</a>` : ''}
+    </article>`).join('')}
+  </div>`}
+</section>`;
 }
 
 /* ================================================================
@@ -1897,30 +2219,21 @@ function gemSponsor(e,id) {
 
 function sletSponsor(id){if(!confirm('Fjern sponsor?'))return;DB.set('ek_sponsorer',(DB.get('ek_sponsorer')||[]).filter(s=>s.id!==id));skiftFane('sp');}
 
-/* ── Admin: Firmapakker ── */
+/* ── Admin: Firmaarrangementer (v8.4 — ingen priser) ── */
 function adGolf() {
-  const pk=DB.get('ek_pakker')||CONFIG.golfPakker;
+  const arr = CONFIG.golfArrangementer;
   return `
-<p class="muted mb1">Ændringer vises straks på "Book firmaarrangement"-siden.</p>
-${pk.map((p,i)=>`
-<div class="ad-form" style="margin-bottom:.75rem">
-  <form onsubmit="gemPakke(event,${i})">
-    <div class="g2f">
-      <div class="fg"><label>Titel</label><input name="titel" value="${esc(p.titel)}"></div>
-      <div class="fg"><label>Pris</label><input name="pris" value="${esc(p.pris)}"></div>
-    </div>
-    <div class="fg"><label>Beskrivelse</label><textarea name="besk" rows="2">${esc(p.beskrivelse)}</textarea></div>
-    <div class="fg"><label>Inkluderer (én pr. linje)</label><textarea name="inkl" rows="3">${(p.inkl||[]).join('\n')}</textarea></div>
-    <button type="submit" class="knap-i">Gem</button>
-  </form>
+<p class="muted mb1">Firmaarrangementer vises på Golf-siden. Priser angives ikke — kontakt bruges til individuelle tilbud.</p>
+<div class="ad-form" style="background:var(--p);color:var(--hvid);padding:.75rem 1rem;border-radius:8px;margin-bottom:1rem">
+  <strong>Firmaarrangement-typer (v8.4)</strong><br>
+  <span style="font-size:.85rem;opacity:.8">Disse typer er konfigureret i CONFIG.golfArrangementer og vises på Golf-siden. Rediger app.js for at ændre dem.</span>
+</div>
+${arr.map(a=>`
+<div class="ad-form" style="margin-bottom:.5rem;padding:.6rem .75rem">
+  <strong>${esc(a.titel)}</strong>
+  <p class="muted" style="font-size:.85rem;margin:.25rem 0 0">${esc(a.beskrivelse)}</p>
+  <p class="muted" style="font-size:.8rem;margin:.2rem 0 0">Inkl.: ${(a.inkl||[]).join(' · ')}</p>
 </div>`).join('')}`;
-}
-
-function gemPakke(e,i){
-  e.preventDefault(); const f=e.target;
-  const pk=DB.get('ek_pakker')||CONFIG.golfPakker;
-  pk[i]={...pk[i],titel:f.titel.value,pris:f.pris.value,beskrivelse:f.besk.value,inkl:f.inkl.value.split('\n').filter(Boolean)};
-  DB.set('ek_pakker',pk); alert('Pakke gemt ✓');
 }
 
 /* ── Admin: Indhold (Nyheder · Partnere · Medlemsvirksomheder) ── */
@@ -1929,22 +2242,40 @@ function adIndhold() {
   const partnere = DB.get('ek_partnere')||[];
   const mvirk   = DB.get('ek_mvirksomheder')||[];
 
+  const afventende = nyheder.filter(n=>n.godkendt===false);
+  const godkendte  = nyheder.filter(n=>n.godkendt!==false);
   return `
 <div class="ad-form mb1">
   <h3>Nyheder <span class="muted">(${nyheder.length})</span></h3>
-  <p class="muted mb1">Vises i "Seneste nyt"-carousel på forsiden.</p>
+  <p class="muted mb1">Nyheder skal godkendes af administrator, før de vises på Nyheder-siden. Kilde og dato vises altid.</p>
   <form onsubmit="tilfoejNyhed(event)">
     <div class="fg"><label>Overskrift *</label><input name="titel" required placeholder="Nyhedsoverskrift"></div>
     <div class="fg"><label>Tekst</label><input name="tekst" placeholder="Kort teaser"></div>
     <div class="g2f">
-      <div class="fg"><label>Dato</label><input type="date" name="dato"></div>
-      <div class="fg"><label>Billede URL</label><input name="billede" placeholder="https://…"></div>
+      <div class="fg"><label>Dato *</label><input type="date" name="dato" required value="${new Date().toISOString().split('T')[0]}"></div>
+      <div class="fg"><label>Kilde</label><input name="kilde" placeholder="lyg.dk, LinkedIn…"></div>
+    </div>
+    <div class="fg"><label>Link (URL)</label><input name="link" placeholder="https://…" type="url"></div>
+    <div class="fg" style="display:flex;align-items:center;gap:.5rem">
+      <input type="checkbox" name="godkendt" id="ny-godk" checked style="width:auto">
+      <label for="ny-godk" style="margin:0;font-weight:normal">Godkend og publicér straks</label>
     </div>
     <button type="submit" class="knap-p">+ Tilføj nyhed</button>
   </form>
-  ${nyheder.length ? `<div class="ad-l mt1">${nyheder.map((n,i)=>`
-  <div class="ad-rad"><div class="ad-ri"><strong>${esc(n.titel)}</strong><span>${n.dato||''}</span></div>
-  <div class="ad-rk"><button class="knap-i red" onclick="sletNyhed(${i})">Slet</button></div>
+  ${afventende.length ? `
+  <div style="background:#fff3cd;border:1px solid #ffc107;border-radius:6px;padding:.6rem .75rem;margin-top:.75rem">
+    <strong style="font-size:.85rem">⏳ Afventer godkendelse (${afventende.length})</strong>
+    <div class="ad-l mt1">${afventende.map((n,i)=>`
+    <div class="ad-rad"><div class="ad-ri"><strong>${esc(n.titel)}</strong><span>${n.dato||''} · ${esc(n.kilde||'')}</span></div>
+    <div class="ad-rk">
+      <button class="knap-i" onclick="godkendNyhed('${esc(n.id||i)}')">Godkend</button>
+      <button class="knap-i red" onclick="sletNyhedId('${esc(n.id||i)}')">Slet</button>
+    </div></div>`).join('')}
+    </div>
+  </div>` : ''}
+  ${godkendte.length ? `<div class="ad-l mt1"><strong style="font-size:.82rem;color:var(--mut)">Publicerede (${godkendte.length})</strong>${godkendte.map((n,i)=>`
+  <div class="ad-rad"><div class="ad-ri"><strong>${esc(n.titel)}</strong><span>${n.dato||''} · ${esc(n.kilde||'')}</span></div>
+  <div class="ad-rk"><button class="knap-i red" onclick="sletNyhedId('${esc(n.id||i)}')">Slet</button></div>
   </div>`).join('')}</div>` : ''}
 </div>
 
@@ -1983,8 +2314,26 @@ function adIndhold() {
 </div>`;
 }
 
-function tilfoejNyhed(e){e.preventDefault();const f=e.target;const a=DB.get('ek_nyheder')||[];a.unshift({titel:f.titel.value,tekst:f.tekst.value,dato:f.dato.value,billede:f.billede.value});DB.set('ek_nyheder',a);skiftFane('indh');}
-function sletNyhed(i){if(!confirm('Slet nyhed?'))return;const a=DB.get('ek_nyheder')||[];a.splice(i,1);DB.set('ek_nyheder',a);skiftFane('indh');}
+function tilfoejNyhed(e){
+  e.preventDefault();const f=e.target;
+  const a=DB.get('ek_nyheder')||[];
+  const godkendt = f.godkendt ? f.godkendt.checked : true;
+  a.unshift({id:'ny'+Date.now(),titel:f.titel.value,tekst:f.tekst.value,dato:f.dato.value,kilde:f.kilde.value,link:f.link.value,godkendt});
+  DB.set('ek_nyheder',a);skiftFane('indh');
+}
+function godkendNyhed(id){
+  const a=DB.get('ek_nyheder')||[];
+  const idx=a.findIndex(n=>String(n.id)===String(id));
+  if(idx>-1){a[idx].godkendt=true;DB.set('ek_nyheder',a);}
+  skiftFane('indh');
+}
+function sletNyhedId(id){
+  if(!confirm('Slet nyhed?'))return;
+  const a=DB.get('ek_nyheder')||[];
+  DB.set('ek_nyheder',a.filter(n=>String(n.id)!==String(id)));
+  skiftFane('indh');
+}
+function sletNyhed(i){if(!confirm('Slet nyhed?'))return;const a=DB.get('ek_nyheder')||[];a.splice(i,1);DB.set('ek_nyheder',a);skiftFane('indh');}  // legacy
 function tilfoejPartner(e){e.preventDefault();const f=e.target;const a=DB.get('ek_partnere')||[];a.push({navn:f.navn.value,fordel:f.fordel.value,tekst:f.tekst.value,logo:f.logo.value,link:f.link.value});DB.set('ek_partnere',a);skiftFane('indh');}
 function sletPartner(i){if(!confirm('Fjern partner?'))return;const a=DB.get('ek_partnere')||[];a.splice(i,1);DB.set('ek_partnere',a);skiftFane('indh');}
 function tilfoejMVirk(e){e.preventDefault();const f=e.target;const a=DB.get('ek_mvirksomheder')||[];a.push({navn:f.navn.value,branche:f.branche.value,logo:f.logo.value});DB.set('ek_mvirksomheder',a);skiftFane('indh');}
