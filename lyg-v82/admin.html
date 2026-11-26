@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<!--
+  LYG Erhvervsklub Admin v8.2
+  ======================================================
+  SIKKERHED:
+  · Login kræver Google OAuth (Google Sign-In)
+  · Kun e-mailadresser i ADMIN_EMAILS (Apps Script Properties) har adgang
+  · Admin-token valideres server-side ved HVERT API-kald
+  · Ingen hardkodet PIN eller fallback-adgang
+  · Apps Script URL og REQUEST_TOKEN konfigureres i CONFIG herunder
+  · Brevo API-nøgle og andre hemmeligheder er ALDRIG i denne fil
+  ======================================================
+-->
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LYG Erhvervsklub Admin</title>
+<meta name="robots" content="noindex, nofollow">
+
+<!-- Google Sign-In (GSI) -->
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+
+<style>
+  :root {
+    --p:    #0d2b1a;
+    --p2:   #163d25;
+    --g:    #b8973a;
+    --hvid: #ffffff;
+    --mut:  #6b7280;
+    --txt:  #1a1a1a;
+    --fejl: #c0392b;
+    --ok:   #27ae60;
+    --bg:   #f4f6f4;
+    --kant: #e0e4e0;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--txt); font-size: 15px; }
+
+  /* Header */
+  .adm-header {
+    background: var(--p); color: var(--hvid); padding: 14px 20px;
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .adm-header h1 { font-size: 1.1rem; font-weight: 700; }
+  .adm-header .sub { font-size: .8rem; color: rgba(255,255,255,.65); }
+  .adm-user { font-size: .8rem; color: var(--g); }
+  .adm-logout { background: none; border: 1px solid rgba(255,255,255,.3); color: var(--hvid);
+    padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: .8rem; }
+  .adm-logout:hover { background: rgba(255,255,255,.1); }
+
+  /* Login-skærm */
+  #login-screen {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  .login-kort {
+    background: var(--hvid); border-radius: 12px; padding: 32px 28px;
+    max-width: 420px; width: 100%; box-shadow: 0 4px 24px rgba(0,0,0,.08);
+    text-align: center;
+  }
+  .login-logo { font-size: 2.5rem; margin-bottom: 8px; }
+  .login-kort h2 { color: var(--p); font-size: 1.3rem; margin-bottom: 4px; }
+  .login-kort p { color: var(--mut); font-size: .9rem; margin-bottom: 24px; }
+  .google-btn {
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    background: var(--hvid); border: 2px solid var(--kant); border-radius: 8px;
+    padding: 12px 20px; cursor: pointer; font-size: 1rem; font-weight: 600; color: var(--txt);
+    width: 100%; transition: border-color .2s, box-shadow .2s; margin-bottom: 16px;
+  }
+  .google-btn:hover { border-color: var(--p); box-shadow: 0 2px 8px rgba(13,43,26,.12); }
+  .google-btn svg { flex-shrink: 0; }
+  .login-info { font-size: .8rem; color: var(--mut); line-height: 1.5; }
+  .login-fejl { color: var(--fejl); font-size: .9rem; margin-top: 12px; display: none; }
+
+  /* Main layout */
+  #admin-screen { display: none; }
+  .adm-layout { display: flex; min-height: calc(100vh - 54px); }
+  .adm-sidebar {
+    width: 200px; background: var(--hvid); border-right: 1px solid var(--kant);
+    padding: 16px 0; flex-shrink: 0;
+  }
+  .adm-sidebar a {
+    display: block; padding: 10px 18px; color: var(--txt); text-decoration: none;
+    font-size: .9rem; border-left: 3px solid transparent; transition: all .15s;
+  }
+  .adm-sidebar a:hover  { background: var(--bg); color: var(--p); }
+  .adm-sidebar a.aktiv  { border-color: var(--g); background: #f0f4f1; color: var(--p); font-weight: 600; }
+  .adm-sidebar .sep { border-top: 1px solid var(--kant); margin: 8px 0; }
+
+  .adm-indhold { flex: 1; padding: 24px 20px; max-width: 900px; }
+
+  /* Sektionsoverskrift */
+  .sek-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .sek-header h2 { font-size: 1.1rem; color: var(--p); }
+
+  /* Tabel */
+  .adm-tabel { width: 100%; border-collapse: collapse; background: var(--hvid); border-radius: 8px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+  .adm-tabel th { background: var(--p); color: var(--hvid); padding: 10px 12px; text-align: left; font-size: .85rem; font-weight: 600; }
+  .adm-tabel td { padding: 10px 12px; border-bottom: 1px solid var(--kant); font-size: .85rem; vertical-align: middle; }
+  .adm-tabel tr:last-child td { border-bottom: none; }
+  .adm-tabel tr:hover td { background: #f8faf8; }
+
+  /* Kort */
+  .adm-kort { background: var(--hvid); border-radius: 8px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,.06); margin-bottom: 16px; }
+  .adm-kort h3 { font-size: .95rem; color: var(--p); margin-bottom: 14px; }
+
+  /* Form-elementer */
+  .fg { margin-bottom: 12px; }
+  .fg label { display: block; font-size: .8rem; color: var(--mut); margin-bottom: 4px; font-weight: 600; }
+  .fg input, .fg textarea, .fg select {
+    width: 100%; padding: 8px 10px; border: 1px solid var(--kant); border-radius: 6px;
+    font-size: .9rem; color: var(--txt); background: var(--hvid); font-family: inherit;
+    transition: border-color .15s;
+  }
+  .fg input:focus, .fg textarea:focus, .fg select:focus {
+    outline: none; border-color: var(--p);
+  }
+  .fg textarea { min-height: 80px; resize: vertical; }
+  .fg-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  /* Knapper */
+  .knap { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-size: .85rem; font-weight: 600; transition: opacity .15s; }
+  .knap:hover { opacity: .85; }
+  .knap-p  { background: var(--p);  color: var(--hvid); }
+  .knap-g  { background: var(--g);  color: var(--hvid); }
+  .knap-ro { background: #e74c3c;   color: var(--hvid); }
+  .knap-gr { background: #ecf0eb;   color: var(--txt);  }
+  .knap-sm { padding: 5px 10px; font-size: .78rem; }
+
+  /* Status */
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: .75rem; font-weight: 600; }
+  .badge-ok    { background: #d4edda; color: #155724; }
+  .badge-fuldt { background: #f8d7da; color: #721c24; }
+  .badge-muted { background: #e9ecef; color: #495057; }
+
+  /* Toast */
+  #toast {
+    position: fixed; bottom: 24px; right: 24px; background: var(--p); color: var(--hvid);
+    padding: 12px 20px; border-radius: 8px; font-size: .9rem; font-weight: 600;
+    transform: translateY(80px); opacity: 0; transition: all .3s; z-index: 9999;
+    max-width: 320px; box-shadow: 0 4px 16px rgba(0,0,0,.2);
+  }
+  #toast.vis { transform: translateY(0); opacity: 1; }
+  #toast.fejl { background: var(--fejl); }
+
+  /* Spinner */
+  .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,.4); border-top-color: var(--hvid); border-radius: 50%; animation: spin .7s linear infinite; vertical-align: middle; margin-right: 6px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Responsive */
+  @media (max-width: 640px) {
+    .adm-sidebar { display: none; }
+    .adm-indhold { padding: 16px 12px; }
+    .fg-row { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════ LOGIN-SKÆRM ══════════════════════ -->
+<div id="login-screen">
+  <div class="login-kort">
+    <div class="login-logo">⛳</div>
+    <h2>LYG Erhvervsklub Admin</h2>
+    <p>Log ind med din autoriserede Google-konto for at administrere appen.</p>
+
+    <button class="google-btn" onclick="startGoogleLogin()">
+      <svg width="20" height="20" viewBox="0 0 48 48">
+        <path fill="#4285F4" d="M44.5 20H24v8.5h11.8C34.7 33.9 29.9 37 24 37c-7.2 0-13-5.8-13-13s5.8-13 13-13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 5.1 29.6 3 24 3 12.9 3 4 11.9 4 23s8.9 20 20 20c11 0 20-8 20-20 0-1.3-.2-2.7-.5-4z"/>
+        <path fill="#34A853" d="M6.3 14.7l7 5.1C15 16.1 19.1 13 24 13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 5.1 29.6 3 24 3 16.3 3 9.7 7.9 6.3 14.7z"/>
+        <path fill="#FBBC05" d="M24 43c5.8 0 10.8-1.9 14.5-5.2l-6.7-5.5C29.9 34.3 27.1 35 24 35c-5.9 0-10.9-3.6-13-8.8l-7 5.4C7.5 39.1 15.2 43 24 43z"/>
+        <path fill="#EA4335" d="M44.5 20H24v8.5h11.8c-1.5 4-5.5 7-11.3 7-1.3 0-2.6-.2-3.8-.5l-7 5.4C15.2 43 19.4 43 24 43c11.1 0 20-8.9 20-20 0-1.3-.2-2.7-.5-4z"/>
+      </svg>
+      Log ind med Google
+    </button>
+
+    <p class="login-info">
+      Kun autoriserede administratorer har adgang.<br>
+      Kontakt klubben, hvis du har behov for adgang.
+    </p>
+    <div class="login-fejl" id="login-fejl"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════ ADMIN-SKÆRM ══════════════════════ -->
+<div id="admin-screen">
+  <header class="adm-header">
+    <div>
+      <h1>⛳ LYG Erhvervsklub Admin</h1>
+      <div class="sub">v8.2 · Google Apps Script + Google Sheets</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <span class="adm-user" id="hdr-email"></span>
+      <button class="adm-logout" onclick="logOut()">Log ud</button>
+    </div>
+  </header>
+
+  <div class="adm-layout">
+    <nav class="adm-sidebar">
+      <a href="#" class="aktiv" data-sek="arr"     onclick="visSek('arr',this)">📅 Arrangementer</a>
+      <a href="#"              data-sek="tilm"    onclick="visSek('tilm',this)">📋 Tilmeldinger</a>
+      <div class="sep"></div>
+      <a href="#"              data-sek="popup"   onclick="visSek('popup',this)">📢 Popup</a>
+      <a href="#"              data-sek="infobj"  onclick="visSek('infobj',this)">🔔 Infobjælke</a>
+      <a href="#"              data-sek="nyheder" onclick="visSek('nyheder',this)">📰 Nyheder</a>
+      <a href="#"              data-sek="sponsor" onclick="visSek('sponsor',this)">🏆 Sponsorer</a>
+      <div class="sep"></div>
+      <a href="#"              data-sek="paamind" onclick="visSek('paamind',this)">📧 Send påmind.</a>
+    </nav>
+
+    <main class="adm-indhold" id="adm-indhold">
+      <p style="color:var(--mut)">Henter data…</p>
+    </main>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ================================================================
+   KONFIGURATION — ret disse to værdier efter deployment
+   ================================================================ */
+const ADM_CFG = {
+  scriptUrl:    'INDSÆT_APPS_SCRIPT_WEB_APP_URL',  // Apps Script Web App URL
+  requestToken: 'INDSÆT_REQUEST_TOKEN',             // Samme som i Apps Script Properties
+  googleClientId: 'INDSÆT_GOOGLE_OAUTH_CLIENT_ID', // Google Cloud Console OAuth client-ID
+};
+
+/* ================================================================
+   TILSTAND
+   ================================================================ */
+let _adminToken = sessionStorage.getItem('lyg_admin_token') || '';
+let _adminEmail = sessionStorage.getItem('lyg_admin_email') || '';
+let _aktivSek   = 'arr';
+let _arrData    = [];
+let _tilmData   = [];
+
+/* ================================================================
+   GOOGLE SIGN-IN
+   ================================================================ */
+window.onload = function() {
+  // Tjek eksisterende session
+  if (_adminToken && _adminEmail) {
+    visAdminSkærm(_adminEmail);
+    indlæsSektion('arr');
+  }
+
+  // Initialiser Google Identity Services
+  if (window.google && ADM_CFG.googleClientId !== 'INDSÆT_GOOGLE_OAUTH_CLIENT_ID') {
+    google.accounts.id.initialize({
+      client_id:  ADM_CFG.googleClientId,
+      callback:   handleGoogleCallback,
+      auto_select: false,
+    });
+  }
+};
+
+function startGoogleLogin() {
+  if (!window.google) {
+    visLoginFejl('Google Sign-In ikke tilgængeligt. Kontrollér internetforbindelsen.');
+    return;
+  }
+  if (ADM_CFG.googleClientId === 'INDSÆT_GOOGLE_OAUTH_CLIENT_ID') {
+    visLoginFejl('Google OAuth Client ID ikke konfigureret i ADM_CFG.googleClientId.');
+    return;
+  }
+  google.accounts.id.prompt();
+}
+
+async function handleGoogleCallback(response) {
+  try {
+    // Send id_token til Apps Script til verifikation
+    const result = await apiFetch({ action: 'adminLogin', idToken: response.credential }, true);
+
+    if (!result.ok) {
+      visLoginFejl(result.fejl || 'Login afvist af serveren.');
+      return;
+    }
+
+    // Gem token i sessionStorage
+    _adminToken = result.adminToken;
+    _adminEmail = result.email;
+    sessionStorage.setItem('lyg_admin_token', _adminToken);
+    sessionStorage.setItem('lyg_admin_email', _adminEmail);
+
+    visAdminSkærm(_adminEmail);
+    indlæsSektion('arr');
+
+  } catch (err) {
+    visLoginFejl('Serverfejl under login: ' + err.message);
+  }
+}
+
+function visAdminSkærm(email) {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('admin-screen').style.display = 'block';
+  document.getElementById('hdr-email').textContent = email;
+}
+
+function visLoginFejl(msg) {
+  const el = document.getElementById('login-fejl');
+  el.textContent = msg; el.style.display = 'block';
+}
+
+function logOut() {
+  _adminToken = ''; _adminEmail = '';
+  sessionStorage.removeItem('lyg_admin_token');
+  sessionStorage.removeItem('lyg_admin_email');
+  if (window.google) google.accounts.id.disableAutoSelect();
+  location.reload();
+}
+
+/* ================================================================
+   API HELPERS
+   ================================================================ */
+async function apiFetch(body, skipToken = false) {
+  const url = ADM_CFG.scriptUrl;
+  if (!url || url.startsWith('INDSÆT')) throw new Error('Apps Script URL ikke konfigureret');
+
+  const payload = {
+    ...body,
+    token:      ADM_CFG.requestToken,
+    adminToken: skipToken ? undefined : _adminToken,
+  };
+
+  const resp = await fetch(url, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify(payload),
+  });
+  if (!resp.ok) throw new Error('HTTP ' + resp.status);
+  return resp.json();
+}
+
+async function apiGet(params = {}) {
+  const url = ADM_CFG.scriptUrl;
+  if (!url || url.startsWith('INDSÆT')) throw new Error('Apps Script URL ikke konfigureret');
+  const qs = new URLSearchParams({ ...params, token: ADM_CFG.requestToken, adminToken: _adminToken });
+  const resp = await fetch(url + '?' + qs);
+  if (!resp.ok) throw new Error('HTTP ' + resp.status);
+  return resp.json();
+}
+
+/* ================================================================
+   NAVIGATION
+   ================================================================ */
+function visSek(sek, el) {
+  _aktivSek = sek;
+  document.querySelectorAll('.adm-sidebar a').forEach(a => a.classList.remove('aktiv'));
+  if (el) el.classList.add('aktiv');
+  indlæsSektion(sek);
+  return false;
+}
+
+async function indlæsSektion(sek) {
+  const main = document.getElementById('adm-indhold');
+  main.innerHTML = '<p style="color:var(--mut)">Henter…</p>';
+  try {
+    switch(sek) {
+      case 'arr':     await visSekArr(main);    break;
+      case 'tilm':    await visSekTilm(main);   break;
+      case 'popup':   await visSekPopup(main);  break;
+      case 'infobj':  await visSekIb(main);     break;
+      case 'nyheder': await visSekNyhed(main);  break;
+      case 'sponsor': await visSekSponsor(main);break;
+      case 'paamind': await visSekPaamind(main);break;
+      default: main.innerHTML = '<p>Ukendt sektion.</p>';
+    }
+  } catch(err) {
+    main.innerHTML = `<p style="color:var(--fejl)">Fejl: ${err.message}</p>`;
+  }
+}
+
+/* ================================================================
+   ARRANGEMENTER
+   ================================================================ */
+async function visSekArr(main) {
+  const data = await apiGet({ action: 'adminGetAll' });
+  const arr  = (data?.data?.ARR?.rows || []);
+  _arrData   = arr;
+  const hdr  = data?.data?.ARR?.headers || [];
+
+  const idIdx    = hdr.indexOf('ID');
+  const titIdx   = hdr.indexOf('Titel');
+  const datoIdx  = hdr.indexOf('Dato');
+  const maksIdx  = hdr.indexOf('Maks');
+  const statIdx  = hdr.indexOf('Status');
+  const aabIdx   = hdr.indexOf('Aaben');
+
+  main.innerHTML = `
+<div class="sek-header">
+  <h2>📅 Arrangementer</h2>
+  <button class="knap knap-p" onclick="visArrForm()">+ Nyt arrangement</button>
+</div>
+<div id="arr-form-wrap"></div>
+<table class="adm-tabel">
+  <thead><tr>
+    <th>Titel</th><th>Dato</th><th>Maks</th><th>Status</th><th>Åben</th><th>Handlinger</th>
+  </tr></thead>
+  <tbody>
+    ${arr.filter(r => r[statIdx] !== 'slettet').map((r, i) => `
+    <tr>
+      <td>${r[titIdx] || '—'}</td>
+      <td>${_formatDato(r[datoIdx])}</td>
+      <td>${r[maksIdx] || '—'}</td>
+      <td><span class="badge ${r[statIdx]==='aktiv'?'badge-ok':'badge-muted'}">${r[statIdx]||'?'}</span></td>
+      <td>${r[aabIdx]===true||r[aabIdx]==='TRUE'?'✅':'❌'}</td>
+      <td>
+        <button class="knap knap-gr knap-sm" onclick="visArrForm(${i})">Redigér</button>
+        <button class="knap knap-ro knap-sm" onclick="sletArr('${r[idIdx]}','${r[titIdx]}')">Slet</button>
+      </td>
+    </tr>`).join('')}
+  </tbody>
+</table>`;
+}
+
+function visArrForm(idx) {
+  const wrap = document.getElementById('arr-form-wrap');
+  const hdr  = _arrData.length ? Object.keys(_arrData[0]) : [];
+  const r    = idx != null ? _arrData[idx] : null;
+  const arrHdr = ['ID','Titel','Dato','TidFra','TidTil','Maks','Pris','Status','Aaben','Beskrivelse','Lokation','Billede'];
+
+  const v = (key) => {
+    if (!r) return key === 'Status' ? 'aktiv' : (key === 'Aaben' ? 'true' : (key === 'ID' ? 'arr' + Date.now() : ''));
+    const i = arrHdr.indexOf(key);
+    return i >= 0 ? (r[i] || '') : '';
+  };
+
+  wrap.innerHTML = `
+<div class="adm-kort" style="border:2px solid var(--g);margin-bottom:20px">
+  <h3>${idx != null ? 'Redigér arrangement' : 'Nyt arrangement'}</h3>
+  <form onsubmit="gemArr(event,'${v('ID')}')">
+    <input type="hidden" name="ID" value="${v('ID')}">
+    <div class="fg-row">
+      <div class="fg"><label>Titel *</label><input name="Titel" value="${_esc(v('Titel'))}" required></div>
+      <div class="fg"><label>Dato *</label><input type="date" name="Dato" value="${_datoInput(v('Dato'))}" required></div>
+    </div>
+    <div class="fg-row">
+      <div class="fg"><label>Tid fra</label><input name="TidFra" value="${_esc(v('TidFra'))}" placeholder="16.00"></div>
+      <div class="fg"><label>Tid til</label><input name="TidTil" value="${_esc(v('TidTil'))}" placeholder="21.00"></div>
+    </div>
+    <div class="fg-row">
+      <div class="fg"><label>Maks deltagere</label><input type="number" name="Maks" value="${v('Maks')}" min="0"></div>
+      <div class="fg"><label>Pris</label><input name="Pris" value="${_esc(v('Pris'))}" placeholder="Gratis / 350 kr."></div>
+    </div>
+    <div class="fg-row">
+      <div class="fg"><label>Lokation</label><input name="Lokation" value="${_esc(v('Lokation'))}"></div>
+      <div class="fg"><label>Billede (URL/sti)</label><input name="Billede" value="${_esc(v('Billede'))}"></div>
+    </div>
+    <div class="fg-row">
+      <div class="fg"><label>Status</label>
+        <select name="Status">
+          <option value="aktiv"    ${v('Status')==='aktiv'?'selected':''}>Aktiv</option>
+          <option value="aflyst"   ${v('Status')==='aflyst'?'selected':''}>Aflyst</option>
+          <option value="afholdt"  ${v('Status')==='afholdt'?'selected':''}>Afholdt</option>
+        </select>
+      </div>
+      <div class="fg"><label>Tilmelding åben</label>
+        <select name="Aaben">
+          <option value="TRUE"  ${v('Aaben')==='TRUE'||v('Aaben')===true?'selected':''}>Ja</option>
+          <option value="FALSE" ${v('Aaben')==='FALSE'||v('Aaben')===false?'selected':''}>Nej</option>
+        </select>
+      </div>
+    </div>
+    <div class="fg"><label>Beskrivelse</label><textarea name="Beskrivelse">${_esc(v('Beskrivelse'))}</textarea></div>
+    <div style="display:flex;gap:8px">
+      <button type="submit" class="knap knap-p">💾 Gem arrangement</button>
+      <button type="button" class="knap knap-gr" onclick="document.getElementById('arr-form-wrap').innerHTML=''">Annullér</button>
+    </div>
+  </form>
+</div>`;
+}
+
+async function gemArr(e, arrId) {
+  e.preventDefault();
+  const fd  = new FormData(e.target);
+  const obj = Object.fromEntries(fd.entries());
+  obj.Aaben = obj.Aaben === 'TRUE';
+  obj.Maks  = Number(obj.Maks) || 0;
+  try {
+    const r = await apiFetch({ action: 'adminSaveArr', arr: obj });
+    if (r.ok) { toast('Arrangement gemt ✓'); visSek('arr'); }
+    else toast(r.fejl || 'Fejl', true);
+  } catch(err) { toast(err.message, true); }
+}
+
+async function sletArr(id, titel) {
+  if (!confirm(`Markér "${titel}" som slettet?\n(Tilmeldinger bevares i systemet.)`)) return;
+  try {
+    const r = await apiFetch({ action: 'adminDeleteArr', arrId: id });
+    if (r.ok) { toast('Arrangement slettet'); visSek('arr'); }
+    else toast(r.fejl || 'Fejl', true);
+  } catch(err) { toast(err.message, true); }
+}
+
+/* ================================================================
+   TILMELDINGER
+   ================================================================ */
+async function visSekTilm(main) {
+  const data = await apiGet({ action: 'adminGetAll' });
+  const rows = data?.data?.TILM?.rows || [];
+  const hdr  = data?.data?.TILM?.headers || [];
+  const arr  = data?.data?.ARR?.rows || [];
+  const arrHdr = data?.data?.ARR?.headers || [];
+
+  const arrTitIdx = arrHdr.indexOf('Titel');
+  const arrIdIdx  = arrHdr.indexOf('ID');
+  const arrListe  = arr.map(r => ({ id: r[arrIdIdx], titel: r[arrTitIdx] }));
+
+  const navnIdx  = hdr.indexOf('Navn');
+  const emailIdx = hdr.indexOf('Email');
+  const virIdx   = hdr.indexOf('Virksomhed');
+  const antalIdx = hdr.indexOf('Antal');
+  const arrIdx   = hdr.indexOf('ArrID');
+  const statIdx  = hdr.indexOf('Status');
+  const arrTIdx  = hdr.indexOf('ArrTitel');
+  const datoIdx  = hdr.indexOf('ArrDato');
+
+  const aktive = rows.filter(r => r[statIdx] !== 'afmeldt');
+
+  main.innerHTML = `
+<div class="sek-header">
+  <h2>📋 Tilmeldinger (${aktive.length} aktive)</h2>
+</div>
+<div class="fg" style="max-width:280px;margin-bottom:16px">
+  <label>Filtrer på arrangement</label>
+  <select id="arr-filter" onchange="filtrerTilm(this.value)" style="width:100%;padding:8px 10px;border:1px solid var(--kant);border-radius:6px">
+    <option value="">— Alle —</option>
+    ${arrListe.map(a => `<option value="${a.id}">${a.titel||a.id}</option>`).join('')}
+  </select>
+</div>
+<div id="tilm-tbl-wrap">
+${_tilmTabel(aktive, hdr, navnIdx, emailIdx, virIdx, antalIdx, arrTIdx, datoIdx, statIdx)}
+</div>`;
+
+  window._alleAktiveTilm = aktive;
+  window._tilmHdr = { hdr, navnIdx, emailIdx, virIdx, antalIdx, arrIdx, arrTIdx, datoIdx, statIdx };
+}
+
+function _tilmTabel(rows, hdr, navnIdx, emailIdx, virIdx, antalIdx, arrTIdx, datoIdx, statIdx) {
+  if (!rows.length) return '<p style="color:var(--mut)">Ingen tilmeldinger.</p>';
+  return `
+<table class="adm-tabel">
+  <thead><tr><th>Navn</th><th>Virksomhed</th><th>E-mail</th><th>Antal</th><th>Arrangement</th><th>Status</th></tr></thead>
+  <tbody>${rows.map(r => `
+  <tr>
+    <td>${r[navnIdx]||'—'}</td>
+    <td>${r[virIdx]||'—'}</td>
+    <td><a href="mailto:${r[emailIdx]}">${r[emailIdx]||'—'}</a></td>
+    <td>${r[antalIdx]||1}</td>
+    <td>${r[arrTIdx]||'—'}</td>
+    <td><span class="badge ${r[statIdx]==='aktiv'?'badge-ok':'badge-muted'}">${r[statIdx]||'?'}</span></td>
+  </tr>`).join('')}
+  </tbody>
+</table>`;
+}
+
+function filtrerTilm(arrId) {
+  const rows = window._alleAktiveTilm || [];
+  const h    = window._tilmHdr;
+  const fil  = arrId ? rows.filter(r => r[h.arrIdx] === arrId) : rows;
+  document.getElementById('tilm-tbl-wrap').innerHTML =
+    _tilmTabel(fil, h.hdr, h.navnIdx, h.emailIdx, h.virIdx, h.antalIdx, h.arrTIdx, h.datoIdx, h.statIdx);
+}
+
+/* ================================================================
+   POPUP
+   ================================================================ */
+async function visSekPopup(main) {
+  const data = await apiGet({ action: 'getPopup' });
+  const p    = data?.popup || { Aktiv: false, Titel: '', Tekst: '', Noegle: 'popup_saeson2027_v1', CtaTekst: '', CtaUrl: '' };
+
+  main.innerHTML = `
+<div class="sek-header"><h2>📢 Popup</h2></div>
+<div class="adm-kort">
+  <form onsubmit="gemPopup(event)">
+    <div class="fg"><label>Aktiv</label>
+      <select name="Aktiv">
+        <option value="TRUE"  ${p.Aktiv===true||p.Aktiv==='TRUE'?'selected':''}>Ja — vis popup</option>
+        <option value="FALSE" ${!p.Aktiv||p.Aktiv==='FALSE'?'selected':''}>Nej — skjult</option>
+      </select>
+    </div>
+    <div class="fg"><label>Overskrift</label><input name="Titel" value="${_esc(p.Titel||'')}"></div>
+    <div class="fg"><label>Brødtekst</label><textarea name="Tekst">${_esc(p.Tekst||'')}</textarea></div>
+    <div class="fg"><label>Nøgle (unik pr. popup — ændring = vises igen for alle)</label><input name="Noegle" value="${_esc(p.Noegle||'popup_v1')}"></div>
+    <div class="fg-row">
+      <div class="fg"><label>Knap-tekst</label><input name="CtaTekst" value="${_esc(p.CtaTekst||'')}"></div>
+      <div class="fg"><label>Knap-URL</label><input name="CtaUrl" value="${_esc(p.CtaUrl||'')}"></div>
+    </div>
+    <button type="submit" class="knap knap-p">💾 Gem popup</button>
+  </form>
+</div>`;
+}
+
+async function gemPopup(e) {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const obj = Object.fromEntries(fd.entries());
+  obj.Aktiv = obj.Aktiv === 'TRUE';
+  try {
+    const r = await apiFetch({ action: 'adminSavePopup', popup: obj });
+    if (r.ok) toast('Popup gemt ✓'); else toast(r.fejl || 'Fejl', true);
+  } catch(err) { toast(err.message, true); }
+}
+
+/* ================================================================
+   INFOBJÆLKE
+   ================================================================ */
+async function visSekIb(main) {
+  const data = await apiGet({ action: 'getInfobjaelke' });
+  const ib   = data?.infobjaelke || { Aktiv: false, Tekst: '', LinkUrl: '', LinkTekst: '' };
+
+  main.innerHTML = `
+<div class="sek-header"><h2>🔔 Infobjælke</h2></div>
+<div class="adm-kort">
+  <form onsubmit="gemIb(event)">
+    <div class="fg"><label>Aktiv</label>
+      <select name="Aktiv">
+        <option value="TRUE"  ${ib.Aktiv===true||ib.Aktiv==='TRUE'?'selected':''}>Ja — vis infobjælke</option>
+        <option value="FALSE" ${!ib.Aktiv||ib.Aktiv==='FALSE'?'selected':''}>Nej — skjult</option>
+      </select>
+    </div>
+    <div class="fg"><label>Tekst (vises i marquee)</label><input name="Tekst" value="${_esc(ib.Tekst||'')}"></div>
+    <div class="fg-row">
+      <div class="fg"><label>Link-URL (valgfrit)</label><input name="LinkUrl" value="${_esc(ib.LinkUrl||'')}"></div>
+      <div class="fg"><label>Link-tekst</label><input name="LinkTekst" value="${_esc(ib.LinkTekst||'')}"></div>
+    </div>
+    <button type="submit" class="knap knap-p">💾 Gem infobjælke</button>
+  </form>
+</div>`;
+}
+
+async function gemIb(e) {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const obj = Object.fromEntries(fd.entries());
+  obj.Aktiv = obj.Aktiv === 'TRUE';
+  try {
+    const r = await apiFetch({ action: 'adminSaveInfobjaelke', ib: obj });
+    if (r.ok) toast('Infobjælke gemt ✓'); else toast(r.fejl || 'Fejl', true);
+  } catch(err) { toast(err.message, true); }
+}
+
+/* ================================================================
+   NYHEDER
+   ================================================================ */
+async function visSekNyhed(main) {
+  const data = await apiGet({ action: 'getNyheder' });
+  const nyheder = data?.nyheder || [];
+
+  main.innerHTML = `
+<div class="sek-header">
+  <h2>📰 Nyheder</h2>
+  <button class="knap knap-p" onclick="visNyhedForm()">+ Ny nyhed</button>
+</div>
+<div id="nyhed-form-wrap"></div>
+${nyheder.length ? `
+<table class="adm-tabel">
+  <thead><tr><th>Titel</th><th>Dato</th><th>Aktiv</th><th></th></tr></thead>
+  <tbody>${nyheder.map((n,i) => `
+  <tr>
+    <td>${n.Titel||'—'}</td>
+    <td>${_formatDato(n.Dato)}</td>
+    <td>${n.Aktiv===true||n.Aktiv==='TRUE'?'✅':'❌'}</td>
+    <td><button class="knap knap-gr knap-sm" onclick="visNyhedForm(${JSON.stringify(n).replace(/"/g,'&quot;')})">Redigér</button></td>
+  </tr>`).join('')}
+  </tbody>
+</table>` : '<p style="color:var(--mut)">Ingen nyheder endnu.</p>'}`;
+}
+
+function visNyhedForm(n) {
+  const wrap = document.getElementById('nyhed-form-wrap');
+  const id   = n ? n.ID : 'n' + Date.now();
+  wrap.innerHTML = `
+<div class="adm-kort" style="border:2px solid var(--g);margin-bottom:20px">
+  <h3>${n ? 'Redigér nyhed' : 'Ny nyhed'}</h3>
+  <form onsubmit="gemNyhed(event,'${id}')">
+    <div class="fg"><label>Titel *</label><input name="Titel" value="${_esc(n?.Titel||'')}" required></div>
+    <div class="fg-row">
+      <div class="fg"><label>Dato</label><input type="date" name="Dato" value="${_datoInput(n?.Dato||'')}"></div>
+      <div class="fg"><label>Aktiv</label>
+        <select name="Aktiv">
+          <option value="TRUE"  ${n?.Aktiv===true||n?.Aktiv==='TRUE'?'selected':''}>Ja</option>
+          <option value="FALSE" ${!n?.Aktiv||n?.Aktiv==='FALSE'?'selected':''}>Nej</option>
+        </select>
+      </div>
+    </div>
+    <div class="fg"><label>Tekst</label><textarea name="Tekst">${_esc(n?.Tekst||'')}</textarea></div>
+    <div class="fg-row">
+      <div class="fg"><label>Link-URL</label><input name="LinkUrl" value="${_esc(n?.LinkUrl||'')}"></div>
+      <div class="fg"><label>Link-tekst</label><input name="LinkTekst" value="${_esc(n?.LinkTekst||'')}"></div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button type="submit" class="knap knap-p">💾 Gem nyhed</button>
+      <button type="button" class="knap knap-gr" onclick="document.getElementById('nyhed-form-wrap').innerHTML=''">Annullér</button>
+    </div>
+  </form>
+</div>`;
+}
+
+async function gemNyhed(e, id) {
+  e.preventDefault();
+  const fd  = new FormData(e.target);
+  const obj = Object.fromEntries(fd.entries());
+  obj.ID    = id;
+  obj.Aktiv = obj.Aktiv === 'TRUE';
+  try {
+    const r = await apiFetch({ action: 'adminSaveNyhed', nyhed: obj });
+    if (r.ok) { toast('Nyhed gemt ✓'); visSek('nyheder'); }
+    else toast(r.fejl || 'Fejl', true);
+  } catch(err) { toast(err.message, true); }
+}
+
+/* ================================================================
+   SPONSORER
+   ================================================================ */
+async function visSekSponsor(main) {
+  const data = await apiGet({ action: 'getSponsor' });
+  const sp   = data?.sponsorer || [];
+
+  main.innerHTML = `
+<div class="sek-header">
+  <h2>🏆 Sponsorer</h2>
+  <button class="knap knap-p" onclick="visSponsorForm()">+ Ny sponsor</button>
+</div>
+<div id="sponsor-form-wrap"></div>
+${sp.length ? `
+<table class="adm-tabel">
+  <thead><tr><th>Navn</th><th>Niveau</th><th>Aktiv</th><th></th></tr></thead>
+  <tbody>${sp.map(s => `
+  <tr>
+    <td>${s.Navn||'—'}</td>
+    <td>${s.Niveau||'—'}</td>
+    <td>${s.Aktiv===true||s.Aktiv==='TRUE'?'✅':'❌'}</td>
+    <td><button class="knap knap-gr knap-sm" onclick="visSponsorForm(${JSON.stringify(s).replace(/"/g,'&quot;')})">Redigér</button></td>
+  </tr>`).join('')}
+  </tbody>
+</table>` : '<p style="color:var(--mut)">Ingen sponsorer endnu.</p>'}`;
+}
+
+function visSponsorForm(s) {
+  const wrap = document.getElementById('sponsor-form-wrap');
+  const id   = s ? s.ID : 'sp' + Date.now();
+  wrap.innerHTML = `
+<div class="adm-kort" style="border:2px solid var(--g);margin-bottom:20px">
+  <h3>${s ? 'Redigér sponsor' : 'Ny sponsor'}</h3>
+  <form onsubmit="gemSponsor(event,'${id}')">
+    <div class="fg-row">
+      <div class="fg"><label>Firmanavn *</label><input name="Navn" value="${_esc(s?.Navn||'')}" required></div>
+      <div class="fg"><label>Niveau</label>
+        <select name="Niveau">
+          <option ${s?.Niveau==='Guld'?'selected':''}>Guld</option>
+          <option ${s?.Niveau==='Sølv'?'selected':''}>Sølv</option>
+          <option ${s?.Niveau==='Bronze'?'selected':''}>Bronze</option>
+          <option ${s?.Niveau==='Partner'?'selected':''}>Partner</option>
+        </select>
+      </div>
+    </div>
+    <div class="fg-row">
+      <div class="fg"><label>Website</label><input name="Website" value="${_esc(s?.Website||'')}" placeholder="https://"></div>
+      <div class="fg"><label>Logo URL</label><input name="Logo" value="${_esc(s?.Logo||'')}"></div>
+    </div>
+    <div class="fg"><label>Beskrivelse</label><textarea name="Beskrivelse">${_esc(s?.Beskrivelse||'')}</textarea></div>
+    <div class="fg-row">
+      <div class="fg"><label>Aktiv</label>
+        <select name="Aktiv">
+          <option value="TRUE"  ${s?.Aktiv===true||s?.Aktiv==='TRUE'?'selected':''}>Ja</option>
+          <option value="FALSE" ${!s?.Aktiv||s?.Aktiv==='FALSE'?'selected':''}>Nej</option>
+        </select>
+      </div>
+      <div class="fg"></div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button type="submit" class="knap knap-p">💾 Gem sponsor</button>
+      <button type="button" class="knap knap-gr" onclick="document.getElementById('sponsor-form-wrap').innerHTML=''">Annullér</button>
+    </div>
+  </form>
+</div>`;
+}
+
+async function gemSponsor(e, id) {
+  e.preventDefault();
+  const fd  = new FormData(e.target);
+  const obj = Object.fromEntries(fd.entries());
+  obj.ID    = id;
+  obj.Aktiv = obj.Aktiv === 'TRUE';
+  try {
+    const r = await apiFetch({ action: 'adminSaveSponsor', sponsor: obj });
+    if (r.ok) { toast('Sponsor gemt ✓'); visSek('sponsor'); }
+    else toast(r.fejl || 'Fejl', true);
+  } catch(err) { toast(err.message, true); }
+}
+
+/* ================================================================
+   PÅMINDELSER
+   ================================================================ */
+async function visSekPaamind(main) {
+  const data = await apiGet({ action: 'adminGetAll' });
+  const arr  = (data?.data?.ARR?.rows || []);
+  const hdr  = data?.data?.ARR?.headers || [];
+  const idIdx  = hdr.indexOf('ID');
+  const titIdx = hdr.indexOf('Titel');
+  const datIdx = hdr.indexOf('Dato');
+
+  const kommende = arr.filter(r => {
+    const d = r[datIdx];
+    return d && new Date(d) >= new Date();
+  });
+
+  main.innerHTML = `
+<div class="sek-header"><h2>📧 Send påmindelser</h2></div>
+<div class="adm-kort">
+  <p style="color:var(--mut);margin-bottom:16px;font-size:.9rem">
+    Send en påmindelses-e-mail til alle aktive tilmeldte til et arrangement via Brevo.
+  </p>
+  ${kommende.map(r => `
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--kant)">
+    <div>
+      <strong>${r[titIdx]||'?'}</strong><br>
+      <span style="font-size:.85rem;color:var(--mut)">${_formatDato(r[datIdx])}</span>
+    </div>
+    <button class="knap knap-g knap-sm" onclick="sendPaamind('${r[idIdx]}','${_esc(r[titIdx])}')">
+      📧 Send påminding
+    </button>
+  </div>`).join('')}
+  ${!kommende.length ? '<p style="color:var(--mut)">Ingen kommende arrangementer.</p>' : ''}
+</div>`;
+}
+
+async function sendPaamind(arrId, titel) {
+  if (!confirm(`Send påmindelses-e-mail til alle tilmeldte til "${titel}"?`)) return;
+  try {
+    const r = await apiFetch({ action: 'adminSendPaamind', arrId });
+    if (r.ok) toast(`✓ Påminding sendt til ${r.sendt} deltagere`);
+    else toast(r.fejl || 'Fejl', true);
+  } catch(err) { toast(err.message, true); }
+}
+
+/* ================================================================
+   HJÆLPEFUNKTIONER
+   ================================================================ */
+function toast(msg, fejl = false) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className   = 'vis' + (fejl ? ' fejl' : '');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.className = '', 3500);
+}
+
+function _esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function _formatDato(v) {
+  if (!v) return '—';
+  try {
+    const d = v instanceof Date ? v : new Date(v);
+    if (isNaN(d)) return String(v);
+    return d.toLocaleDateString('da-DK', { day:'numeric', month:'short', year:'numeric' });
+  } catch { return String(v); }
+}
+
+function _datoInput(v) {
+  if (!v) return '';
+  try {
+    const d = v instanceof Date ? v : new Date(v);
+    if (isNaN(d)) return '';
+    return d.toISOString().slice(0,10);
+  } catch { return ''; }
+}
+</script>
+</body>
+</html>

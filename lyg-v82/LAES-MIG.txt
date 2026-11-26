@@ -1,0 +1,7 @@
+LYG Erhvervsklub v8.0 — SAMLET TESTPAKKE
+
+Samlet fra brugerens uploadede filer. Service-workerens asset-versionshenvisninger er rettet fra 7.4 til 8.0.
+
+OBS: Ikke godkendt til produktionsdrift. Brevo er ikke integreret; admin har usikker PIN-fallback; Supabase booking kan falde tilbage til localStorage. Test database, sikkerhed og tilmeldinger grundigt før offentliggørelse. Golfbold-introen med originalt logo mangler.
+
+ZIP-indholdets filer skal placeres i GitHub Pages publiceringsrod, hvis repoet er konfigureret til at publicere fra rod.
