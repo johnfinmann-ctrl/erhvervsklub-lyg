@@ -1,654 +1,1332 @@
 <!DOCTYPE html>
+<!--
+  LYG Erhvervsklub Admin v8.3
+  ======================================================
+  SIKKERHED:
+  · Login kræver Google OAuth (Google Sign-In)
+  · Kun e-mailadresser i ADMIN_EMAILS (Apps Script Properties) har adgang
+  · Admin-token valideres server-side ved HVERT API-kald
+  · adminToken sendes i POST body — aldrig i URL (v8.3 fix)
+  · Ingen hardkodet PIN eller fallback-adgang
+  · Apps Script URL og REQUEST_TOKEN konfigureres i CONFIG herunder
+  · Brevo API-nøgle og andre hemmeligheder er ALDRIG i denne fil
+
+  NYT I v8.3:
+  · adminGetAll bruger POST — adminToken i body, ikke URL
+  · CSV-eksport af deltagerlister
+  · Manuel afmeldingsregistrering
+  · Ventelistehåndtering (vis og aktiver)
+  · E-maillog med retry (undgår dobbeltudsendelse)
+  · Send ændringer, aflysninger og praktiske oplysninger
+  · Sæsonhåndtering via Indstillinger
+  ======================================================
+-->
 <html lang="da">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Admin — Finnes Entreprise</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LYG Erhvervsklub Admin</title>
 <meta name="robots" content="noindex, nofollow">
-<link rel="stylesheet" href="css/style.css">
-<link rel="stylesheet" href="css/admin.css">
+
+<!-- Google Sign-In (GSI) -->
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+
 <style>
-/* ─── Admin-specifikt layout ─── */
-body { background: #f0f4f0; }
-#admin-wrap { max-width: 860px; margin: 0 auto; padding: 0 0 80px; }
+  :root {
+    --p:    #0d2b1a;
+    --p2:   #163d25;
+    --g:    #b8973a;
+    --hvid: #ffffff;
+    --mut:  #6b7280;
+    --txt:  #1a1a1a;
+    --fejl: #c0392b;
+    --ok:   #27ae60;
+    --bg:   #f4f6f4;
+    --kant: #e0e4e0;
+    --info: #1a6fa0;
+  }
 
-/* Login */
-#login-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
-.login-card { background: #fff; border-radius: 18px; padding: 40px 32px; width: 100%; max-width: 360px; text-align: center; box-shadow: 0 8px 40px rgba(0,0,0,.10); }
-.login-logo { font-size: 3rem; margin-bottom: 12px; }
-.login-card h1 { font-size: 1.3rem; color: #1F4D2C; margin-bottom: 4px; }
-.login-card p  { font-size: .9rem; color: #777; margin-bottom: 24px; }
-.pin-input { width: 100%; font-size: 2rem; text-align: center; letter-spacing: .5em; padding: 14px 10px; border: 2px solid #d0e0cc; border-radius: 12px; background: #f8faf8; margin-bottom: 12px; }
-.pin-input:focus { outline: none; border-color: #2E6F40; }
-.pin-error { color: #c0392b; font-size: .85rem; min-height: 1.2em; margin-top: 4px; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--txt); font-size: 15px; }
 
-/* Header */
-.admin-header { background: #1F4D2C; color: #fff; padding: 0 20px; height: 54px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
-.admin-header h1 { font-size: 1rem; font-weight: 700; display: flex; align-items: center; gap: 10px; }
-.admin-header-right { display: flex; gap: 10px; align-items: center; }
-.admin-version { font-size: .72rem; opacity: .6; }
+  /* Header */
+  .adm-header {
+    background: var(--p); color: var(--hvid); padding: 14px 20px;
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .adm-header h1 { font-size: 1.1rem; font-weight: 700; }
+  .adm-header .sub { font-size: .8rem; color: rgba(255,255,255,.65); }
+  .adm-user { font-size: .8rem; color: var(--g); }
+  .adm-logout { background: none; border: 1px solid rgba(255,255,255,.3); color: var(--hvid);
+    padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: .8rem; }
+  .adm-logout:hover { background: rgba(255,255,255,.1); }
 
-/* Tabs */
-.admin-tabs { display: flex; gap: 4px; flex-wrap: wrap; background: #fff; border-bottom: 1px solid #d0e0cc; padding: 8px 16px 0; position: sticky; top: 54px; z-index: 90; }
-.admin-tab { padding: 9px 14px; border: none; background: transparent; font-size: .82rem; font-weight: 600; color: #666; cursor: pointer; border-bottom: 3px solid transparent; border-radius: 8px 8px 0 0; transition: color .15s, border-color .15s; white-space: nowrap; }
-.admin-tab.active { color: #2E6F40; border-bottom-color: #2E6F40; }
-.admin-tab:hover:not(.active) { color: #2E6F40; background: #EAF3EC; }
-.admin-pane { display: none; padding: 20px 16px; }
-.admin-pane.active { display: block; }
+  /* Login-skærm */
+  #login-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .login-kort {
+    background: var(--hvid); border-radius: 12px; padding: 32px 28px;
+    max-width: 420px; width: 100%; box-shadow: 0 4px 24px rgba(0,0,0,.08); text-align: center;
+  }
+  .login-logo { font-size: 2.5rem; margin-bottom: 8px; }
+  .login-kort h2 { color: var(--p); font-size: 1.3rem; margin-bottom: 4px; }
+  .login-kort p { color: var(--mut); font-size: .9rem; margin-bottom: 24px; }
+  .google-btn {
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    background: var(--hvid); border: 2px solid var(--kant); border-radius: 8px;
+    padding: 12px 20px; cursor: pointer; font-size: 1rem; font-weight: 600; color: var(--txt);
+    width: 100%; transition: border-color .2s, box-shadow .2s; margin-bottom: 16px;
+  }
+  .google-btn:hover { border-color: var(--p); box-shadow: 0 2px 8px rgba(13,43,26,.12); }
+  .login-info { font-size: .8rem; color: var(--mut); line-height: 1.5; }
+  .login-fejl { color: var(--fejl); font-size: .9rem; margin-top: 12px; display: none; }
 
-/* Cards */
-.admin-card { background: #fff; border-radius: 14px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 10px rgba(0,0,0,.06); }
-.admin-card h2 { font-size: .95rem; font-weight: 700; color: #1F4D2C; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid #e8f0e8; }
-.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.field-group { margin-bottom: 12px; }
-.field-group label { display: block; font-size: .78rem; font-weight: 700; color: #333; margin-bottom: 5px; }
-.field-group input, .field-group select, .field-group textarea {
-  width: 100%; padding: 10px 13px; border: 1.5px solid #d0e0cc; border-radius: 9px;
-  background: #f8faf8; font-size: .9rem; font-family: inherit; transition: border-color .15s;
-}
-.field-group input:focus, .field-group select:focus, .field-group textarea:focus {
-  outline: none; border-color: #2E6F40; background: #fff;
-}
-.field-group textarea { resize: vertical; min-height: 80px; }
-.field-hint { font-size: .75rem; color: #888; margin-top: 4px; }
+  /* Main layout */
+  #admin-screen { display: none; }
+  .adm-layout { display: flex; min-height: calc(100vh - 54px); }
+  .adm-sidebar {
+    width: 210px; background: var(--hvid); border-right: 1px solid var(--kant);
+    padding: 16px 0; flex-shrink: 0;
+  }
+  .adm-sidebar a {
+    display: block; padding: 10px 18px; color: var(--txt); text-decoration: none;
+    font-size: .9rem; border-left: 3px solid transparent; transition: all .15s;
+  }
+  .adm-sidebar a:hover  { background: var(--bg); color: var(--p); }
+  .adm-sidebar a.aktiv  { border-color: var(--g); background: #f0f4f1; color: var(--p); font-weight: 600; }
+  .adm-sidebar .sep { border-top: 1px solid var(--kant); margin: 8px 0; }
+  .adm-sidebar .nav-gruppe { padding: 8px 18px 4px; font-size: .75rem; color: var(--mut); font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
 
-/* Ydelser */
-.ydelse-item { background: #f8faf8; border: 1.5px solid #d0e0cc; border-radius: 10px; padding: 12px; margin-bottom: 8px; }
-.ydelse-row { display: flex; gap: 8px; align-items: flex-start; }
-.ydelse-row input { flex: 1; padding: 8px 10px; border: 1.5px solid #d0e0cc; border-radius: 7px; font-size: .88rem; }
-.ydelse-row input:focus { outline: none; border-color: #2E6F40; }
-.ydelse-ico-input { width: 48px; flex: none; text-align: center; font-size: 1.1rem; }
-.ydelse-textarea { width: 100%; margin-top: 7px; padding: 8px 10px; border: 1.5px solid #d0e0cc; border-radius: 7px; font-size: .82rem; min-height: 56px; resize: vertical; }
-.ydelse-textarea:focus { outline: none; border-color: #2E6F40; }
-.del-btn { background: none; border: none; color: #c0392b; cursor: pointer; font-size: 1rem; padding: 4px 6px; flex-shrink: 0; }
+  .adm-indhold { flex: 1; padding: 24px 20px; max-width: 960px; }
 
-/* Pris-grid */
-.price-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.price-field label { display: block; font-size: .75rem; font-weight: 700; color: #444; margin-bottom: 4px; }
-.price-field input { width: 100%; padding: 9px 12px; border: 1.5px solid #d0e0cc; border-radius: 8px; font-size: .95rem; font-weight: 700; }
-.price-field input:focus { outline: none; border-color: #2E6F40; }
-.price-section-label { font-size: .82rem; font-weight: 700; color: #2E6F40; margin: 14px 0 6px; text-transform: uppercase; letter-spacing: .05em; }
+  /* Sektionsoverskrift */
+  .sek-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
+  .sek-header h2 { font-size: 1.1rem; color: var(--p); }
+  .sek-header .knapgruppe { display: flex; gap: 8px; flex-wrap: wrap; }
 
-/* Knapper */
-.btn-admin-save { background: #2E6F40; color: #fff; border: none; border-radius: 10px; padding: 12px 24px; font-size: .9rem; font-weight: 700; cursor: pointer; transition: background .15s; }
-.btn-admin-save:hover { background: #1F4D2C; }
-.btn-admin-outline { background: transparent; border: 2px solid #2E6F40; color: #2E6F40; border-radius: 10px; padding: 10px 20px; font-size: .87rem; font-weight: 700; cursor: pointer; transition: background .15s; }
-.btn-admin-outline:hover { background: #EAF3EC; }
-.btn-admin-danger { background: transparent; border: 2px solid #c0392b; color: #c0392b; border-radius: 10px; padding: 10px 20px; font-size: .87rem; font-weight: 700; cursor: pointer; }
-.btn-row-admin { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
+  /* Tabel */
+  .adm-tabel { width: 100%; border-collapse: collapse; background: var(--hvid); border-radius: 8px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.06); margin-bottom: 20px; }
+  .adm-tabel th { background: #f0f4f1; color: var(--p); font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; padding: 10px 12px; text-align: left; }
+  .adm-tabel td { padding: 10px 12px; border-top: 1px solid var(--kant); font-size: .9rem; }
+  .adm-tabel tr:hover td { background: #fafcfa; }
 
-/* Save-bar */
-.save-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 1px solid #d0e0cc; padding: 12px 20px; display: flex; justify-content: flex-end; align-items: center; gap: 12px; z-index: 99; box-shadow: 0 -4px 16px rgba(0,0,0,.08); }
-.save-status { font-size: .85rem; font-weight: 600; color: #2E6F40; flex: 1; }
+  /* Badges */
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: .75rem; font-weight: 600; }
+  .badge-ok     { background: #d4edda; color: #1a5c2e; }
+  .badge-fejl   { background: #f8d7da; color: #842029; }
+  .badge-vente  { background: #fff3cd; color: #664d03; }
+  .badge-info   { background: #d1ecf1; color: #0c5460; }
+  .badge-graa   { background: var(--bg); color: var(--mut); }
 
-/* Toast */
-.admin-toast { position: fixed; bottom: 70px; left: 50%; transform: translateX(-50%) translateY(6px); background: #1F4D2C; color: #fff; padding: 11px 22px; border-radius: 30px; font-size: .88rem; font-weight: 700; opacity: 0; transition: opacity .25s, transform .25s; z-index: 999; pointer-events: none; white-space: nowrap; }
-.admin-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  /* Formularer */
+  .adm-form { background: var(--hvid); border-radius: 8px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,.06); margin-bottom: 20px; }
+  .adm-form h3 { font-size: 1rem; color: var(--p); margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid var(--kant); }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-grid.cols3 { grid-template-columns: 1fr 1fr 1fr; }
+  .form-grid.full { grid-template-columns: 1fr; }
+  .form-felt { display: flex; flex-direction: column; gap: 4px; }
+  .form-felt label { font-size: .8rem; color: var(--mut); font-weight: 600; }
+  .form-felt input, .form-felt select, .form-felt textarea {
+    padding: 8px 10px; border: 1px solid var(--kant); border-radius: 6px; font-size: .9rem; color: var(--txt); background: var(--hvid);
+    transition: border-color .15s;
+  }
+  .form-felt input:focus, .form-felt select:focus, .form-felt textarea:focus { outline: none; border-color: var(--p); }
+  .form-felt textarea { resize: vertical; min-height: 80px; }
 
-/* Backup */
-.backup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-.backup-card { background: #f8faf8; border: 1.5px solid #d0e0cc; border-radius: 12px; padding: 18px; }
-.backup-card h3 { font-size: .9rem; font-weight: 700; margin-bottom: 6px; }
-.backup-card p  { font-size: .82rem; color: #666; margin-bottom: 12px; line-height: 1.5; }
-.danger-zone { border-color: #f5c6c6; background: #fff8f8; }
-.danger-zone h3 { color: #c0392b; }
+  /* Knapper */
+  .btn { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-size: .9rem; font-weight: 600; transition: all .15s; display: inline-flex; align-items: center; gap: 6px; }
+  .btn-p    { background: var(--p); color: var(--hvid); }
+  .btn-p:hover { background: var(--p2); }
+  .btn-g    { background: var(--g); color: var(--hvid); }
+  .btn-g:hover { opacity: .9; }
+  .btn-ok   { background: var(--ok); color: var(--hvid); }
+  .btn-ok:hover { opacity: .9; }
+  .btn-fejl { background: var(--fejl); color: var(--hvid); }
+  .btn-fejl:hover { opacity: .9; }
+  .btn-hvid { background: var(--hvid); color: var(--txt); border: 1px solid var(--kant); }
+  .btn-hvid:hover { border-color: var(--p); color: var(--p); }
+  .btn-sm   { padding: 4px 10px; font-size: .8rem; }
 
-/* Responsive */
-@media (max-width: 540px) {
-  .field-row, .price-grid, .backup-grid { grid-template-columns: 1fr; }
-  .admin-tabs { gap: 2px; }
-  .admin-tab { font-size: .75rem; padding: 8px 8px; }
-}
+  /* Alert boks */
+  .alert { padding: 10px 14px; border-radius: 6px; margin-bottom: 14px; font-size: .9rem; display: none; }
+  .alert-ok   { background: #d4edda; color: #1a5c2e; border: 1px solid #c3e6cb; }
+  .alert-fejl { background: #f8d7da; color: #842029; border: 1px solid #f5c6cb; }
+  .alert-info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+  .alert.vis  { display: block; }
+
+  /* Loading */
+  .loading { text-align: center; padding: 40px; color: var(--mut); }
+  .loading::after { content: '⛳'; animation: spin 1s linear infinite; display: inline-block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Tekstområde til masseudsendelse */
+  .masse-boks { background: var(--hvid); border-radius: 8px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,.06); margin-bottom: 20px; }
+  .masse-boks h3 { font-size: 1rem; color: var(--p); margin-bottom: 14px; }
+  .masse-boks select, .masse-boks textarea { width: 100%; margin-bottom: 10px; padding: 8px 10px; border: 1px solid var(--kant); border-radius: 6px; font-size: .9rem; }
+
+  /* Info-blok */
+  .info-blok { background: #e8f4f8; border: 1px solid #bee3ef; border-radius: 6px; padding: 12px 14px; font-size: .85rem; color: #0c5460; margin-bottom: 16px; }
+  .info-blok strong { display: block; margin-bottom: 4px; }
+
+  /* Email log */
+  .email-status { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
+  .email-status.ok    { background: var(--ok); }
+  .email-status.fejl  { background: var(--fejl); }
+  .email-status.retry { background: var(--g); }
+
+  /* Responsiv */
+  @media (max-width: 700px) {
+    .adm-sidebar { width: 160px; }
+    .form-grid { grid-template-columns: 1fr; }
+    .form-grid.cols3 { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 540px) {
+    .adm-layout { flex-direction: column; }
+    .adm-sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--kant); display: flex; flex-wrap: wrap; padding: 8px; }
+    .adm-sidebar a { padding: 7px 12px; border-left: none; border-bottom: 2px solid transparent; }
+    .adm-sidebar a.aktiv { border-bottom-color: var(--g); background: transparent; }
+    .adm-sidebar .sep, .adm-sidebar .nav-gruppe { display: none; }
+  }
 </style>
 </head>
 <body>
 
-<!-- ════════════════════════════
-     LOGIN
-════════════════════════════ -->
+<!-- ══ LOGIN SKÆRM ══ -->
 <div id="login-screen">
-  <div class="login-card">
-    <div class="login-logo">🌿</div>
-    <h1>Finnes Entreprise</h1>
-    <p>Adminpanel — indtast PIN-kode</p>
-    <input class="pin-input" id="pin-input" type="password"
-           placeholder="••••" maxlength="20"
-           inputmode="numeric" autocomplete="current-password">
-    <button class="btn btn-primary" style="width:100%" onclick="doLogin()">Log ind</button>
-    <p class="pin-error" id="pin-error"></p>
-    <p style="margin-top:18px; font-size:.8rem; color:#aaa;">
-      <a href="index.html" style="color:#2E6F40;">← Tilbage til hjemmesiden</a>
-    </p>
+  <div class="login-kort">
+    <div class="login-logo">⛳</div>
+    <h2>LYG Erhvervsklub</h2>
+    <p>Administration — kun autoriserede administratorer</p>
+    <button class="google-btn" onclick="startGoogleLogin()">
+      <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+      Log ind med Google
+    </button>
+    <p class="login-info">Kun godkendte administratorer har adgang.<br>Din e-mailadresse bekræftes automatisk.</p>
+    <p class="login-fejl" id="login-fejl"></p>
   </div>
 </div>
 
-<!-- ════════════════════════════
-     ADMIN PANEL
-════════════════════════════ -->
-<div id="admin-panel" style="display:none">
-
-  <header class="admin-header">
-    <h1>⚙ Admin <span class="admin-version">v1.0 · 20260623</span></h1>
-    <div class="admin-header-right">
-      <a href="index.html" target="_blank" style="color:rgba(255,255,255,.75); font-size:.85rem;">↗ Se side</a>
-      <button class="btn btn-outline" style="padding:6px 14px; font-size:.82rem" onclick="doLogout()">Log ud</button>
+<!-- ══ ADMIN SKÆRM ══ -->
+<div id="admin-screen">
+  <header class="adm-header">
+    <div>
+      <h1>⛳ LYG Erhvervsklub Admin</h1>
+      <div class="sub">v8.3 · <span id="hdr-dato"></span></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <span class="adm-user" id="hdr-email"></span>
+      <button class="adm-logout" onclick="logUd()">Log ud</button>
     </div>
   </header>
 
-  <div class="admin-tabs">
-    <button class="admin-tab active" onclick="showTab('firma', this)">🏢 Firma</button>
-    <button class="admin-tab" onclick="showTab('kontakt', this)">📞 Kontakt</button>
-    <button class="admin-tab" onclick="showTab('priser', this)">💰 Priser</button>
-    <button class="admin-tab" onclick="showTab('ydelser', this)">🌿 Ydelser</button>
-    <button class="admin-tab" onclick="showTab('tekster', this)">📝 Tekster</button>
-    <button class="admin-tab" onclick="showTab('backup', this)">📦 Backup</button>
-  </div>
+  <div class="adm-layout">
+    <nav class="adm-sidebar">
+      <div class="nav-gruppe">Indhold</div>
+      <a href="#" onclick="visSek('arrangementer')" id="nav-arrangementer">📅 Arrangementer</a>
+      <a href="#" onclick="visSek('tilmeldinger')"  id="nav-tilmeldinger">👥 Tilmeldinger</a>
+      <a href="#" onclick="visSek('venteliste')"    id="nav-venteliste">⏳ Venteliste</a>
+      <div class="sep"></div>
+      <div class="nav-gruppe">Kommunikation</div>
+      <a href="#" onclick="visSek('paamindelser')"  id="nav-paamindelser">📧 E-mail & beskeder</a>
+      <a href="#" onclick="visSek('emaillog')"      id="nav-emaillog">📋 E-maillog</a>
+      <div class="sep"></div>
+      <div class="nav-gruppe">Hjemmeside</div>
+      <a href="#" onclick="visSek('nyheder')"       id="nav-nyheder">📰 Nyheder</a>
+      <a href="#" onclick="visSek('sponsorer')"     id="nav-sponsorer">🏆 Sponsorer</a>
+      <a href="#" onclick="visSek('popup')"         id="nav-popup">💬 Popup</a>
+      <a href="#" onclick="visSek('infobjaelke')"   id="nav-infobjaelke">📢 Infobjælke</a>
+      <div class="sep"></div>
+      <div class="nav-gruppe">System</div>
+      <a href="#" onclick="visSek('indstillinger')" id="nav-indstillinger">⚙️ Indstillinger</a>
+    </nav>
 
-  <div id="admin-wrap">
+    <main class="adm-indhold">
+      <div id="adm-alert" class="alert"></div>
 
-    <!-- ─── FIRMA ─── -->
-    <div class="admin-pane active" id="pane-firma">
-      <div class="admin-card">
-        <h2>Virksomhedsoplysninger</h2>
-        <div class="field-row">
-          <div class="field-group">
-            <label>Firmanavn</label>
-            <input type="text" id="a-name" placeholder="Finnes Entreprise">
-          </div>
-          <div class="field-group">
-            <label>Tagline / slogan</label>
-            <input type="text" id="a-tagline" placeholder="Professionel Have- og Graveservice">
+      <!-- ARRANGEMENTER -->
+      <section id="sek-arrangementer" style="display:none">
+        <div class="sek-header">
+          <h2>📅 Arrangementer</h2>
+          <div class="knapgruppe">
+            <button class="btn btn-p" onclick="nytArr()">+ Nyt arrangement</button>
           </div>
         </div>
-        <div class="field-row">
-          <div class="field-group">
-            <label>CVR-nummer</label>
-            <input type="text" id="a-cvr" placeholder="46557557">
+        <div id="arr-liste" class="loading"></div>
+        <div id="arr-form" style="display:none">
+          <div class="adm-form">
+            <h3 id="arr-form-titel">Nyt arrangement</h3>
+            <input type="hidden" id="arr-id">
+            <div class="form-grid">
+              <div class="form-felt">
+                <label>Titel *</label>
+                <input type="text" id="arr-titel" placeholder="SIM Golf-dag 2027">
+              </div>
+              <div class="form-felt">
+                <label>Dato *</label>
+                <input type="date" id="arr-dato">
+              </div>
+              <div class="form-felt">
+                <label>Tidspunkt fra</label>
+                <input type="time" id="arr-tid-fra">
+              </div>
+              <div class="form-felt">
+                <label>Tidspunkt til</label>
+                <input type="time" id="arr-tid-til">
+              </div>
+              <div class="form-felt">
+                <label>Max deltagere (0 = ubegr.)</label>
+                <input type="number" id="arr-maks" value="0" min="0">
+              </div>
+              <div class="form-felt">
+                <label>Pris</label>
+                <input type="text" id="arr-pris" placeholder="250 kr./person">
+              </div>
+              <div class="form-felt">
+                <label>Status</label>
+                <select id="arr-status">
+                  <option value="aktiv">Aktiv</option>
+                  <option value="aflyst">Aflyst</option>
+                  <option value="slettet">Slettet</option>
+                </select>
+              </div>
+              <div class="form-felt">
+                <label>Tilmelding åben</label>
+                <select id="arr-aaben">
+                  <option value="true">Ja — tilmelding åben</option>
+                  <option value="false">Nej — tilmelding lukket</option>
+                </select>
+              </div>
+              <div class="form-felt">
+                <label>Lokation</label>
+                <input type="text" id="arr-lokation" placeholder="Lyngbygaard Golf, Clubhuset">
+              </div>
+              <div class="form-felt">
+                <label>Billedsti (valgfrit)</label>
+                <input type="text" id="arr-billede" placeholder="./images/arr-foto.jpg">
+              </div>
+            </div>
+            <div class="form-grid full" style="margin-top:14px">
+              <div class="form-felt">
+                <label>Beskrivelse</label>
+                <textarea id="arr-beskrivelse" rows="4" placeholder="Kort beskrivelse af arrangementet..."></textarea>
+              </div>
+            </div>
+            <div style="margin-top:16px;display:flex;gap:10px">
+              <button class="btn btn-p" onclick="gemArr()">💾 Gem arrangement</button>
+              <button class="btn btn-hvid" onclick="lukArrForm()">Annuller</button>
+            </div>
           </div>
-          <div class="field-group">
-            <label>Momsstatus</label>
-            <select id="a-vat">
-              <option value="true">Momsregistreret</option>
-              <option value="false">Ikke momsregistreret</option>
+        </div>
+      </section>
+
+      <!-- TILMELDINGER -->
+      <section id="sek-tilmeldinger" style="display:none">
+        <div class="sek-header">
+          <h2>👥 Tilmeldinger</h2>
+          <div class="knapgruppe">
+            <select id="filter-arr" onchange="filterTilm()" style="padding:7px 10px;border:1px solid var(--kant);border-radius:6px;font-size:.9rem">
+              <option value="">Alle arrangementer</option>
             </select>
+            <button class="btn btn-hvid" onclick="eksporterCSV()">⬇️ CSV-eksport</button>
           </div>
         </div>
-        <div class="field-group">
-          <label>Dækningsområder (kommasepareret)</label>
-          <input type="text" id="a-areas" placeholder="Vejle, Børkop, Egtved, Jelling, Kolding">
+        <div class="info-blok">
+          <strong>Persondata</strong>
+          Tilmeldingsdata vises kun til brug for planlægning. Eksporterede lister må kun deles internt og slettes efter brug (GDPR).
         </div>
-        <div class="field-row">
-          <div class="field-group">
-            <label>Åbningstider (hverdage)</label>
-            <input type="text" id="a-hours-wd" placeholder="07:00–16:00">
-          </div>
-          <div class="field-group">
-            <label>Åbningstider (weekend)</label>
-            <input type="text" id="a-hours-we" placeholder="Lukket">
-          </div>
-        </div>
-      </div>
-    </div>
+        <div id="tilm-liste" class="loading"></div>
+      </section>
 
-    <!-- ─── KONTAKT ─── -->
-    <div class="admin-pane" id="pane-kontakt">
-      <div class="admin-card">
-        <h2>Kontaktoplysninger</h2>
-        <div class="field-row">
-          <div class="field-group">
-            <label>Telefon (visning)</label>
-            <input type="tel" id="a-phone" placeholder="40 13 73 70">
-          </div>
-          <div class="field-group">
-            <label>Telefon rå (til tel:/sms: links)</label>
-            <input type="tel" id="a-phone-raw" placeholder="+4540137370">
-            <span class="field-hint">Format: +4540137370 (ingen mellemrum)</span>
-          </div>
+      <!-- VENTELISTE -->
+      <section id="sek-venteliste" style="display:none">
+        <div class="sek-header">
+          <h2>⏳ Venteliste</h2>
         </div>
-        <div class="field-row">
-          <div class="field-group">
-            <label>SMS rå</label>
-            <input type="tel" id="a-sms-raw" placeholder="+4540137370">
-          </div>
-          <div class="field-group">
-            <label>E-mail</label>
-            <input type="email" id="a-email" placeholder="finmann1@gmail.com">
-          </div>
-        </div>
-        <div class="field-group">
-          <label>Logo-sti (relativ)</label>
-          <input type="text" id="a-logo" placeholder="assets/logo/finnes-entreprise-mark.png">
-          <span class="field-hint">Fil skal uploades til assets/logo/ på GitHub</span>
-        </div>
-      </div>
-    </div>
+        <div id="vente-liste" class="loading"></div>
+      </section>
 
-    <!-- ─── PRISER ─── -->
-    <div class="admin-pane" id="pane-priser">
-      <div class="admin-card">
-        <h2>Beregnerpriser</h2>
-        <p style="font-size:.84rem; color:#666; margin-bottom:16px;">
-          Ændringer her slår igennem i alle 8 prisberegnere.
-        </p>
-
-        <div class="price-section-label">1 — Græsslåning</div>
-        <div class="price-grid">
-          <div class="price-field"><label>Kr./m²</label><input type="number" id="p-grass-sqm" step="0.05"></div>
-          <div class="price-field"><label>Minimumspris (kr.)</label><input type="number" id="p-grass-min"></div>
-          <div class="price-field"><label>Tillæg, højt græs (kr.)</label><input type="number" id="p-grass-high"></div>
-          <div class="price-field"><label>Bortkørsel af afklip (kr.)</label><input type="number" id="p-grass-waste"></div>
+      <!-- E-MAIL & BESKEDER -->
+      <section id="sek-paamindelser" style="display:none">
+        <div class="sek-header">
+          <h2>📧 E-mail & beskeder</h2>
+        </div>
+        <div class="info-blok">
+          <strong>Send til alle tilmeldte i et arrangement</strong>
+          Vælg arrangement og beskedtype nedenfor. Alle aktive tilmeldinger modtager beskeden.
         </div>
 
-        <div class="price-section-label">2 — Hækkeklipning</div>
-        <div class="price-grid">
-          <div class="price-field"><label>Kr./meter (u. 2m, én side)</label><input type="number" id="p-hedge-rate"></div>
-          <div class="price-field"><label>Bortkørsel (kr.)</label><input type="number" id="p-hedge-waste"></div>
-          <div class="price-field"><label>Tillæg 2–3m (kr./m)</label><input type="number" id="p-hedge-h2"></div>
-          <div class="price-field"><label>Tillæg over 3m (kr./m)</label><input type="number" id="p-hedge-h3"></div>
+        <div class="masse-boks">
+          <h3>📧 Manuel påminding</h3>
+          <select id="paamind-arr">
+            <option value="">— Vælg arrangement —</option>
+          </select>
+          <button class="btn btn-p" onclick="sendPaamind()">Send påminding til alle tilmeldte</button>
         </div>
 
-        <div class="price-section-label">3 — Minigraver</div>
-        <div class="price-grid">
-          <div class="price-field"><label>Timepris (kr./t)</label><input type="number" id="p-exc-rate"></div>
-          <div class="price-field"><label>Minimum (timer)</label><input type="number" id="p-exc-min" step="0.5"></div>
-          <div class="price-field"><label>Ekstra mand (kr./t)</label><input type="number" id="p-exc-man"></div>
-          <div class="price-field"><label>Bortkørsel af jord (kr./læs)</label><input type="number" id="p-exc-waste"></div>
+        <div class="masse-boks">
+          <h3>⚠️ Vigtig ændring i arrangementet</h3>
+          <select id="aendring-arr">
+            <option value="">— Vælg arrangement —</option>
+          </select>
+          <textarea id="aendring-tekst" rows="4" placeholder="Beskriv ændringen... (fx ny dato, nyt lokale, ændret tidspunkt)"></textarea>
+          <button class="btn btn-g" onclick="sendAendring()">Send ændringsbesked</button>
         </div>
 
-        <div class="price-section-label">4 — Haveoprydning</div>
-        <div class="price-grid">
-          <div class="price-field"><label>Timepris (kr./t)</label><input type="number" id="p-clean-rate"></div>
-          <div class="price-field"><label>Minimumspris (kr.)</label><input type="number" id="p-clean-min"></div>
-          <div class="price-field"><label>Bortkørsel (kr.)</label><input type="number" id="p-clean-waste"></div>
-          <div class="price-field"><label>Tillæg, stor opgave (kr.)</label><input type="number" id="p-clean-big"></div>
+        <div class="masse-boks">
+          <h3>🚫 Aflysning</h3>
+          <select id="aflysning-arr">
+            <option value="">— Vælg arrangement —</option>
+          </select>
+          <textarea id="aflysning-tekst" rows="3" placeholder="Årsag til aflysning (valgfrit)..."></textarea>
+          <button class="btn btn-fejl" onclick="sendAflysning()">Send aflysningsbesked (arrangement markeres aflyst)</button>
         </div>
 
-        <div class="price-section-label">5 — Jordarbejde</div>
-        <div class="price-grid">
-          <div class="price-field"><label>Timepris (kr./t)</label><input type="number" id="p-earth-rate"></div>
-          <div class="price-field"><label>Maskintid (kr./t)</label><input type="number" id="p-earth-machine"></div>
-          <div class="price-field"><label>Bortkørsel (kr./læs)</label><input type="number" id="p-earth-waste"></div>
+        <div class="masse-boks">
+          <h3>📋 Praktiske oplysninger</h3>
+          <select id="praktisk-arr">
+            <option value="">— Vælg arrangement —</option>
+          </select>
+          <textarea id="praktisk-tekst" rows="4" placeholder="Parkering, påklædning, mødetidspunkt, hvad medbringes..."></textarea>
+          <button class="btn btn-p" onclick="sendPraktisk()">Send til alle tilmeldte</button>
         </div>
+      </section>
 
-        <div class="price-section-label">6 — Belægning</div>
-        <div class="price-grid">
-          <div class="price-field"><label>Simpel (kr./m²)</label><input type="number" id="p-pav-simple"></div>
-          <div class="price-field"><label>Normal (kr./m²)</label><input type="number" id="p-pav-normal"></div>
-          <div class="price-field"><label>Kompleks (kr./m²)</label><input type="number" id="p-pav-complex"></div>
-          <div class="price-field"><label>Forberedelse (% tillæg)</label><input type="number" id="p-pav-prep" step="0.01"></div>
-        </div>
-
-        <div class="price-section-label">7 — Sommerhusservice</div>
-        <div class="price-grid">
-          <div class="price-field"><label>Enkeltbesøg (kr.)</label><input type="number" id="p-sum-single"></div>
-          <div class="price-field"><label>Åbning/lukning (kr.)</label><input type="number" id="p-sum-season"></div>
-          <div class="price-field"><label>Tilsynsbesøg (kr.)</label><input type="number" id="p-sum-inspect"></div>
-        </div>
-
-        <div class="price-section-label">8 — Fast haveaftale</div>
-        <div class="price-grid">
-          <div class="price-field"><label>Kr./m² pr. besøg</label><input type="number" id="p-sub-sqm" step="0.05"></div>
-          <div class="price-field"><label>Minimumspris pr. besøg</label><input type="number" id="p-sub-min"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ─── YDELSER ─── -->
-    <div class="admin-pane" id="pane-ydelser">
-      <div class="admin-card">
-        <h2>Ydelseskort</h2>
-        <p style="font-size:.84rem; color:#666; margin-bottom:14px;">
-          Rediger ikon, titel og tekst for hvert ydelseskort på hjemmesiden.
-        </p>
-        <div id="ydelser-editor"></div>
-        <button class="btn-admin-outline" style="margin-top:10px" onclick="addYdelse()">
-          + Tilføj ydelse
-        </button>
-      </div>
-    </div>
-
-    <!-- ─── TEKSTER ─── -->
-    <div class="admin-pane" id="pane-tekster">
-      <div class="admin-card">
-        <h2>Sidetekster</h2>
-        <div class="field-group">
-          <label>Forside — intro-tekst</label>
-          <textarea id="a-intro" rows="3"></textarea>
-        </div>
-        <div class="field-group">
-          <label>Om os — overskrift</label>
-          <input type="text" id="a-about-h">
-        </div>
-        <div class="field-group">
-          <label>Om os — brødtekst</label>
-          <textarea id="a-about-text" rows="4"></textarea>
-        </div>
-      </div>
-      <div class="admin-card">
-        <h2>Adgangskode</h2>
-        <div class="field-row">
-          <div class="field-group">
-            <label>Ny PIN-kode</label>
-            <input type="password" id="a-pin-new" placeholder="Ny kode">
-          </div>
-          <div class="field-group">
-            <label>Bekræft ny PIN</label>
-            <input type="password" id="a-pin-confirm" placeholder="Gentag ny kode">
+      <!-- E-MAILLOG -->
+      <section id="sek-emaillog" style="display:none">
+        <div class="sek-header">
+          <h2>📋 E-maillog</h2>
+          <div class="knapgruppe">
+            <label style="font-size:.85rem;display:flex;align-items:center;gap:6px">
+              <input type="checkbox" id="vis-alle-mails" onchange="hentEmaillog()"> Vis alle (inkl. sendte)
+            </label>
           </div>
         </div>
-        <button class="btn-admin-outline" onclick="changePIN()">Skift PIN-kode</button>
-      </div>
-    </div>
-
-    <!-- ─── BACKUP ─── -->
-    <div class="admin-pane" id="pane-backup">
-      <div class="backup-grid">
-        <div class="backup-card">
-          <h3>📤 Eksporter backup</h3>
-          <p>Download alle admin-indstillinger som JSON. Gem filen et sikkert sted.</p>
-          <button class="btn-admin-outline" onclick="exportJSON()">Download backup.json</button>
+        <div class="info-blok">
+          <strong>Retry af fejlede e-mails</strong>
+          Klik "Gensend" for at forsøge igen. Allerede sendte e-mails kan ikke gensendes (undgår dobbeltudsendelse).
         </div>
-        <div class="backup-card">
-          <h3>📥 Importer backup</h3>
-          <p>Gendan fra en tidligere eksporteret JSON-backup-fil.</p>
-          <input type="file" id="import-file" accept=".json" style="display:none" onchange="importJSON(this)">
-          <button class="btn-admin-outline" onclick="document.getElementById('import-file').click()">Vælg backup.json</button>
-        </div>
-        <div class="backup-card danger-zone" style="grid-column:1/-1">
-          <h3>⚠️ Nulstil til standard</h3>
-          <p>Slet alle gemte admin-ændringer og gå tilbage til standard config-filer. Kan ikke fortrydes.</p>
-          <button class="btn-admin-danger" onclick="resetAll()">Nulstil alt til standard</button>
-        </div>
-      </div>
-    </div>
+        <div id="email-liste" class="loading"></div>
+      </section>
 
-  </div><!-- admin-wrap -->
+      <!-- NYHEDER -->
+      <section id="sek-nyheder" style="display:none">
+        <div class="sek-header">
+          <h2>📰 Nyheder</h2>
+          <button class="btn btn-p" onclick="nyNyhed()">+ Ny nyhed</button>
+        </div>
+        <div id="nyheder-form" style="display:none" class="adm-form">
+          <h3 id="nyhed-form-titel">Ny nyhed</h3>
+          <input type="hidden" id="nyhed-id">
+          <div class="form-grid">
+            <div class="form-felt"><label>Titel *</label><input type="text" id="nyhed-titel"></div>
+            <div class="form-felt"><label>Dato *</label><input type="date" id="nyhed-dato"></div>
+            <div class="form-felt"><label>Aktiv</label><select id="nyhed-aktiv"><option value="true">Ja</option><option value="false">Nej</option></select></div>
+            <div class="form-felt"><label>Billedsti</label><input type="text" id="nyhed-billede"></div>
+            <div class="form-felt"><label>Link URL</label><input type="url" id="nyhed-url"></div>
+            <div class="form-felt"><label>Link tekst</label><input type="text" id="nyhed-link-tekst"></div>
+          </div>
+          <div class="form-grid full" style="margin-top:12px">
+            <div class="form-felt"><label>Tekst *</label><textarea id="nyhed-tekst" rows="4"></textarea></div>
+          </div>
+          <div style="margin-top:12px;display:flex;gap:10px">
+            <button class="btn btn-p" onclick="gemNyhed()">💾 Gem</button>
+            <button class="btn btn-hvid" onclick="lukNyhedForm()">Annuller</button>
+          </div>
+        </div>
+        <div id="nyheder-liste" class="loading"></div>
+      </section>
 
-  <!-- Save-bar -->
-  <div class="save-bar">
-    <span class="save-status" id="save-status"></span>
-    <a href="index.html" class="btn-admin-outline" style="text-decoration:none; font-size:.85rem">← Se side</a>
-    <button class="btn-admin-save" onclick="saveAll()">💾 Gem ændringer</button>
+      <!-- SPONSORER -->
+      <section id="sek-sponsorer" style="display:none">
+        <div class="sek-header">
+          <h2>🏆 Sponsorer</h2>
+          <button class="btn btn-p" onclick="nySponsor()">+ Ny sponsor</button>
+        </div>
+        <div id="sponsor-form" style="display:none" class="adm-form">
+          <h3>Sponsor</h3>
+          <input type="hidden" id="sponsor-id">
+          <div class="form-grid">
+            <div class="form-felt"><label>Navn *</label><input type="text" id="sponsor-navn"></div>
+            <div class="form-felt"><label>Niveau</label><select id="sponsor-niveau"><option>Guld</option><option>Sølv</option><option>Bronze</option><option>Partner</option></select></div>
+            <div class="form-felt"><label>Email</label><input type="email" id="sponsor-email"></div>
+            <div class="form-felt"><label>Telefon</label><input type="tel" id="sponsor-tlf"></div>
+            <div class="form-felt"><label>Aktiv</label><select id="sponsor-aktiv"><option value="true">Ja</option><option value="false">Nej</option></select></div>
+            <div class="form-felt"><label>Website</label><input type="url" id="sponsor-web"></div>
+          </div>
+          <div style="margin-top:12px;display:flex;gap:10px">
+            <button class="btn btn-p" onclick="gemSponsor()">💾 Gem</button>
+            <button class="btn btn-hvid" onclick="lukSponsorForm()">Annuller</button>
+          </div>
+        </div>
+        <div id="sponsor-liste" class="loading"></div>
+      </section>
+
+      <!-- POPUP -->
+      <section id="sek-popup" style="display:none">
+        <div class="sek-header"><h2>💬 Popup</h2></div>
+        <div class="adm-form">
+          <h3>Velkomst-popup</h3>
+          <div class="form-grid">
+            <div class="form-felt"><label>Aktiv</label><select id="popup-aktiv"><option value="true">Ja</option><option value="false">Nej</option></select></div>
+            <div class="form-felt"><label>Nøgle (unik ID)</label><input type="text" id="popup-noegle" placeholder="popup_v1"></div>
+            <div class="form-felt"><label>Titel</label><input type="text" id="popup-titel"></div>
+            <div class="form-felt"><label>CTA tekst</label><input type="text" id="popup-cta-tekst"></div>
+            <div class="form-felt"><label>CTA URL</label><input type="url" id="popup-cta-url"></div>
+          </div>
+          <div class="form-grid full" style="margin-top:12px">
+            <div class="form-felt"><label>Tekst</label><textarea id="popup-tekst" rows="3"></textarea></div>
+          </div>
+          <div style="margin-top:12px">
+            <button class="btn btn-p" onclick="gemPopup()">💾 Gem popup</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- INFOBJÆLKE -->
+      <section id="sek-infobjaelke" style="display:none">
+        <div class="sek-header"><h2>📢 Infobjælke</h2></div>
+        <div class="adm-form">
+          <h3>Rullende infobjælke</h3>
+          <div class="form-grid">
+            <div class="form-felt"><label>Aktiv</label><select id="ib-aktiv"><option value="true">Ja</option><option value="false">Nej</option></select></div>
+            <div class="form-felt"><label>Link URL</label><input type="url" id="ib-url"></div>
+            <div class="form-felt"><label>Link tekst</label><input type="text" id="ib-link-tekst"></div>
+          </div>
+          <div class="form-grid full" style="margin-top:12px">
+            <div class="form-felt"><label>Tekst (vises rullende)</label><textarea id="ib-tekst" rows="2"></textarea></div>
+          </div>
+          <div style="margin-top:12px">
+            <button class="btn btn-p" onclick="gemInfobjaelke()">💾 Gem infobjælke</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- INDSTILLINGER -->
+      <section id="sek-indstillinger" style="display:none">
+        <div class="sek-header"><h2>⚙️ Indstillinger</h2></div>
+        <div class="info-blok">
+          <strong>Sæsonhåndtering og systemkonfiguration</strong>
+          Disse indstillinger gemmes i Google Sheets og bruges af Apps Script backend.
+        </div>
+        <div id="indstil-liste" class="loading"></div>
+        <div class="adm-form" style="margin-top:20px">
+          <h3>Tilføj/opdatér indstilling</h3>
+          <div class="form-grid">
+            <div class="form-felt"><label>Nøgle</label><input type="text" id="indstil-noegle" placeholder="aktiv_saeson"></div>
+            <div class="form-felt"><label>Værdi</label><input type="text" id="indstil-vaerdi" placeholder="2027"></div>
+          </div>
+          <div class="form-grid full" style="margin-top:10px">
+            <div class="form-felt"><label>Beskrivelse</label><input type="text" id="indstil-beskrivelse" placeholder="Kort forklaring"></div>
+          </div>
+          <div style="margin-top:12px">
+            <button class="btn btn-p" onclick="gemIndstilling()">💾 Gem indstilling</button>
+          </div>
+        </div>
+      </section>
+    </main>
   </div>
 </div>
 
-<!-- Toast -->
-<div class="admin-toast" id="admin-toast"></div>
-
 <script>
-/* ============================================================
-   ADMIN.JS — inline (Finnes Entreprise)
-   Gem/hent admin-data via localStorage.
-   Nøgle: "fe_admin_override" — merges ovenpå config-filer.
-   ============================================================ */
-
-const KEY     = "fe_admin_override";
-const PIN_KEY = "fe_admin_pin";
-const DEF_PIN = "1234";
-
-/* ── Standard-værdier (kopieret fra config-filer) ── */
-const DEFAULTS = {
-  name: "Finnes Entreprise",
-  tagline: "Professionel Have- og Graveservice",
-  cvr: "46557557",
-  vatRegistered: true,
-  areas: "Vejle, Børkop, Brejning, Egtved, Jelling, Kolding",
-  hoursWd: "07:00–16:00",
-  hoursWe: "Lukket",
-  phone: "40 13 73 70",
-  phoneRaw: "+4540137370",
-  smsRaw: "+4540137370",
-  email: "finmann1@gmail.com",
-  logo: "assets/logo/finnes-entreprise-mark.png",
-  intro: "Professionel have- og graveservice til private, erhverv og sommerhuse.",
-  aboutH: "Om os",
-  aboutText: "Vi tilbyder professionel have- og graveservice i Vejle-området. Ring for et uforpligtende tilbud.",
-  // Priser
-  pGrassSqm: 1.25,  pGrassMin: 350, pGrassHigh: 200, pGrassWaste: 150,
-  pHedgeRate: 60,   pHedgeWaste: 400, pHedgeH2: 25, pHedgeH3: 55,
-  pExcRate: 650,    pExcMin: 2, pExcMan: 350, pExcWaste: 850,
-  pCleanRate: 450,  pCleanMin: 350, pCleanWaste: 400, pCleanBig: 500,
-  pEarthRate: 450,  pEarthMachine: 300, pEarthWaste: 850,
-  pPavSimple: 350,  pPavNormal: 550, pPavComplex: 850, pPavPrep: 0.25,
-  pSumSingle: 650,  pSumSeason: 1200, pSumInspect: 450,
-  pSubSqm: 0.95,    pSubMin: 300,
-  // Ydelser
-  ydelser: [
-    { ico:"🌱", titel:"Græsslåning",   tekst:"Regelmæssig klipning eller enkeltstående besøg. Fast aftale giver rabat." },
-    { ico:"✂️", titel:"Hækkeklipning", tekst:"Professionel klipning af alle typer hæk — begge sider og bortkørsel." },
-    { ico:"🚜", titel:"Minigraver",    tekst:"Udgravning, planering, dræn og fundament. Minimum 2 timer." },
-    { ico:"🍂", titel:"Haveoprydning", tekst:"Rydning af have forår og efterår — løvfald, ukrudt og beskæring." },
-    { ico:"⛏️", titel:"Jordarbejde",  tekst:"Større og mindre jordflytning, opfyldning og planering." },
-    { ico:"🪨", titel:"Belægning",     tekst:"Fliser, grus og chaussésten — indkørsler og terrasser." },
-    { ico:"🏡", titel:"Sommerhus",     tekst:"Åbning, lukning og løbende vedligeholdelse af dit sommerhus." },
-    { ico:"📅", titel:"Fast aftale",   tekst:"Ugentlig eller 14-dages haveservice med fast rabat." }
-  ]
+// ══════════════════════════════════════════════════════════════
+// KONFIGURATION — TILPAS EFTER DEPLOYMENT
+// ══════════════════════════════════════════════════════════════
+const ADM_CFG = {
+  // Apps Script Web App URL (fra deployment)
+  scriptUrl:    'INDSÆT_APPS_SCRIPT_WEB_APP_URL',
+  // REQUEST_TOKEN: Samme som i Script Properties (IKKE Brevo-nøgle)
+  requestToken: 'INDSÆT_REQUEST_TOKEN',
+  // Google Sign-In Client ID
+  googleClientId: 'INDSÆT_GOOGLE_CLIENT_ID.apps.googleusercontent.com',
 };
 
-/* ── PIN ── */
-function getPin() { return localStorage.getItem(PIN_KEY) || DEF_PIN; }
+// ══════════════════════════════════════════════════════════════
+// AUTH STATE
+// ══════════════════════════════════════════════════════════════
+let _adminToken = sessionStorage.getItem('lyg_admin_token') || null;
+let _adminEmail = sessionStorage.getItem('lyg_admin_email') || null;
+let _allData    = null;
 
-document.getElementById("pin-input").addEventListener("keydown", e => {
-  if (e.key === "Enter") doLogin();
-});
+// ══════════════════════════════════════════════════════════════
+// API HELPERS — adminToken sendes i POST body (v8.3 sikkerhedsopdatering)
+// ══════════════════════════════════════════════════════════════
 
-function doLogin() {
-  const pin = document.getElementById("pin-input").value;
-  const err = document.getElementById("pin-error");
-  if (pin === getPin()) {
-    document.getElementById("login-screen").style.display = "none";
-    document.getElementById("admin-panel").style.display = "block";
-    populateForm();
-  } else {
-    err.textContent = "Forkert PIN-kode — prøv igen.";
-    document.getElementById("pin-input").value = "";
-    setTimeout(() => { err.textContent = ""; }, 3000);
-  }
-}
-
-function doLogout() {
-  document.getElementById("admin-panel").style.display = "none";
-  document.getElementById("login-screen").style.display = "flex";
-  document.getElementById("pin-input").value = "";
-}
-
-/* ── Tabs ── */
-function showTab(id, btn) {
-  document.querySelectorAll(".admin-pane").forEach(p => p.classList.remove("active"));
-  document.querySelectorAll(".admin-tab").forEach(b => b.classList.remove("active"));
-  document.getElementById("pane-" + id).classList.add("active");
-  btn.classList.add("active");
-}
-
-/* ── Hent gemt data ── */
-function getSaved() {
-  try {
-    const raw = localStorage.getItem(KEY);
-    if (!raw) return Object.assign({}, DEFAULTS);
-    const saved = JSON.parse(raw);
-    return Object.assign({}, DEFAULTS, saved);
-  } catch(e) { return Object.assign({}, DEFAULTS); }
-}
-
-/* ── Udfyld formular ── */
-function populateForm() {
-  const d = getSaved();
-  const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = String(v ?? ""); };
-  set("a-name",       d.name);
-  set("a-tagline",    d.tagline);
-  set("a-cvr",        d.cvr);
-  set("a-vat",        d.vatRegistered ? "true" : "false");
-  set("a-areas",      d.areas);
-  set("a-hours-wd",   d.hoursWd);
-  set("a-hours-we",   d.hoursWe);
-  set("a-phone",      d.phone);
-  set("a-phone-raw",  d.phoneRaw);
-  set("a-sms-raw",    d.smsRaw);
-  set("a-email",      d.email);
-  set("a-logo",       d.logo);
-  set("a-intro",      d.intro);
-  set("a-about-h",    d.aboutH);
-  set("a-about-text", d.aboutText);
-  // Priser
-  set("p-grass-sqm",  d.pGrassSqm); set("p-grass-min",  d.pGrassMin);
-  set("p-grass-high", d.pGrassHigh); set("p-grass-waste",d.pGrassWaste);
-  set("p-hedge-rate", d.pHedgeRate); set("p-hedge-waste",d.pHedgeWaste);
-  set("p-hedge-h2",   d.pHedgeH2);  set("p-hedge-h3",   d.pHedgeH3);
-  set("p-exc-rate",   d.pExcRate);  set("p-exc-min",    d.pExcMin);
-  set("p-exc-man",    d.pExcMan);   set("p-exc-waste",  d.pExcWaste);
-  set("p-clean-rate", d.pCleanRate);set("p-clean-min",  d.pCleanMin);
-  set("p-clean-waste",d.pCleanWaste);set("p-clean-big", d.pCleanBig);
-  set("p-earth-rate", d.pEarthRate);set("p-earth-machine",d.pEarthMachine);
-  set("p-earth-waste",d.pEarthWaste);
-  set("p-pav-simple", d.pPavSimple);set("p-pav-normal", d.pPavNormal);
-  set("p-pav-complex",d.pPavComplex);set("p-pav-prep",  d.pPavPrep);
-  set("p-sum-single", d.pSumSingle);set("p-sum-season", d.pSumSeason);
-  set("p-sum-inspect",d.pSumInspect);
-  set("p-sub-sqm",    d.pSubSqm);  set("p-sub-min",    d.pSubMin);
-  // Ydelser
-  buildYdelserEditor(d.ydelser);
-}
-
-/* ── Ydelser-editor ── */
-function buildYdelserEditor(ydelser) {
-  const ed = document.getElementById("ydelser-editor");
-  ed.innerHTML = "";
-  (ydelser || []).forEach((y, i) => {
-    ed.appendChild(makeYdelseRow(i, y));
+/** POST-kald med adminToken i body (aldrig i URL) */
+async function apiPost(params = {}) {
+  const resp = await fetch(ADM_CFG.scriptUrl, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({
+      ...params,
+      token:      ADM_CFG.requestToken,
+      adminToken: _adminToken,
+    }),
   });
+  if (!resp.ok) throw new Error('HTTP ' + resp.status);
+  return resp.json();
 }
 
-function makeYdelseRow(i, y) {
-  const wrap = document.createElement("div");
-  wrap.className = "ydelse-item";
-  wrap.dataset.idx = i;
-  wrap.innerHTML = `
-    <div class="ydelse-row">
-      <input class="ydelse-ico-input" type="text" value="${esc(y.ico)}" maxlength="4" title="Emoji-ikon" placeholder="🌱">
-      <input type="text" value="${esc(y.titel)}" placeholder="Titel" style="flex:1">
-      <button class="del-btn" title="Slet" onclick="this.closest('.ydelse-item').remove()">🗑</button>
-    </div>
-    <textarea class="ydelse-textarea" placeholder="Kort beskrivelse...">${esc(y.tekst)}</textarea>`;
-  return wrap;
-}
-
-function addYdelse() {
-  const ed = document.getElementById("ydelser-editor");
-  ed.appendChild(makeYdelseRow(ed.querySelectorAll(".ydelse-item").length, { ico:"🌿", titel:"", tekst:"" }));
-}
-
-function esc(s) {
-  return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
-}
-
-/* ── Læs formular ── */
-function readForm() {
-  const g  = id => { const el = document.getElementById(id); return el ? el.value.trim() : ""; };
-  const gn = id => parseFloat(g(id)) || 0;
-  // Ydelser
-  const ydelser = [];
-  document.querySelectorAll("#ydelser-editor .ydelse-item").forEach(item => {
-    const inputs = item.querySelectorAll("input");
-    const ta = item.querySelector("textarea");
-    ydelser.push({ ico: inputs[0]?.value.trim()||"🌿", titel: inputs[1]?.value.trim()||"", tekst: ta?.value.trim()||"" });
+/** POST-kald uden adminToken (login og offentlige handlinger) */
+async function apiPostPublic(params = {}) {
+  const resp = await fetch(ADM_CFG.scriptUrl, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({ ...params, token: ADM_CFG.requestToken }),
   });
-  return {
-    name: g("a-name"), tagline: g("a-tagline"), cvr: g("a-cvr"),
-    vatRegistered: g("a-vat") === "true",
-    areas: g("a-areas"), hoursWd: g("a-hours-wd"), hoursWe: g("a-hours-we"),
-    phone: g("a-phone"), phoneRaw: g("a-phone-raw"), smsRaw: g("a-sms-raw"),
-    email: g("a-email"), logo: g("a-logo"),
-    intro: g("a-intro"), aboutH: g("a-about-h"), aboutText: g("a-about-text"),
-    pGrassSqm: gn("p-grass-sqm"),  pGrassMin: gn("p-grass-min"),
-    pGrassHigh: gn("p-grass-high"), pGrassWaste: gn("p-grass-waste"),
-    pHedgeRate: gn("p-hedge-rate"), pHedgeWaste: gn("p-hedge-waste"),
-    pHedgeH2: gn("p-hedge-h2"),    pHedgeH3: gn("p-hedge-h3"),
-    pExcRate: gn("p-exc-rate"),     pExcMin: gn("p-exc-min"),
-    pExcMan: gn("p-exc-man"),       pExcWaste: gn("p-exc-waste"),
-    pCleanRate: gn("p-clean-rate"), pCleanMin: gn("p-clean-min"),
-    pCleanWaste: gn("p-clean-waste"),pCleanBig: gn("p-clean-big"),
-    pEarthRate: gn("p-earth-rate"), pEarthMachine: gn("p-earth-machine"),
-    pEarthWaste: gn("p-earth-waste"),
-    pPavSimple: gn("p-pav-simple"), pPavNormal: gn("p-pav-normal"),
-    pPavComplex: gn("p-pav-complex"),pPavPrep: gn("p-pav-prep"),
-    pSumSingle: gn("p-sum-single"), pSumSeason: gn("p-sum-season"),
-    pSumInspect: gn("p-sum-inspect"),
-    pSubSqm: gn("p-sub-sqm"),       pSubMin: gn("p-sub-min"),
-    ydelser
-  };
+  if (!resp.ok) throw new Error('HTTP ' + resp.status);
+  return resp.json();
 }
 
-/* ── Gem ── */
-function saveAll() {
-  const data = readForm();
-  try {
-    localStorage.setItem(KEY, JSON.stringify(data));
-    showToast("✅ Gemt! Genindlæs siden for at se ændringerne.");
-    document.getElementById("save-status").textContent = "Gemt " + new Date().toLocaleTimeString("da-DK");
-  } catch(e) {
-    showToast("❌ Fejl: " + e.message);
+// ══════════════════════════════════════════════════════════════
+// ALERT
+// ══════════════════════════════════════════════════════════════
+function visAlert(tekst, type = 'info') {
+  const el = document.getElementById('adm-alert');
+  el.className = 'alert alert-' + type + ' vis';
+  el.textContent = tekst;
+  setTimeout(() => el.classList.remove('vis'), 5000);
+}
+
+// ══════════════════════════════════════════════════════════════
+// GOOGLE LOGIN
+// ══════════════════════════════════════════════════════════════
+function startGoogleLogin() {
+  if (!ADM_CFG.googleClientId || ADM_CFG.googleClientId.includes('INDSÆT')) {
+    document.getElementById('login-fejl').style.display = 'block';
+    document.getElementById('login-fejl').textContent = 'Google Client ID er ikke konfigureret i admin.html.';
+    return;
   }
+  google.accounts.id.initialize({
+    client_id:         ADM_CFG.googleClientId,
+    callback:          handleGoogleCredential,
+    auto_select:       false,
+    cancel_on_tap_outside: true,
+  });
+  google.accounts.id.prompt();
 }
 
-/* ── Skift PIN ── */
-function changePIN() {
-  const n1 = document.getElementById("a-pin-new").value;
-  const n2 = document.getElementById("a-pin-confirm").value;
-  if (!n1 || n1.length < 4) { showToast("❌ PIN skal være mindst 4 tegn."); return; }
-  if (n1 !== n2) { showToast("❌ PIN-koderne er ikke ens."); return; }
-  localStorage.setItem(PIN_KEY, n1);
-  document.getElementById("a-pin-new").value = "";
-  document.getElementById("a-pin-confirm").value = "";
-  showToast("✅ PIN-kode ændret!");
-}
-
-/* ── Backup / Import ── */
-function exportJSON() {
-  const data = readForm();
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement("a");
-  a.href     = url;
-  a.download = "finnes-admin-backup-" + new Date().toISOString().slice(0,10) + ".json";
-  a.click();
-  URL.revokeObjectURL(url);
-  showToast("📤 Backup downloadet!");
-}
-
-function importJSON(input) {
-  const file = input.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    try {
-      const data = JSON.parse(e.target.result);
-      localStorage.setItem(KEY, JSON.stringify(data));
-      populateForm();
-      showToast("✅ Backup importeret og gemt!");
-    } catch(err) {
-      showToast("❌ Ugyldig JSON-fil: " + err.message);
+async function handleGoogleCredential(response) {
+  try {
+    const res = await apiPostPublic({ action: 'adminLogin', idToken: response.credential });
+    if (!res.ok) {
+      document.getElementById('login-fejl').style.display = 'block';
+      document.getElementById('login-fejl').textContent = res.fejl || 'Adgang nægtet.';
+      return;
     }
+    _adminToken = res.adminToken;
+    _adminEmail = res.email;
+    sessionStorage.setItem('lyg_admin_token', _adminToken);
+    sessionStorage.setItem('lyg_admin_email', _adminEmail);
+    visAdminSkærm();
+  } catch(e) {
+    document.getElementById('login-fejl').style.display = 'block';
+    document.getElementById('login-fejl').textContent = 'Fejl: ' + e.message;
+  }
+}
+
+function logUd() {
+  _adminToken = null;
+  _adminEmail = null;
+  sessionStorage.removeItem('lyg_admin_token');
+  sessionStorage.removeItem('lyg_admin_email');
+  document.getElementById('admin-screen').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+}
+
+// ══════════════════════════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════════════════════════
+function visAdminSkærm() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('admin-screen').style.display = 'block';
+  document.getElementById('hdr-email').textContent = _adminEmail || '';
+  document.getElementById('hdr-dato').textContent  = new Date().toLocaleDateString('da-DK');
+  hentAlleData();
+  visSek('arrangementer');
+}
+
+function visSek(id) {
+  document.querySelectorAll('[id^=sek-]').forEach(s => s.style.display = 'none');
+  document.querySelectorAll('.adm-sidebar a').forEach(a => a.classList.remove('aktiv'));
+  document.getElementById('sek-' + id).style.display = 'block';
+  const nav = document.getElementById('nav-' + id);
+  if (nav) nav.classList.add('aktiv');
+
+  // Indlæs data for sektionen
+  if (id === 'tilmeldinger')  renderTilmeldinger();
+  if (id === 'venteliste')    renderVenteliste();
+  if (id === 'nyheder')       renderNyheder();
+  if (id === 'sponsorer')     renderSponsorer();
+  if (id === 'popup')         renderPopup();
+  if (id === 'infobjaelke')   renderInfobjaelke();
+  if (id === 'emaillog')      hentEmaillog();
+  if (id === 'indstillinger') renderIndstillinger();
+  if (id === 'paamindelser')  renderArrDropdowns();
+}
+
+// ══════════════════════════════════════════════════════════════
+// DATA HENTNING
+// ══════════════════════════════════════════════════════════════
+async function hentAlleData() {
+  try {
+    const res = await apiPost({ action: 'adminGetAll' });
+    if (res.ok) {
+      _allData = res.data;
+      renderArrangementer();
+    } else {
+      visAlert('Fejl ved datahentning: ' + (res.fejl || 'Ukendt'), 'fejl');
+    }
+  } catch(e) {
+    visAlert('Netværksfejl: ' + e.message, 'fejl');
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// ARRANGEMENTER
+// ══════════════════════════════════════════════════════════════
+function renderArrangementer() {
+  if (!_allData || !_allData.ARR) return;
+  const { headers, rows } = _allData.ARR;
+
+  const tilmData = _allData.TILM ? _allData.TILM.rows : [];
+  const tilmHdr  = _allData.TILM ? _allData.TILM.headers : [];
+  const statusKol = tilmHdr.indexOf('Status');
+  const arrIdKol  = tilmHdr.indexOf('ArrID');
+
+  const aktive = rows.filter(r => r[headers.indexOf('Status')] !== 'slettet')
+    .sort((a,b) => new Date(a[headers.indexOf('Dato')]) - new Date(b[headers.indexOf('Dato')]));
+
+  const idKol = headers.indexOf('ID');
+  const tilKol = headers.indexOf('Titel');
+  const datKol = headers.indexOf('Dato');
+  const makKol = headers.indexOf('Maks');
+  const stKol  = headers.indexOf('Status');
+  const aabKol = headers.indexOf('Aaben');
+
+  if (!aktive.length) {
+    document.getElementById('arr-liste').innerHTML = '<p style="color:var(--mut);padding:20px">Ingen arrangementer endnu. Klik "+ Nyt arrangement" for at komme i gang.</p>';
+    return;
+  }
+
+  let html = `<table class="adm-tabel"><thead><tr>
+    <th>Titel</th><th>Dato</th><th>Maks</th><th>Tilmeldt</th><th>Status</th><th>Åben</th><th>Handlinger</th>
+  </tr></thead><tbody>`;
+
+  aktive.forEach(r => {
+    const arrId = r[idKol];
+    const tilm  = tilmData.filter(t => t[arrIdKol] === arrId && t[statusKol] !== 'afmeldt').length;
+    const dato  = r[datKol] ? new Date(r[datKol]).toLocaleDateString('da-DK') : '—';
+    const st    = r[stKol] || 'aktiv';
+    const aab   = r[aabKol] === true || r[aabKol] === 'TRUE';
+    const arrIdEnc = encodeURIComponent(arrId);
+
+    html += `<tr>
+      <td><strong>${r[tilKol] || '—'}</strong></td>
+      <td>${dato}</td>
+      <td>${r[makKol] || '∞'}</td>
+      <td>${tilm}</td>
+      <td><span class="badge ${st==='aktiv'?'badge-ok':st==='aflyst'?'badge-fejl':'badge-graa'}">${st}</span></td>
+      <td><span class="badge ${aab?'badge-ok':'badge-graa'}">${aab?'Åben':'Lukket'}</span></td>
+      <td>
+        <button class="btn btn-hvid btn-sm" onclick="redigerArr('${arrIdEnc}')">Redigér</button>
+        <button class="btn btn-fejl btn-sm" onclick="sletArr('${arrIdEnc}')">Slet</button>
+      </td>
+    </tr>`;
+  });
+
+  html += '</tbody></table>';
+  document.getElementById('arr-liste').innerHTML = html;
+}
+
+function nytArr() {
+  ['arr-id','arr-titel','arr-dato','arr-tid-fra','arr-tid-til','arr-pris','arr-lokation','arr-billede','arr-beskrivelse'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('arr-maks').value = '0';
+  document.getElementById('arr-status').value = 'aktiv';
+  document.getElementById('arr-aaben').value = 'true';
+  document.getElementById('arr-form-titel').textContent = 'Nyt arrangement';
+  document.getElementById('arr-form').style.display = 'block';
+  document.getElementById('arr-form').scrollIntoView({behavior:'smooth'});
+}
+
+function redigerArr(arrId) {
+  const { headers, rows } = _allData.ARR;
+  const r = rows.find(row => row[headers.indexOf('ID')] === decodeURIComponent(arrId));
+  if (!r) return;
+
+  const H = k => r[headers.indexOf(k)];
+  document.getElementById('arr-id').value          = H('ID');
+  document.getElementById('arr-titel').value       = H('Titel') || '';
+  const dato = H('Dato');
+  document.getElementById('arr-dato').value        = dato instanceof Date ? dato.toISOString().slice(0,10) : (dato || '');
+  document.getElementById('arr-tid-fra').value     = H('TidFra') || '';
+  document.getElementById('arr-tid-til').value     = H('TidTil') || '';
+  document.getElementById('arr-maks').value        = H('Maks') || 0;
+  document.getElementById('arr-pris').value        = H('Pris') || '';
+  document.getElementById('arr-status').value      = H('Status') || 'aktiv';
+  document.getElementById('arr-aaben').value       = (H('Aaben') === true || H('Aaben') === 'TRUE') ? 'true' : 'false';
+  document.getElementById('arr-lokation').value    = H('Lokation') || '';
+  document.getElementById('arr-billede').value     = H('Billede') || '';
+  document.getElementById('arr-beskrivelse').value = H('Beskrivelse') || '';
+  document.getElementById('arr-form-titel').textContent = 'Redigér: ' + H('Titel');
+  document.getElementById('arr-form').style.display = 'block';
+  document.getElementById('arr-form').scrollIntoView({behavior:'smooth'});
+}
+
+async function gemArr() {
+  const id = document.getElementById('arr-id').value || ('arr_' + Date.now());
+  const arr = {
+    ID:          id,
+    Titel:       document.getElementById('arr-titel').value,
+    Dato:        document.getElementById('arr-dato').value,
+    TidFra:      document.getElementById('arr-tid-fra').value,
+    TidTil:      document.getElementById('arr-tid-til').value,
+    Maks:        Number(document.getElementById('arr-maks').value),
+    Pris:        document.getElementById('arr-pris').value,
+    Status:      document.getElementById('arr-status').value,
+    Aaben:       document.getElementById('arr-aaben').value === 'true',
+    Lokation:    document.getElementById('arr-lokation').value,
+    Billede:     document.getElementById('arr-billede').value,
+    Beskrivelse: document.getElementById('arr-beskrivelse').value,
   };
-  reader.readAsText(file);
-  input.value = "";
+  if (!arr.Titel || !arr.Dato) { visAlert('Titel og dato er påkrævet', 'fejl'); return; }
+
+  try {
+    const res = await apiPost({ action: 'adminSaveArr', arr });
+    if (res.ok) {
+      visAlert('Arrangement gemt!', 'ok');
+      lukArrForm();
+      hentAlleData();
+    } else {
+      visAlert('Fejl: ' + res.fejl, 'fejl');
+    }
+  } catch(e) { visAlert('Netværksfejl', 'fejl'); }
 }
 
-function resetAll() {
-  if (!confirm("Nulstil ALLE admin-ændringer til standard?\n\nDette kan ikke fortrydes.")) return;
-  localStorage.removeItem(KEY);
-  populateForm();
-  showToast("🔄 Nulstillet til standardværdier.");
+async function sletArr(arrId) {
+  if (!confirm('Er du sikker på, at du vil slette dette arrangement?\n\nTilmeldinger bevares i arkivet.')) return;
+  try {
+    const res = await apiPost({ action: 'adminDeleteArr', arrId: decodeURIComponent(arrId) });
+    if (res.ok) { visAlert('Arrangement slettet', 'ok'); hentAlleData(); }
+    else visAlert('Fejl: ' + res.fejl, 'fejl');
+  } catch(e) { visAlert('Netværksfejl', 'fejl'); }
 }
 
-/* ── Toast ── */
-let toastTimer;
-function showToast(msg) {
-  const t = document.getElementById("admin-toast");
-  t.textContent = msg;
-  t.classList.add("show");
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove("show"), 2800);
+function lukArrForm() {
+  document.getElementById('arr-form').style.display = 'none';
 }
+
+// ══════════════════════════════════════════════════════════════
+// TILMELDINGER
+// ══════════════════════════════════════════════════════════════
+function renderTilmeldinger() {
+  if (!_allData) return;
+  const { headers: ah, rows: ar } = _allData.ARR || { headers:[], rows:[] };
+  const { headers: th, rows: tr } = _allData.TILM || { headers:[], rows:[] };
+
+  // Byg arrangement-dropdown
+  const sel = document.getElementById('filter-arr');
+  const valgt = sel.value;
+  sel.innerHTML = '<option value="">Alle arrangementer</option>';
+  (ar || []).forEach(r => {
+    const id = r[ah.indexOf('ID')];
+    const t  = r[ah.indexOf('Titel')];
+    sel.innerHTML += `<option value="${id}"${id===valgt?' selected':''}>${t}</option>`;
+  });
+
+  filterTilm();
+}
+
+function filterTilm() {
+  if (!_allData || !_allData.TILM) return;
+  const { headers: th, rows: tr } = _allData.TILM;
+  const valgt = document.getElementById('filter-arr').value;
+
+  const idKol  = th.indexOf('ID');
+  const arrKol = th.indexOf('ArrID');
+  const navnKol = th.indexOf('Navn');
+  const emailKol = th.indexOf('Email');
+  const virKol = th.indexOf('Virksomhed');
+  const antKol = th.indexOf('Antal');
+  const stKol  = th.indexOf('Status');
+  const datKol = th.indexOf('OprettetDato');
+  const titKol = th.indexOf('ArrTitel');
+
+  let rows = tr.filter(r => r[stKol] !== 'afmeldt');
+  if (valgt) rows = rows.filter(r => r[arrKol] === valgt);
+
+  if (!rows.length) {
+    document.getElementById('tilm-liste').innerHTML = '<p style="color:var(--mut);padding:20px">Ingen aktive tilmeldinger for valgte filter.</p>';
+    return;
+  }
+
+  let html = `<table class="adm-tabel"><thead><tr>
+    <th>Navn</th><th>Virksomhed</th><th>E-mail</th><th>Antal</th><th>Arrangement</th><th>Dato</th><th>Afmeld</th>
+  </tr></thead><tbody>`;
+
+  rows.forEach(r => {
+    const tilmId = r[idKol];
+    const dato   = r[datKol] ? new Date(r[datKol]).toLocaleDateString('da-DK') : '—';
+    html += `<tr>
+      <td>${r[navnKol]||'—'}</td>
+      <td>${r[virKol]||'—'}</td>
+      <td><a href="mailto:${r[emailKol]}">${r[emailKol]||'—'}</a></td>
+      <td>${r[antKol]||1}</td>
+      <td>${r[titKol]||r[arrKol]||'—'}</td>
+      <td>${dato}</td>
+      <td><button class="btn btn-fejl btn-sm" onclick="afmeldManuelt('${encodeURIComponent(tilmId)}')">Afmeld</button></td>
+    </tr>`;
+  });
+
+  html += '</tbody></table>';
+  document.getElementById('tilm-liste').innerHTML = html;
+}
+
+async function eksporterCSV() {
+  const arrId = document.getElementById('filter-arr').value || '';
+  try {
+    const res = await apiPost({ action: 'adminEksporterCSV', arrId });
+    if (!res.ok) { visAlert('Fejl: ' + res.fejl, 'fejl'); return; }
+
+    const blob = new Blob(['﻿' + res.csv], { type: 'text/csv;charset=utf-8;' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = 'tilmeldinger_' + new Date().toISOString().slice(0,10) + '.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+    visAlert('CSV-fil downloaded (' + res.antal + ' rækker)', 'ok');
+  } catch(e) { visAlert('Eksport fejlede', 'fejl'); }
+}
+
+async function afmeldManuelt(tilmId) {
+  if (!confirm('Afmeld denne deltager?\n\nDeltager modtager bekræftelse på e-mail.')) return;
+  try {
+    const res = await apiPost({ action: 'adminAfmeldManuelt', tilmId: decodeURIComponent(tilmId), sendMail: true });
+    if (res.ok) { visAlert('Deltager afmeldt', 'ok'); hentAlleData(); renderTilmeldinger(); }
+    else visAlert('Fejl: ' + res.fejl, 'fejl');
+  } catch(e) { visAlert('Netværksfejl', 'fejl'); }
+}
+
+// ══════════════════════════════════════════════════════════════
+// VENTELISTE
+// ══════════════════════════════════════════════════════════════
+function renderVenteliste() {
+  if (!_allData || !_allData.VENTE) {
+    document.getElementById('vente-liste').innerHTML = '<p style="color:var(--mut);padding:20px">Ingen ventelistedata.</p>';
+    return;
+  }
+  const { headers: vh, rows: vr } = _allData.VENTE;
+  const aktive = vr.filter(r => r[vh.indexOf('Status')] !== 'aktiveret');
+
+  if (!aktive.length) {
+    document.getElementById('vente-liste').innerHTML = '<p style="color:var(--mut);padding:20px">Ingen på ventelisten.</p>';
+    return;
+  }
+
+  const idKol  = vh.indexOf('ID');
+  const navnKol = vh.indexOf('Navn');
+  const emailKol = vh.indexOf('Email');
+  const arrKol = vh.indexOf('ArrTitel');
+  const datKol = vh.indexOf('OprettetDato');
+  const antKol = vh.indexOf('Antal');
+
+  let html = `<table class="adm-tabel"><thead><tr>
+    <th>Navn</th><th>E-mail</th><th>Arrangement</th><th>Antal</th><th>Tilmeldt</th><th>Aktiver</th>
+  </tr></thead><tbody>`;
+
+  aktive.forEach(r => {
+    const id   = r[idKol];
+    const dato = r[datKol] ? new Date(r[datKol]).toLocaleDateString('da-DK') : '—';
+    html += `<tr>
+      <td>${r[navnKol]||'—'}</td>
+      <td><a href="mailto:${r[emailKol]}">${r[emailKol]||'—'}</a></td>
+      <td>${r[arrKol]||'—'}</td>
+      <td>${r[antKol]||1}</td>
+      <td>${dato}</td>
+      <td><button class="btn btn-ok btn-sm" onclick="aktiverVente('${encodeURIComponent(id)}')">Tilbyd plads</button></td>
+    </tr>`;
+  });
+
+  html += '</tbody></table>';
+  document.getElementById('vente-liste').innerHTML = html;
+}
+
+async function aktiverVente(venteId) {
+  if (!confirm('Send e-mail til personen om ledig plads?')) return;
+  try {
+    const res = await apiPost({ action: 'adminAktivérVenteliste', venteId: decodeURIComponent(venteId) });
+    if (res.ok) { visAlert('Plads-besked sendt!', 'ok'); hentAlleData(); renderVenteliste(); }
+    else visAlert('Fejl: ' + res.fejl, 'fejl');
+  } catch(e) { visAlert('Netværksfejl', 'fejl'); }
+}
+
+// ══════════════════════════════════════════════════════════════
+// E-MAIL & BESKEDER
+// ══════════════════════════════════════════════════════════════
+function renderArrDropdowns() {
+  if (!_allData || !_allData.ARR) return;
+  const { headers, rows } = _allData.ARR;
+  const aktive = rows.filter(r => r[headers.indexOf('Status')] === 'aktiv');
+  const opts = '<option value="">— Vælg arrangement —</option>' +
+    aktive.map(r => `<option value="${r[headers.indexOf('ID')]}">${r[headers.indexOf('Titel')]}</option>`).join('');
+
+  ['paamind-arr','aendring-arr','aflysning-arr','praktisk-arr'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = opts;
+  });
+}
+
+async function sendPaamind() {
+  const arrId = document.getElementById('paamind-arr').value;
+  if (!arrId) { visAlert('Vælg et arrangement', 'fejl'); return; }
+  if (!confirm('Send påminding til alle tilmeldte i dette arrangement?')) return;
+  try {
+    const res = await apiPost({ action: 'adminSendPaamind', arrId });
+    if (res.ok) visAlert(`Påminding sendt til ${res.sendt} deltagere`, 'ok');
+    else visAlert('Fejl: ' + res.fejl, 'fejl');
+  } catch(e) { visAlert('Netværksfejl', 'fejl'); }
+}
+
+async function sendAendring() {
+  const arrId = document.getElementById('aendring-arr').value;
+  const tekst = document.getElementById('aendring-tekst').value;
+  if (!arrId || !tekst) { visAlert('Vælg arrangement og skriv en besked', 'fejl'); return; }
+  if (!confirm('Send ændringsbesked til alle tilmeldte?')) return;
+  try {
+    const res = await apiPost({ action: 'adminSendAendring', arrId, aendringsTekst: tekst });
+    if (res.ok) visAlert(`Ændringsbesked sendt til ${res.sendt} deltagere`, 'ok');
+    else visAlert('Fejl: ' + res.fejl, 'fejl');
+  } catch(e) { visAlert('Netværksfejl', 'fejl'); }
+}
+
+async function sendAflysning() {
+  const arrId = document.getElementById('aflysning-arr').value;
+  const tekst = document.getElementById('aflysning-tekst').value;
+  if (!arrId) { visAlert('Vælg et arrangement', 'fejl'); return; }
+  if (!confirm('Er du sikker?\n\nArrangementet markeres som AFLYST og alle tilmeldte modtager besked.')) return;
+  try {
+    const res = await apiPost({ action: 'adminSendAflysning', arrId, aflysningsTekst: tekst });
+    if (res.ok) { visAlert(`Aflysning sendt til ${res.sendt} deltagere`, 'ok'); hentAlleData(); }
+    else visAlert('Fejl: ' + res.fejl, 'fejl');
+  } catch(e) { visAlert('Netværksfejl', 'fejl'); }
+}
+
+async function sendPraktisk() {
+  const arrId = document.getElementById('praktisk-arr').value;
+  const tekst = document.getElementById('praktisk-tekst').value;
+  if (!arrId || !tekst) { visAlert('Vælg arrangement og skriv tekst', 'fejl'); return; }
+  if (!confirm('Send praktiske oplysninger til alle tilmeldte?')) return;
+  try {
+    const res = await apiPost({ action: 'adminSendPraktisk', arrId, praktiskTekst: tekst });
+    if (res.ok) visAlert(`Praktiske oplysninger sendt til ${res.sendt} deltagere`, 'ok');
+    else visAlert('Fejl: ' + res.fejl, 'fejl');
+  } catch(e) { visAlert('Netværksfejl', 'fejl'); }
+}
+
+// ══════════════════════════════════════════════════════════════
+// E-MAILLOG
+// ══════════════════════════════════════════════════════════════
+async function hentEmaillog() {
+  const all = document.getElementById('vis-alle-mails')?.checked || false;
+  document.getElementById('email-liste').innerHTML = '<div class="loading"></div>';
+  try {
+    const res = await apiPost({ action: 'adminGetEmaillog', all });
+    if (!res.ok) { document.getElementById('email-liste').innerHTML = '<p style="color:var(--fejl)">Fejl: ' + (res.fejl||'Ukendt') + '</p>'; return; }
+
+    const rows = res.emaillog || [];
+    if (!rows.length) {
+      document.getElementById('email-liste').innerHTML = '<p style="color:var(--mut);padding:20px">' + (all ? 'Ingen e-mails i log.' : 'Ingen fejlede e-mails.') + '</p>';
+      return;
+    }
+
+    let html = `<table class="adm-tabel"><thead><tr>
+      <th>Status</th><th>Type</th><th>Modtager</th><th>Sendt</th><th>Fejl</th><th>Handling</th>
+    </tr></thead><tbody>`;
+
+    rows.forEach(r => {
+      const st     = r.Status || 'fejl';
+      const sendt  = r.Sendt ? new Date(r.Sendt).toLocaleString('da-DK') : '—';
+      const fejl   = r.FejlBesked || '';
+      const id     = r.ID || '';
+      const kanRetry = st !== 'sendt';
+
+      html += `<tr>
+        <td><span class="email-status ${st.startsWith('sendt')?'ok':st==='retry'?'retry':'fejl'}"></span>
+          <span class="badge ${st.startsWith('sendt')?'badge-ok':st==='retry'?'badge-vente':'badge-fejl'}">${st}</span></td>
+        <td>${r.Type||'—'}</td>
+        <td>${r.Modtager||'—'}</td>
+        <td>${sendt}</td>
+        <td style="font-size:.8rem;color:var(--fejl);max-width:200px;overflow:hidden;text-overflow:ellipsis">${fejl}</td>
+        <td>${kanRetry && id ? `<button class="btn btn-g btn-sm" onclick="retryEmail('${encodeURIComponent(id)}')">↩ Gensend</button>` : '—'}</td>
+      </tr>`;
+    });
+
+    html += '</tbody></table>';
+    document.getElementById('email-liste').innerHTML = html;
+  } catch(e) {
+    document.getElementById('email-liste').innerHTML = '<p style="color:var(--fejl)">Fejl: ' + e.message + '</p>';
+  }
+}
+
+async function retryEmail(emailId) {
+  if (!confirm('Forsøg at gensende denne e-mail?\n\nAllerede sendte e-mails sendes IKKE dobbelt.')) return;
+  try {
+    const res = await apiPost({ action: 'adminRetryEmail', emailId: decodeURIComponent(emailId) });
+    if (res.ok) { visAlert('E-mail gensendt!', 'ok'); hentEmaillog(); }
+    else visAlert('Fejl: ' + res.fejl, 'fejl');
+  } catch(e) { visAlert('Netværksfejl', 'fejl'); }
+}
+
+// ══════════════════════════════════════════════════════════════
+// NYHEDER
+// ══════════════════════════════════════════════════════════════
+function renderNyheder() {
+  if (!_allData || !_allData.NYHEDER) return;
+  const { headers, rows } = _allData.NYHEDER;
+  const idK = headers.indexOf('ID'), titK = headers.indexOf('Titel'), datK = headers.indexOf('Dato'), aktK = headers.indexOf('Aktiv');
+
+  if (!rows.length) { document.getElementById('nyheder-liste').innerHTML = '<p style="color:var(--mut);padding:20px">Ingen nyheder endnu.</p>'; return; }
+
+  let html = `<table class="adm-tabel"><thead><tr><th>Titel</th><th>Dato</th><th>Aktiv</th><th>Redigér</th></tr></thead><tbody>`;
+  rows.forEach(r => {
+    const akt = r[aktK] === true || r[aktK] === 'TRUE';
+    html += `<tr>
+      <td>${r[titK]||'—'}</td>
+      <td>${r[datK] ? new Date(r[datK]).toLocaleDateString('da-DK') : '—'}</td>
+      <td><span class="badge ${akt?'badge-ok':'badge-graa'}">${akt?'Aktiv':'Skjult'}</span></td>
+      <td><button class="btn btn-hvid btn-sm" onclick="redigerNyhed('${encodeURIComponent(r[idK])}')">Redigér</button></td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  document.getElementById('nyheder-liste').innerHTML = html;
+}
+
+function nyNyhed() {
+  ['nyhed-id','nyhed-titel','nyhed-dato','nyhed-tekst','nyhed-billede','nyhed-url','nyhed-link-tekst'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('nyhed-aktiv').value = 'true';
+  document.getElementById('nyhed-form-titel').textContent = 'Ny nyhed';
+  document.getElementById('nyheder-form').style.display = 'block';
+}
+
+function redigerNyhed(id) {
+  const { headers, rows } = _allData.NYHEDER;
+  const r = rows.find(row => row[headers.indexOf('ID')] === decodeURIComponent(id));
+  if (!r) return;
+  const H = k => r[headers.indexOf(k)];
+  document.getElementById('nyhed-id').value        = H('ID');
+  document.getElementById('nyhed-titel').value     = H('Titel') || '';
+  const d = H('Dato');
+  document.getElementById('nyhed-dato').value      = d instanceof Date ? d.toISOString().slice(0,10) : (d||'');
+  document.getElementById('nyhed-tekst').value     = H('Tekst') || '';
+  document.getElementById('nyhed-aktiv').value     = (H('Aktiv')===true||H('Aktiv')==='TRUE') ? 'true' : 'false';
+  document.getElementById('nyhed-billede').value   = H('Billede') || '';
+  document.getElementById('nyhed-url').value       = H('LinkUrl') || '';
+  document.getElementById('nyhed-link-tekst').value = H('LinkTekst') || '';
+  document.getElementById('nyhed-form-titel').textContent = 'Redigér nyhed';
+  document.getElementById('nyheder-form').style.display = 'block';
+}
+
+async function gemNyhed() {
+  const nyhed = {
+    ID:        document.getElementById('nyhed-id').value || ('nyh_'+Date.now()),
+    Titel:     document.getElementById('nyhed-titel').value,
+    Dato:      document.getElementById('nyhed-dato').value,
+    Tekst:     document.getElementById('nyhed-tekst').value,
+    Aktiv:     document.getElementById('nyhed-aktiv').value === 'true',
+    Billede:   document.getElementById('nyhed-billede').value,
+    LinkUrl:   document.getElementById('nyhed-url').value,
+    LinkTekst: document.getElementById('nyhed-link-tekst').value,
+  };
+  try {
+    const res = await apiPost({ action: 'adminSaveNyhed', nyhed });
+    if (res.ok) { visAlert('Nyhed gemt!', 'ok'); lukNyhedForm(); hentAlleData(); renderNyheder(); }
+    else visAlert('Fejl: ' + res.fejl, 'fejl');
+  } catch(e) { visAlert('Netværksfejl', 'fejl'); }
+}
+
+function lukNyhedForm() { document.getElementById('nyheder-form').style.display = 'none'; }
+
+// ══════════════════════════════════════════════════════════════
+// SPONSORER
+// ══════════════════════════════════════════════════════════════
+function renderSponsorer() {
+  if (!_allData || !_allData.SPONSOR) return;
+  const { headers, rows } = _allData.SPONSOR;
+  const idK = headers.indexOf('ID'), navnK = headers.indexOf('Navn'), nivK = headers.indexOf('Niveau'), aktK = headers.indexOf('Aktiv');
+
+  if (!rows.length) { document.getElementById('sponsor-liste').innerHTML = '<p style="color:var(--mut);padding:20px">Ingen sponsorer endnu.</p>'; return; }
+
+  let html = `<table class="adm-tabel"><thead><tr><th>Navn</th><th>Niveau</th><th>Aktiv</th><th>Redigér</th></tr></thead><tbody>`;
+  rows.forEach(r => {
+    const akt = r[aktK] === true || r[aktK] === 'TRUE';
+    html += `<tr>
+      <td>${r[navnK]||'—'}</td>
+      <td>${r[nivK]||'—'}</td>
+      <td><span class="badge ${akt?'badge-ok':'badge-graa'}">${akt?'Aktiv':'Skjult'}</span></td>
+      <td><button class="btn btn-hvid btn-sm" onclick="redigerSponsor('${encodeURIComponent(r[idK])}')">Redigér</button></td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  document.getElementById('sponsor-liste').innerHTML = html;
+}
+
+function nySponsor() {
+  ['sponsor-id','sponsor-navn','sponsor-email','sponsor-tlf','sponsor-web'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('sponsor-aktiv').value = 'true';
+  document.getElementById('sponsor-form').style.display = 'block';
+}
+
+function redigerSponsor(id) {
+  const { headers, rows } = _allData.SPONSOR;
+  const r = rows.find(row => row[headers.indexOf('ID')] === decodeURIComponent(id));
+  if (!r) return;
+  const H = k => r[headers.indexOf(k)];
+  document.getElementById('sponsor-id').value    = H('ID');
+  document.getElementById('sponsor-navn').value  = H('Navn') || '';
+  document.getElementById('sponsor-niveau').value = H('Niveau') || 'Guld';
+  document.getElementById('sponsor-email').value = H('Email') || '';
+  document.getElementById('sponsor-tlf').value   = H('Telefon') || '';
+  document.getElementById('sponsor-aktiv').value = (H('Aktiv')===true||H('Aktiv')==='TRUE') ? 'true' : 'false';
+  document.getElementById('sponsor-web').value   = H('Website') || '';
+  document.getElementById('sponsor-form').style.display = 'block';
+}
+
+async function gemSponsor() {
+  const sponsor = {
+    ID:          document.getElementById('sponsor-id').value || ('spo_'+Date.now()),
+    Navn:        document.getElementById('sponsor-navn').value,
+    Niveau:      document.getElementById('sponsor-niveau').value,
+    Email:       document.getElementById('sponsor-email').value,
+    Telefon:     document.getElementById('sponsor-tlf').value,
+    Aktiv:       document.getElementById('sponsor-aktiv').value === 'true',
+    Website:     document.getElementById('sponsor-web').value,
+  };
+  try {
+    const res = await apiPost({ action: 'adminSaveSponsor', sponsor });
+    if (res.ok) { visAlert('Sponsor gemt!', 'ok'); lukSponsorForm(); hentAlleData(); renderSponsorer(); }
+    else visAlert('Fejl: ' + res.fejl, 'fejl');
+  } catch(e) { visAlert('Netværksfejl', 'fejl'); }
+}
+
+function lukSponsorForm() { document.getElementById('sponsor-form').style.display = 'none'; }
+
+// ══════════════════════════════════════════════════════════════
+// POPUP
+// ══════════════════════════════════════════════════════════════
+function renderPopup() {
+  if (!_allData || !_allData.POPUP || !_allData.POPUP.rows.length) return;
+  const { headers, rows } = _allData.POPUP;
+  const r = rows[0];
+  const H = k => r[headers.indexOf(k)];
+  document.getElementById('popup-aktiv').value    = (H('Aktiv')===true||H('Aktiv')==='TRUE') ? 'true' : 'false';
+  document.getElementById('popup-noegle').value   = H('Noegle') || 'popup_v1';
+  document.getElementById('popup-titel').value    = H('Titel') || '';
+  document.getElementById('popup-tekst').value    = H('Tekst') || '';
+  document.getElementById('popup-cta-tekst').value = H('CtaTekst') || '';
+  document.getElementById('popup-cta-url').value  = H('CtaUrl') || '';
+}
+
+async function gemPopup() {
+  const popup = {
+    Aktiv:    document.getElementById('popup-aktiv').value === 'true',
+    Noegle:   document.getElementById('popup-noegle').value || 'popup_v1',
+    Titel:    document.getElementById('popup-titel').value,
+    Tekst:    document.getElementById('popup-tekst').value,
+    CtaTekst: document.getElementById('popup-cta-tekst').value,
+    CtaUrl:   document.getElementById('popup-cta-url').value,
+  };
+  try {
+    const res = await apiPost({ action: 'adminSavePopup', popup });
+    if (res.ok) visAlert('Popup gemt!', 'ok');
+    else visAlert('Fejl: ' + res.fejl, 'fejl');
+  } catch(e) { visAlert('Netværksfejl', 'fejl'); }
+}
+
+// ══════════════════════════════════════════════════════════════
+// INFOBJÆLKE
+// ══════════════════════════════════════════════════════════════
+function renderInfobjaelke() {
+  if (!_allData || !_allData.INFOBJ || !_allData.INFOBJ.rows.length) return;
+  const { headers, rows } = _allData.INFOBJ;
+  const r = rows[0];
+  const H = k => r[headers.indexOf(k)];
+  document.getElementById('ib-aktiv').value    = (H('Aktiv')===true||H('Aktiv')==='TRUE') ? 'true' : 'false';
+  document.getElementById('ib-tekst').value    = H('Tekst') || '';
+  document.getElementById('ib-url').value      = H('LinkUrl') || '';
+  document.getElementById('ib-link-tekst').value = H('LinkTekst') || '';
+}
+
+async function gemInfobjaelke() {
+  const ib = {
+    Aktiv:     document.getElementById('ib-aktiv').value === 'true',
+    Tekst:     document.getElementById('ib-tekst').value,
+    LinkUrl:   document.getElementById('ib-url').value,
+    LinkTekst: document.getElementById('ib-link-tekst').value,
+  };
+  try {
+    const res = await apiPost({ action: 'adminSaveInfobjaelke', ib });
+    if (res.ok) visAlert('Infobjælke gemt!', 'ok');
+    else visAlert('Fejl: ' + res.fejl, 'fejl');
+  } catch(e) { visAlert('Netværksfejl', 'fejl'); }
+}
+
+// ══════════════════════════════════════════════════════════════
+// INDSTILLINGER (nyt i v8.3)
+// ══════════════════════════════════════════════════════════════
+function renderIndstillinger() {
+  if (!_allData || !_allData.INDSTIL) {
+    document.getElementById('indstil-liste').innerHTML = '<p style="color:var(--mut);padding:20px">Henter indstillinger...</p>';
+    return;
+  }
+  const { headers, rows } = _allData.INDSTIL;
+  if (!rows.length) { document.getElementById('indstil-liste').innerHTML = '<p style="color:var(--mut);padding:20px">Ingen indstillinger endnu.</p>'; return; }
+
+  const nK = headers.indexOf('Nøgle'), vK = headers.indexOf('Værdi'), bK = headers.indexOf('Beskrivelse');
+
+  let html = `<table class="adm-tabel"><thead><tr><th>Nøgle</th><th>Værdi</th><th>Beskrivelse</th><th>Redigér</th></tr></thead><tbody>`;
+  rows.forEach(r => {
+    html += `<tr>
+      <td><code>${r[nK]||'—'}</code></td>
+      <td><strong>${r[vK]||'—'}</strong></td>
+      <td style="color:var(--mut);font-size:.85rem">${r[bK]||''}</td>
+      <td><button class="btn btn-hvid btn-sm" onclick="fyldIndstilling('${encodeURIComponent(r[nK])}','${encodeURIComponent(r[vK])}','${encodeURIComponent(r[bK]||'')}')">Redigér</button></td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  document.getElementById('indstil-liste').innerHTML = html;
+}
+
+function fyldIndstilling(noegle, vaerdi, beskrivelse) {
+  document.getElementById('indstil-noegle').value     = decodeURIComponent(noegle);
+  document.getElementById('indstil-vaerdi').value     = decodeURIComponent(vaerdi);
+  document.getElementById('indstil-beskrivelse').value = decodeURIComponent(beskrivelse);
+  document.getElementById('indstil-noegle').scrollIntoView({behavior:'smooth'});
+}
+
+async function gemIndstilling() {
+  const noegle = document.getElementById('indstil-noegle').value;
+  const vaerdi = document.getElementById('indstil-vaerdi').value;
+  const beskrivelse = document.getElementById('indstil-beskrivelse').value;
+  if (!noegle || !vaerdi) { visAlert('Nøgle og værdi er påkrævet', 'fejl'); return; }
+  try {
+    const res = await apiPost({ action: 'adminGemIndstilling', noegle, vaerdi, beskrivelse });
+    if (res.ok) { visAlert('Indstilling gemt!', 'ok'); hentAlleData(); renderIndstillinger(); }
+    else visAlert('Fejl: ' + res.fejl, 'fejl');
+  } catch(e) { visAlert('Netværksfejl', 'fejl'); }
+}
+
+// ══════════════════════════════════════════════════════════════
+// OPSTART
+// ══════════════════════════════════════════════════════════════
+window.addEventListener('load', () => {
+  if (_adminToken) {
+    visAdminSkærm();
+  } else {
+    document.getElementById('login-screen').style.display = 'flex';
+  }
+});
 </script>
 </body>
 </html>

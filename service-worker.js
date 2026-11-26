@@ -1,5 +1,5 @@
 /* ================================================================
-   Lyngbygaard Erhvervsklub — Service Worker v7.3
+   Lyngbygaard Erhvervsklub — Service Worker v8.3.1
 
    VERSIONSSTYRING:
    Skift CACHE_VERSION ved hver GitHub-upload.
@@ -11,14 +11,14 @@
    · Offline fallback → cached index.html
    ================================================================ */
 
-const CACHE_VERSION = 'lyg-erhverv-v8.0';
+const CACHE_VERSION = 'lyg-erhverv-v8.3.1';
 const BASE          = self.registration.scope;
 
 const PRECACHE_URLS = [
   BASE + 'index.html',
-  BASE + 'style.css?v=8.0',
-  BASE + 'app.js?v=8.0',
-  BASE + 'manifest.json?v=8.0',
+  BASE + 'style.css?v=8.3.1',
+  BASE + 'app.js?v=8.3.1',
+  BASE + 'manifest.json?v=8.3.1',
   BASE + 'icons/icon-192.png',
   BASE + 'icons/icon-512.png',
   BASE + 'images/golfer-1-address.png',
@@ -49,8 +49,8 @@ self.addEventListener('activate', event => {
     caches.keys()
       .then(keys => Promise.all(
         keys
-          .filter(k => k !== CACHE_VERSION)
-          .map(k => { console.log('[SW] Slet gammel cache:', k); return caches.delete(k); })
+          .filter(k => k.startsWith('lyg-erhverv-') && k !== CACHE_VERSION)
+          .map(k => { console.log('[SW] Slet gammel LYG-cache:', k); return caches.delete(k); })
       ))
       .then(() => self.clients.claim())
   );

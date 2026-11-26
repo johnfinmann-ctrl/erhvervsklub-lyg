@@ -1,21 +1,27 @@
 /* ================================================================
-   LYNGBYGAARD ERHVERVSKLUB — app.js v8.0
+   LYNGBYGAARD ERHVERVSKLUB — app.js v8.3.1
    Al konfiguration samlet øverst. Ret her – ingen andre steder.
 
-   CHANGELOG v7.0 (fra v6.2):
-   · Klubhusbillede som hero (klubhus-hero.jpg) — ikke golfspiller
-   · Golfbold-animation: 3 bolde ruller diskret hen over græs
-   · Golfer-scene skjult på desktop (≥900px) — vises kun under animation
-   · Informationsbjælke: fast over bundnav (mobil), bund af indhold (desktop)
-   · SVG-ikoner i navigation (hus, kalender, person+plus, golf, hjerte, gruppe, boble, gear)
-   · Hero-højde begrænset: 340px desktop, 52vw mobil — ingen dominerende lodret visning
-   · Service Worker bumped: lyg-erhverv-v7.0
-   · Cache-busting: ?v=7.0 på alle assets
-   · Alle v6.2-funktioner bevaret uændret:
-     — Supabase booking (atomisk RPC), kontaktformular, Auth
-     — GolfBox-integration (https://golfbox.golf/)
-     — localStorage-nøgler (ek_*) uændrede
-     — Push deaktiveret indtil backend klar
+   CHANGELOG v8.3 (fra v8.2):
+   · Supabase-push-kode fjernet (registrerPushSubscription, synkroniserArrangementer, urlBase64ToUint8Array)
+   · PWA-installationsvejledning tilføjet under pgOm() — enhedsdetekteret
+   · Påmindelser: 14, 7 og 3 dage (via Apps Script sendDagligePaamindelser)
+   · adInst(): "Skift admin-kode"-formular fjernet (erstattet af Google OAuth)
+   · GDPR-samtykke-afkrydsning tilføjet ved tilmelding
+   · Program 2027: sæsonbesked i informationsbjælke og kalender
+   · v8.3 migrationsmarkør i init()
+   · Footer opdateret til v8.3
+
+   CHANGELOG v8.2 (fra v8.1):
+   · Supabase fjernet — erstattet med Google Apps Script backend
+   · Booking via fetch() til Apps Script Web App URL (atomisk + LockService)
+   · Venteliste sendt til Apps Script (email via Brevo)
+   · Firmaarrangement-forespørgsel til Apps Script
+   · Admin login via Google OAuth (admin.html)
+   · Ingen Supabase-URL, anon-nøgle eller klient i browserkode
+   · GolfBox-integration bevaret (https://golfbox.golf/)
+   · localStorage-nøgler (ek_*) uændrede
+   · Design, animation og PWA-funktioner uændrede fra v8.1
    ================================================================ */
 
 const CONFIG = {
@@ -33,22 +39,18 @@ const CONFIG = {
   heroUnder:   'Lyngbygaard Erhvervsklub samler virksomheder i Aarhus-regionen om golf, relationer og fællesskab.',
   heroBillede: './images/ek-klubhus.jpg',
 
-  /* ⚠️  SIKKERHED: adminKode er KUN en fallback til lokal test.
-     I produktion bruges Supabase Auth (se admin-login nedenfor).
-     Koden er stadig synlig i JS — brug aldrig produktionskode her. */
-  adminKode: '1234',
-
-  /* ── Supabase ────────────────────────────────────────────────
-     Fælles database for alle brugere. Projekt: lyg-erhvervsklub
-     Region: eu-central-1
+  /* ── Google Apps Script backend ────────────────────────────
+     Erstattet Supabase. Deploy som Web App i Apps Script.
+     Indsæt den genererede Web App URL nedenfor efter deployment.
      ─────────────────────────────────────────────────────────── */
-  supabaseUrl:  'https://csjsauqjfmknqmmjodqp.supabase.co',
-  supabaseAnon: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNzanNhdXFqZm1rbnFtbWpvZHFwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIyMDM4NDgsImV4cCI6MjEwNzc3OTg0OH0.aOJW-V_AOjB5o91TDOPyrxs0b6xqlFvm_E2v6utnqIs',
+  scriptUrl: 'INDSÆT_APPS_SCRIPT_WEB_APP_URL',
 
-  /* Push: DEAKTIVERET indtil backend er etableret og testet.
-     Indsæt VAPID-nøgle og aktiver her, når Supabase Edge Function
-     til push-scheduler er konfigureret (se MIGRATIONSGUIDE.md). */
-  vapidPublic:  'INDSÆT_DIN_VAPID_PUBLIC_KEY',
+  /* REQUEST_TOKEN: Samme værdi som i Apps Script Properties.
+     Bruges som enkel identifikation af kald fra appen — ikke som
+     hemmelig adgangskontrol, da frontend-koden er offentlig.
+     Egentlig adgangskontrol til admin sker via Google OAuth server-side.
+     Erstat pladsholder med din REQUEST_TOKEN-værdi. */
+  requestToken: 'INDSÆT_REQUEST_TOKEN',
 
   golfPakker: [
     { id:'gp1', titel:'Kundearrangement',   pris:'Fra 2.800 kr./hold',     beskrivelse:'Eksklusiv oplevelse til jeres vigtigste kunder. Golf, VIP-service og middag i professionelle rammer.',  inkl:['9 eller 18 huller golf','VIP-velkomst','Middag på klubhuset','Fotoservice'] },
@@ -96,39 +98,54 @@ const CONFIG = {
 };
 
 /* ================================================================
-   SUPABASE KLIENT
-   Initialiseres fra CONFIG. Hvis URL mangler → null → localStorage bruges.
+   APPS SCRIPT API-KALD
+   Alle server-kald går via scriptFetch(). Ingen Supabase.
+   Nøgler gemmes i Script Properties — aldrig i browserkode.
    ================================================================ */
-let _supabase = null;
 
-function getSupabase() {
-  if (_supabase) return _supabase;
-  if (!CONFIG.supabaseUrl || !CONFIG.supabaseAnon) return null;
-  try {
-    const { createClient } = window.supabase || {};
-    if (!createClient) return null;
-    _supabase = createClient(CONFIG.supabaseUrl, CONFIG.supabaseAnon);
-    return _supabase;
-  } catch (e) {
-    console.warn('[Supabase] Klient fejlede:', e);
-    return null;
+async function scriptFetch(body) {
+  const url = CONFIG.scriptUrl;
+  if (!url || url.startsWith('INDSÆT')) {
+    throw new Error('Apps Script URL ikke konfigureret i CONFIG.scriptUrl');
   }
+  const resp = await fetch(url, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({ ...body, token: CONFIG.requestToken }),
+  });
+  if (!resp.ok) throw new Error('Serverfejl: ' + resp.status);
+  return resp.json();
 }
 
-/* ── Standard arrangementer ── */
-const STD_ARR = [
-  { id:'a1',  dato:'2026-02-04', tid:'',            titel:'Høj Sol over Aarhus',          sted:'Hermans, Tivoli Friheden',          type:'Koncert / netværk',   besk:'Årets første erhvervsarrangement med musik og netværk.',  maks:80, tlm:0, status:'aaben', aaben:true },
-  { id:'a2',  dato:'2026-03-04', tid:'16.00-21.00', titel:'SIM Golf',                     sted:'Golfarena Aarhus',                   type:'Golf / netværk',      besk:'Netværk og konkurrence på indoor simulator-bane.',        maks:24, tlm:0, status:'aaben', aaben:true },
-  { id:'a3',  dato:'2026-03-18', tid:'16.00-21.00', titel:'SIM Golf',                     sted:'Golfarena Aarhus',                   type:'Golf / netværk',      besk:'Netværk og konkurrence på indoor simulator-bane.',        maks:24, tlm:0, status:'aaben', aaben:true },
-  { id:'a4',  dato:'2026-03-24', tid:'',            titel:'Byudvikling & Bajere',          sted:'Aarhus',                             type:'Netværksarrangement', besk:'Uformel debat og netværk om byudvikling i Aarhus.',       maks:50, tlm:0, status:'aaben', aaben:true },
-  { id:'a5',  dato:'2026-04-22', tid:'',            titel:'Hjemmekamp mod Himmerland BC',  sted:'Lyngbygaard Golf',                   type:'Golf / netværk',      besk:'Venlighedskamp og netværk med Himmerland Business Club.', maks:40, tlm:0, status:'aaben', aaben:true },
-  { id:'a6',  dato:'2026-05-01', tid:'',            titel:'Udlandsrejse — Skotland',       sted:'Skotland',                           type:'Golfrejse',           besk:'Golfrejse til Skotland 1.–4. maj 2026.',                  maks:20, tlm:0, status:'aaben', aaben:true },
-  { id:'a7',  dato:'2026-06-02', tid:'',            titel:'Tysklandstur',                  sted:'Timmendorfer Strand',                type:'Golfrejse',           besk:'Golfrejse til Timmendorfer Strand 2.–3. juni 2026.',      maks:20, tlm:0, status:'aaben', aaben:true },
-  { id:'a8',  dato:'2026-08-14', tid:'',            titel:'Danish Golf Championship',      sted:'Great Northern',                     type:'Golfoplevelse',       besk:'Se årets store golfchampionship med erhvervsklubben.',    maks:30, tlm:0, status:'aaben', aaben:true },
-  { id:'a9',  dato:'2026-09-01', tid:'',            titel:'Jyllandstur',                   sted:'Nordvestjysk & Holstebro Golfklub',  type:'Golfrejse',           besk:'Jyllandstur 1.–2. september med golf på to baner.',       maks:24, tlm:0, status:'aaben', aaben:true },
-  { id:'a10', dato:'2026-10-09', tid:'',            titel:'EK-Mesterskaberne',              sted:'Silkeborg Ry Golfklub',              type:'Mesterskab',          besk:'Erhvervsklubbens eget mesterskab — hvem vinder?',         maks:48, tlm:0, status:'aaben', aaben:true },
-  { id:'a11', dato:'2026-11-20', tid:'',            titel:'Julefrokost & Gokart',           sted:'Racehall Aarhus',                    type:'Socialt arrangement', besk:'Julefrokost med gokart — årets hyggeligste event.',        maks:60, tlm:0, status:'aaben', aaben:true }
+async function scriptGet(params) {
+  const url = CONFIG.scriptUrl;
+  if (!url || url.startsWith('INDSÆT')) {
+    throw new Error('Apps Script URL ikke konfigureret i CONFIG.scriptUrl');
+  }
+  const qs = new URLSearchParams({ ...params, token: CONFIG.requestToken });
+  const resp = await fetch(url + '?' + qs);
+  if (!resp.ok) throw new Error('Serverfejl: ' + resp.status);
+  return resp.json();
+}
+
+/* ── Arkiv: sæson 2026 (alle afholdte arrangementer) ── */
+const STD_ARR_ARKIV_2026 = [
+  { id:'a1',  dato:'2026-02-04', tid:'',            titel:'Høj Sol over Aarhus',          sted:'Hermans, Tivoli Friheden',          type:'Koncert / netværk',   besk:'Årets første erhvervsarrangement med musik og netværk.',  maks:80, tlm:0, status:'afholdt', aaben:false },
+  { id:'a2',  dato:'2026-03-04', tid:'16.00-21.00', titel:'SIM Golf',                     sted:'Golfarena Aarhus',                   type:'Golf / netværk',      besk:'Netværk og konkurrence på indoor simulator-bane.',        maks:24, tlm:0, status:'afholdt', aaben:false },
+  { id:'a3',  dato:'2026-03-18', tid:'16.00-21.00', titel:'SIM Golf',                     sted:'Golfarena Aarhus',                   type:'Golf / netværk',      besk:'Netværk og konkurrence på indoor simulator-bane.',        maks:24, tlm:0, status:'afholdt', aaben:false },
+  { id:'a4',  dato:'2026-03-24', tid:'',            titel:'Byudvikling & Bajere',          sted:'Aarhus',                             type:'Netværksarrangement', besk:'Uformel debat og netværk om byudvikling i Aarhus.',       maks:50, tlm:0, status:'afholdt', aaben:false },
+  { id:'a5',  dato:'2026-04-22', tid:'',            titel:'Hjemmekamp mod Himmerland BC',  sted:'Lyngbygaard Golf',                   type:'Golf / netværk',      besk:'Venlighedskamp og netværk med Himmerland Business Club.', maks:40, tlm:0, status:'afholdt', aaben:false },
+  { id:'a6',  dato:'2026-05-01', tid:'',            titel:'Udlandsrejse — Skotland',       sted:'Skotland',                           type:'Golfrejse',           besk:'Golfrejse til Skotland 1.–4. maj 2026.',                  maks:20, tlm:0, status:'afholdt', aaben:false },
+  { id:'a7',  dato:'2026-06-02', tid:'',            titel:'Tysklandstur',                  sted:'Timmendorfer Strand',                type:'Golfrejse',           besk:'Golfrejse til Timmendorfer Strand 2.–3. juni 2026.',      maks:20, tlm:0, status:'afholdt', aaben:false },
+  { id:'a8',  dato:'2026-08-14', tid:'',            titel:'Danish Golf Championship',      sted:'Great Northern',                     type:'Golfoplevelse',       besk:'Se årets store golfchampionship med erhvervsklubben.',    maks:30, tlm:0, status:'afholdt', aaben:false },
+  { id:'a9',  dato:'2026-09-01', tid:'',            titel:'Jyllandstur',                   sted:'Nordvestjysk & Holstebro Golfklub',  type:'Golfrejse',           besk:'Jyllandstur 1.–2. september med golf på to baner.',       maks:24, tlm:0, status:'afholdt', aaben:false },
+  { id:'a10', dato:'2026-10-09', tid:'',            titel:'EK-Mesterskaberne',              sted:'Silkeborg Ry Golfklub',              type:'Mesterskab',          besk:'Erhvervsklubbens eget mesterskab — hvem vinder?',         maks:48, tlm:0, status:'afholdt', aaben:false },
+  { id:'a11', dato:'2026-11-20', tid:'',            titel:'Julefrokost & Gokart',           sted:'Racehall Aarhus',                    type:'Socialt arrangement', besk:'Julefrokost med gokart — årets hyggeligste event.',        maks:60, tlm:0, status:'afholdt', aaben:false }
 ];
+
+/* ── Standard arrangementer 2027 — tomt indtil officielt program foreligger ──
+   INGEN opdigtede arrangementer. Administrator opretter via admin.html (Google Apps Script). */
+const STD_ARR = [];
 
 const STD_SPONSORER = [
   { id:'s1', navn:'Hovedsponsor — ledigt', logo:'', link:'#', niveau:'guld' },
@@ -163,14 +180,42 @@ function migrationBackup() {
 
 function init() {
   if (!DB.get('ek_init')) {
-    DB.set('ek_arr',       STD_ARR);
+    DB.set('ek_arr',       STD_ARR);         // tom i v8.1 — 2027-program ikke fastlagt
     DB.set('ek_sponsorer', STD_SPONSORER);
     DB.set('ek_tilm',      []);
-    DB.set('ek_kode',      CONFIG.adminKode);
+    /* Admin-adgang kræver Supabase Auth — se admin.html */
     DB.set('ek_hero',      { tekst:CONFIG.heroTekst, under:CONFIG.heroUnder, billede:CONFIG.heroBillede });
     DB.set('ek_pakker',    CONFIG.golfPakker);
     DB.set('ek_golfbox',   CONFIG.golfboxUrl);
     DB.set('ek_init',      true);
+  }
+
+  /* ── v8.3: Markér migration ── */
+  if (!DB.get('ek_v83_upgrade')) {
+    DB.set('ek_v83_upgrade', { dato: new Date().toISOString(), fra: 'v8.2' });
+    console.log('[v8.3] Migrationsmarkør sat ✓');
+  }
+
+  /* ── v8.1: Arkivér 2026-arrangementer ──
+     Flyt afholdte 2026-arr til ek_arr_arkiv (bevares).
+     Fjern dem fra aktiv liste ek_arr.
+     Kører kun hvis ek_v81_arkiv ikke allerede er sat. */
+  if (!DB.get('ek_v81_arkiv')) {
+    /* Gem arkiv (2026) */
+    const gammeltArkiv = DB.get('ek_arr_arkiv') || [];
+    const nytArkiv = [...gammeltArkiv];
+    for (const a of STD_ARR_ARKIV_2026) {
+      if (!nytArkiv.find(x => x.id === a.id)) nytArkiv.push(a);
+    }
+    DB.set('ek_arr_arkiv', nytArkiv);
+
+    /* Ryd aktiv liste for 2026-arr (men bevar eventuelle fremtidige arr admin har oprettet) */
+    const aktive = DB.get('ek_arr') || [];
+    const ryddet = aktive.filter(a => !STD_ARR_ARKIV_2026.find(x => x.id === a.id));
+    DB.set('ek_arr', ryddet);
+
+    DB.set('ek_v81_arkiv', true);
+    console.log('[v8.1] 2026-arrangementer arkiveret ✓');
   }
 }
 
@@ -178,7 +223,7 @@ function init() {
    HELPERS
    ================================================================ */
 function getArr()       { return (DB.get('ek_arr')||[]).sort((a,b)=>a.dato.localeCompare(b.dato)); }
-function getKode()      { return DB.get('ek_kode')||CONFIG.adminKode; }
+function getKode()      { return DB.get('ek_kode') || ''; }
 function getGolfboxUrl(){ return DB.get('ek_golfbox')||CONFIG.golfboxUrl; }
 
 function fmtDato(iso) {
@@ -261,7 +306,27 @@ function opdaterInfoBjaelke() {
   /* Find næste arrangement — prioritér åbne med ledige pladser, ellers første fremtidige */
   const alleArr  = getArr().filter(a => erFremtidig(a.dato));
   const næsteArr = alleArr.find(a => a.aaben && ledigePladser(a) > 0) || alleArr[0];
-  if (!næsteArr) { el.style.display = 'none'; return; }
+
+  if (!næsteArr) {
+    /* Ingen kommende arrangementer — vis sæson 2027-besked */
+    const saeson2027 = 'Vi glæder os til sæson 2027 · Programmet offentliggøres snart';
+    el.innerHTML = `
+      <button class="ib-indre" onclick="navTil('erhvervsklub')" aria-label="Gå til Erhvervsklubben">
+        <span class="ib-prik" style="background:#b8973a"></span>
+        <span class="ib-label">SÆSON</span>
+        <span class="ib-titel">2027</span>
+        <span class="ib-marquee-wrap" aria-hidden="true" style="flex:1;min-width:0;overflow:hidden;display:flex;">
+          <span class="ib-marquee-track ib-marquee-active" style="animation-duration:18s">
+            <span class="ib-marquee-txt">${saeson2027} &nbsp;&nbsp;&nbsp;</span>
+            <span class="ib-marquee-txt" aria-hidden="true">${saeson2027} &nbsp;&nbsp;&nbsp;</span>
+          </span>
+        </span>
+        <span class="ib-meta" style="display:none">${saeson2027}</span>
+        <svg class="ib-pil" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </button>`;
+    el.style.display = '';
+    return;
+  }
 
   const dato     = fmtDato(næsteArr.dato);
   const ledig    = næsteArr.maks ? ledigePladser(næsteArr) : null;
@@ -542,7 +607,7 @@ ${nyheder.length ? `
   <p>Lyngbygaard Golf · Lyngbygårdsvej 29, 8220 Brabrand</p>
   <p class="kont-tlf-linje"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.17h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 8.91a16 16 0 0 0 6 6l.81-.81a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 21.9 16.92z"/></svg> <a href="tel:87441070">87 44 10 70</a></p>
   <p class="foot-credit">Bygget af Nordic Operations · nordicoperations.dk</p>
-  <p class="foot-version">LYG Erhvervsklub v8.0</p>
+  <p class="foot-version">LYG Erhvervsklub v8.3.1</p>
 </footer>`;
 }
 
@@ -828,6 +893,10 @@ ${_bookState.trin === 3 && arr ? `
       <div class="bk-ops-felt"><span>Antal</span><strong>${_bookState.antal} person${_bookState.antal>1?'er':''}</strong></div>
     </div>
   </div>
+  <label class="pwa-samtykke-row">
+    <input type="checkbox" id="gdpr-samtykke" required>
+    <span>Jeg accepterer, at LYG Erhvervsklub behandler mine oplysninger (navn, virksomhed, e-mail, telefon) med det formål at håndtere min tilmelding. Oplysningerne slettes efter sæsonafslutning. <button class="link-knap" onclick="navTil('kontakt')" type="button">Privatlivspolitik</button>.</span>
+  </label>
   <button class="knap-p fb bk-submit" onclick="bookAfslut()">Bekræft tilmelding</button>
   <button class="bk-rediger" onclick="bookTilTrin(2)">Ret oplysninger</button>
 </section>` : ''}
@@ -890,112 +959,84 @@ function bookTrin2(e) {
   navTil('tilmelding');
 }
 
-/* bookAfslut: forsøger Supabase RPC (atomisk kapacitetskontrol).
+/* bookAfslut: Atomisk booking via Google Apps Script (LockService).
    Succes vises KUN efter serverbekræftelse.
-   Fallback til localStorage hvis Supabase ikke er tilgængeligt. */
+   Ingen localStorage-fallback — brugeren må ALDRIG få falsk bekræftelse. */
 async function bookAfslut() {
   const arr = getArr().find(a => a.id === _bookState.arrId);
   if (!arr) { alert('Arrangement ikke fundet.'); return; }
+
+  /* GDPR-samtykke — obligatorisk */
+  const samtykke = document.getElementById('gdpr-samtykke');
+  if (samtykke && !samtykke.checked) {
+    samtykke.closest('label').style.outline = '2px solid #c0392b';
+    samtykke.focus();
+    return;
+  }
 
   /* Deaktiver bekræft-knappen og vis "behandler…" */
   const btn = document.querySelector('.bk-submit');
   if (btn) { btn.disabled = true; btn.textContent = 'Behandler…'; }
 
-  const sb = getSupabase();
+  try {
+    /* ── Apps Script: atomisk booking med LockService ── */
+    const data = await scriptFetch({
+      action:      'tilmeld',
+      arrId:       arr.id,
+      navn:        _bookState.navn,
+      virksomhed:  _bookState.virk,
+      email:       _bookState.email,
+      telefon:     _bookState.tlf,
+      antal:       _bookState.antal,
+      kommentar:   _bookState.kom,
+    });
 
-  if (sb) {
-    /* ── Supabase: atomisk booking via server-side RPC ── */
-    try {
-      const { data, error } = await sb.rpc('tilmeld_arrangement', {
-        p_arrangement_id: arr.id,
-        p_navn:           _bookState.navn,
-        p_virksomhed:     _bookState.virk,
-        p_email:          _bookState.email,
-        p_telefon:        _bookState.tlf,
-        p_antal:          _bookState.antal,
-        p_kommentar:      _bookState.kom
-      });
-
-      if (error) throw error;
-
-      if (!data || !data.ok) {
-        /* Serveren afviste — fx fuldt booket */
-        const fejl = data?.fejl || 'Tilmelding ikke mulig.';
-        const ledig = data?.ledige ?? '?';
-        if (btn) { btn.disabled = false; btn.textContent = 'Bekræft tilmelding'; }
-        alert(`${fejl}\nLedige pladser: ${ledig}`);
-        bookTilTrin(2);
-        return;
-      }
-
-      /* ✅ Server bekræftede — gem lokal kopi og gem arrTitel til kvittering */
-      const t = {
-        id: data.tilmelding_id || 't'+Date.now(),
-        arrId: arr.id, arrTitel: arr.titel,
-        navn: _bookState.navn, virk: _bookState.virk,
-        email: _bookState.email, tlf: _bookState.tlf,
-        antal: _bookState.antal, kom: _bookState.kom,
-        dato: idag(), mødt: false, kilde: 'supabase'
-      };
-      const alle = DB.get('ek_tilm')||[]; alle.push(t); DB.set('ek_tilm', alle);
-
-      /* Opdatér lokal tælling fra server-svar */
-      const arrs = DB.get('ek_arr')||[];
-      const idx  = arrs.findIndex(a => a.id === arr.id);
-      if (idx > -1) {
-        const ledige = data.ledige_tilbage ?? (arrs[idx].maks - arrs[idx].tlm - _bookState.antal);
-        arrs[idx].tlm = arrs[idx].maks - Math.max(0, ledige);
-        if (arrs[idx].tlm >= arrs[idx].maks) arrs[idx].status = 'fuldt';
-        DB.set('ek_arr', arrs);
-      }
-
-      _bookState._arrTitel = arr.titel;
-      _bookState.trin = 4;
-      navTil('tilmelding');
-
-    } catch (err) {
-      console.warn('[Booking] Supabase RPC fejlede, prøver localStorage:', err);
+    if (!data || !data.ok) {
+      /* Serveren afviste — fx fuldt booket eller dobbelttilmelding */
+      const fejl  = data?.fejl   || 'Tilmelding ikke mulig.';
+      const ledig = data?.ledige != null ? data.ledige : '?';
       if (btn) { btn.disabled = false; btn.textContent = 'Bekræft tilmelding'; }
-      /* Fallback til localStorage ved netværksfejl */
-      _bookAfslutLokal(arr, btn);
+      alert(fejl + (ledig !== '?' ? `\nLedige pladser: ${ledig}` : ''));
+      bookTilTrin(2);
+      return;
     }
 
-  } else {
-    /* ── Fallback: localStorage ── */
-    _bookAfslutLokal(arr, btn);
-  }
-}
+    /* ✅ Server bekræftede — gem lokal kopi til opslagsformål */
+    const t = {
+      id:       data.tilmelding_id || 't' + Date.now(),
+      arrId:    arr.id,
+      arrTitel: arr.titel,
+      navn:     _bookState.navn,
+      virk:     _bookState.virk,
+      email:    _bookState.email,
+      tlf:      _bookState.tlf,
+      antal:    _bookState.antal,
+      kom:      _bookState.kom,
+      dato:     idag(),
+      mødt:     false,
+      kilde:    'apps-script',
+    };
+    const alle = DB.get('ek_tilm') || []; alle.push(t); DB.set('ek_tilm', alle);
 
-/* Lokal fallback — bruges kun hvis Supabase ikke er tilgængeligt */
-function _bookAfslutLokal(arr, btn) {
-  const ledig = ledigePladser(arr);
-  if (_bookState.antal > ledig) {
+    /* Opdatér lokal tælling fra server-svar */
+    const arrs = DB.get('ek_arr') || [];
+    const idx  = arrs.findIndex(a => a.id === arr.id);
+    if (idx > -1 && data.ledige_tilbage != null) {
+      arrs[idx].tlm = arrs[idx].maks - Math.max(0, data.ledige_tilbage);
+      if (arrs[idx].tlm >= arrs[idx].maks) arrs[idx].status = 'fuldt';
+      DB.set('ek_arr', arrs);
+    }
+
+    _bookState._arrTitel = arr.titel;
+    _bookState.trin = 4;
+    navTil('tilmelding');
+
+  } catch (err) {
+    /* Netværksfejl eller serverfejl — vis fejl, INGEN falsk bekræftelse */
+    console.error('[Booking] Apps Script fejlede:', err);
     if (btn) { btn.disabled = false; btn.textContent = 'Bekræft tilmelding'; }
-    alert(`Kun ${ledig} ledige pladser.`);
-    bookTilTrin(2);
-    return;
+    alert('Tilmelding mislykkedes. Kontrollér din internetforbindelse og prøv igen.\nDin tilmelding er IKKE registreret.');
   }
-
-  const t = {
-    id: 't'+Date.now(), arrId: arr.id, arrTitel: arr.titel,
-    navn: _bookState.navn, virk: _bookState.virk,
-    email: _bookState.email, tlf: _bookState.tlf,
-    antal: _bookState.antal, kom: _bookState.kom,
-    dato: idag(), mødt: false, kilde: 'lokal'
-  };
-  const alle = DB.get('ek_tilm')||[]; alle.push(t); DB.set('ek_tilm', alle);
-
-  const arrs = DB.get('ek_arr')||[];
-  const idx  = arrs.findIndex(a => a.id === arr.id);
-  if (idx > -1) {
-    arrs[idx].tlm += _bookState.antal;
-    if (arrs[idx].tlm >= arrs[idx].maks) arrs[idx].status = 'fuldt';
-    DB.set('ek_arr', arrs);
-  }
-
-  _bookState._arrTitel = arr.titel;
-  _bookState.trin = 4;
-  navTil('tilmelding');
 }
 
 function bookReset() {
@@ -1004,14 +1045,33 @@ function bookReset() {
 
 function submitTilm(e) { e.preventDefault(); } // legacy — erstattet af wizard
 
-function venteListe(arrId) {
-  const arr=getArr().find(a=>a.id===arrId); if(!arr) return;
-  const navn=prompt('Dit navn (venteliste):'); if(!navn) return;
-  const email=prompt('Din email:');           if(!email) return;
-  const vl=DB.get('ek_venteliste')||[];
-  vl.push({arrId,arrTitel:arr.titel,navn,email,dato:new Date().toISOString()});
-  DB.set('ek_venteliste',vl);
-  alert(`Du er sat på venteliste til "${arr.titel}". Vi kontakter dig ved ledige pladser.`);
+async function venteListe(arrId) {
+  const arr = getArr().find(a => a.id === arrId); if (!arr) return;
+  const navn  = prompt('Dit navn (venteliste):'); if (!navn) return;
+  const email = prompt('Din e-mailadresse:');     if (!email) return;
+  const antal = Number(prompt('Antal deltagere (inkl. dig selv):') || '1') || 1;
+
+  try {
+    const data = await scriptFetch({
+      action:   'venteListe',
+      arrId,
+      navn:     navn.trim(),
+      email:    email.trim(),
+      antal,
+    });
+    if (data && data.ok) {
+      /* Gem lokal kopi */
+      const vl = DB.get('ek_venteliste') || [];
+      vl.push({ arrId, arrTitel: arr.titel, navn, email, dato: new Date().toISOString() });
+      DB.set('ek_venteliste', vl);
+      alert(`Du er sat på ventelisten til "${arr.titel}".\nVi sender dig en e-mail, hvis der opstår ledige pladser.`);
+    } else {
+      alert(data?.fejl || 'Venteliste mislykkedes — prøv igen.');
+    }
+  } catch (err) {
+    console.error('[Venteliste] Fejl:', err);
+    alert('Venteliste mislykkedes. Kontrollér din internetforbindelse.\nDu er IKKE sat på ventelisten.');
+  }
 }
 
 /* ================================================================
@@ -1142,11 +1202,39 @@ function golfTrin2(e) {
   _golfState.trin=3; navTil('golfarr');
 }
 
-function golfAfslut() {
-  const bg=DB.get('ek_golf_booking')||[];
-  bg.push({id:'g'+Date.now(),..._golfState,oprettet:new Date().toISOString()});
-  DB.set('ek_golf_booking',bg);
-  _golfState.trin=4; navTil('golfarr');
+async function golfAfslut() {
+  const btn = document.querySelector('.bk-submit');
+  if (btn) { btn.disabled = true; btn.textContent = 'Sender…'; }
+
+  try {
+    const data = await scriptFetch({
+      action:        'firmaarrangement',
+      pakke:         _golfState.pakke,
+      virksomhed:    _golfState.virk,
+      kontaktperson: _golfState.kp,
+      email:         _golfState.email,
+      telefon:       _golfState.tlf,
+      dato:          _golfState.dato,
+      antal:         _golfState.antal,
+      beskrivelse:   _golfState.besk,
+    });
+
+    if (data && data.ok) {
+      /* Gem lokal kopi */
+      const bg = DB.get('ek_golf_booking') || [];
+      bg.push({ id: 'g' + Date.now(), ..._golfState, oprettet: new Date().toISOString() });
+      DB.set('ek_golf_booking', bg);
+      _golfState.trin = 4;
+      navTil('golfarr');
+    } else {
+      if (btn) { btn.disabled = false; btn.textContent = 'Send forespørgsel'; }
+      alert(data?.fejl || 'Forespørgsel mislykkedes — prøv igen.');
+    }
+  } catch (err) {
+    console.error('[Firma] Apps Script fejlede:', err);
+    if (btn) { btn.disabled = false; btn.textContent = 'Send forespørgsel'; }
+    alert('Forespørgsel mislykkedes. Kontrollér din internetforbindelse og prøv igen.');
+  }
 }
 
 function golfReset() { _golfState={trin:1,pakke:'',virk:'',kp:'',email:'',tlf:'',dato:'',antal:4,besk:''}; }
@@ -1321,7 +1409,151 @@ function pgOm() {
       </button>
     </div>
   </div>
+</section>
+
+<!-- ── INSTALLÉR SOM APP (v8.3) ── -->
+<section class="sek pwa-sek" id="pwa-install-sek">
+  ${_pwaInstallHtml()}
 </section>`;}
+
+
+/* ================================================================
+   PWA INSTALLATION — enhedsdetekteret vejledning (v8.3)
+   Platform: iOS Safari, iOS Chrome/andre, Android Chrome,
+             Android andre, Windows/Mac Chrome/Edge, Windows/Mac Safari/andre
+   ================================================================ */
+function _pwaInstallHtml() {
+  const ua        = navigator.userAgent;
+  const erIOS     = /iphone|ipad|ipod/i.test(ua);
+  const erAndroid = /android/i.test(ua);
+  const erSafari  = /safari/i.test(ua) && !/chrome|crios|fxios|edg/i.test(ua);
+  const erChrome  = /chrome/i.test(ua) && !/edg/i.test(ua);
+  const erEdge    = /edg\//i.test(ua);
+  const erMac     = /macintosh/i.test(ua);
+  const erWin     = /windows/i.test(ua);
+
+  /* Er allerede installeret som PWA? */
+  const erInstalleret = window.navigator.standalone === true
+    || window.matchMedia('(display-mode: standalone)').matches;
+
+  /* iOS Safari — kan installeres via Deling → Føj til hjemmeskærm */
+  const erIOSSafari  = erIOS && erSafari;
+  /* iOS andre browsere — kan ikke installeres som PWA */
+  const erIOSAndre   = erIOS && !erSafari;
+  /* Android Chrome/Edge — native beforeinstallprompt */
+  const harNativePrompt = installEvt !== null;
+
+  const svgApp = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>`;
+  const svgCheck = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+  const svgShare = `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>`;
+  const svgDots  = `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>`;
+
+  if (erInstalleret) {
+    return `
+<div class="pwa-boks pwa-installeret">
+  <div class="pwa-ikon">${svgApp}</div>
+  <div>
+    <strong class="pwa-titel">Appen er installeret</strong>
+    <p class="pwa-tekst muted">Du bruger allerede LYG Erhvervsklub som app — tak!</p>
+  </div>
+</div>`;
+  }
+
+  let vejledning = '';
+
+  if (harNativePrompt) {
+    /* Android Chrome / Windows/Mac Chrome+Edge — native install */
+    vejledning = `
+<p class="pwa-tekst">Din browser understøtter direkte installation. Klik på knappen nedenfor.</p>
+<button class="knap-p pwa-install-btn" onclick="installApp()">
+  ${svgApp} Installér som app
+</button>
+<p class="pwa-hint muted">Appen placeres på din hjemmeskærm og åbner uden browserramme.</p>`;
+
+  } else if (erIOSSafari) {
+    /* iPhone / iPad — Safari Deling-menu */
+    vejledning = `
+<p class="pwa-tekst">Følg disse trin i Safari:</p>
+<ol class="pwa-trin">
+  <li>${svgShare} Tryk på <strong>Deling</strong>-knappen i bunden af skærmen</li>
+  <li>Rul ned og vælg <strong>Føj til hjemmeskærm</strong></li>
+  <li>Tryk <strong>Tilføj</strong> øverst til højre</li>
+</ol>
+<p class="pwa-hint muted">Appen optræder herefter på din hjemmeskærm som en selvstændig app.</p>`;
+
+  } else if (erIOSAndre) {
+    /* iPhone / iPad — ikke Safari */
+    vejledning = `
+<p class="pwa-tekst">Installation kræver Safari på iPhone og iPad.</p>
+<ol class="pwa-trin">
+  <li>Åbn denne side i <strong>Safari</strong></li>
+  <li>Tryk på ${svgShare} <strong>Deling</strong>-knappen</li>
+  <li>Vælg <strong>Føj til hjemmeskærm</strong></li>
+</ol>
+<p class="pwa-hint muted">Kopiér adressen fra din browser og indsæt den i Safari.</p>`;
+
+  } else if (erAndroid) {
+    /* Android — Chrome ikke installeret / Firefox / Samsung */
+    vejledning = `
+<p class="pwa-tekst">Åbn siden i <strong>Chrome</strong> for at installere som app:</p>
+<ol class="pwa-trin">
+  <li>Tryk på ${svgDots} menuen øverst til højre</li>
+  <li>Vælg <strong>Føj til hjemmeskærm</strong> eller <strong>Installér app</strong></li>
+  <li>Bekræft installation</li>
+</ol>`;
+
+  } else if (erChrome || erEdge) {
+    /* Windows / Mac — Chrome eller Edge — ingen prompt endnu */
+    vejledning = `
+<p class="pwa-tekst">Installér via adresselinjen i din browser:</p>
+<ol class="pwa-trin">
+  <li>Klik på ${svgApp}-ikonet helt til højre i adresselinjen</li>
+  <li>Vælg <strong>Installér</strong></li>
+  <li>Appen åbner i sit eget vindue uden browserramme</li>
+</ol>
+<p class="pwa-hint muted">Ses ikonet ikke? Prøv at genindlæse siden eller brug menuen (${svgDots}) → Kast som app / Installér side som app.</p>`;
+
+  } else if (erSafari && erMac) {
+    /* Mac Safari */
+    vejledning = `
+<p class="pwa-tekst">Installér fra Safari-menuen:</p>
+<ol class="pwa-trin">
+  <li>Åbn menuen <strong>Filer</strong> i menulinjen</li>
+  <li>Vælg <strong>Føj til Dock</strong></li>
+  <li>Klik <strong>Tilføj</strong></li>
+</ol>
+<p class="pwa-hint muted">Appen placeres i Dock og åbner som selvstændig app.</p>`;
+
+  } else {
+    /* Generisk fallback */
+    vejledning = `
+<p class="pwa-tekst">Åbn siden i <strong>Chrome</strong> eller <strong>Edge</strong> og vælg "Installér app" fra browsermenuen.</p>
+<ul class="pwa-trin">
+  <li><strong>iPhone/iPad:</strong> Safari → Del → Føj til hjemmeskærm</li>
+  <li><strong>Android:</strong> Chrome → Menu → Installér app</li>
+  <li><strong>Windows/Mac:</strong> Chrome/Edge → adresselinjeikon → Installér</li>
+</ul>`;
+  }
+
+  return `
+<div class="pwa-boks">
+  <div class="pwa-hdr">
+    <div class="pwa-ikon">${svgApp}</div>
+    <div>
+      <strong class="pwa-titel">Installér Erhvervsklubben som app</strong>
+      <p class="pwa-under muted">Hurtig adgang fra din hjemmeskærm — ingen app store krævet</p>
+    </div>
+  </div>
+  <div class="pwa-fordele">
+    <span>${svgCheck} Virker offline</span>
+    <span>${svgCheck} Opdateres automatisk</span>
+    <span>${svgCheck} Ingen reklamer</span>
+  </div>
+  <div class="pwa-vejl">
+    ${vejledning}
+  </div>
+</div>`;
+}
 
 
 /* ================================================================
@@ -1372,9 +1604,9 @@ function pgKontakt() {
 async function submitKontakt(e) {
   e.preventDefault();
   const f = e.target;
-  const sb = getSupabase();
 
   const post = {
+    action:        'kontakt',
     virksomhed:    f.virk.value.trim(),
     kontaktperson: f.kp.value.trim(),
     telefon:       f.tlf.value.trim(),
@@ -1382,20 +1614,18 @@ async function submitKontakt(e) {
     besked:        f.besk.value.trim()
   };
 
-  /* Gem lokalt uanset hvad */
+  /* Gem lokalt */
   const alle = DB.get('ek_beskeder')||[];
   alle.push({ id:'k'+Date.now(), virk:post.virksomhed, kp:post.kontaktperson,
     tlf:post.telefon, email:post.email, besk:post.besked,
     dato:new Date().toISOString(), læst:false });
   DB.set('ek_beskeder', alle);
 
-  /* Forsøg Supabase — fejl her stopper ikke bekræftelse */
-  if (sb) {
-    try {
-      await sb.from('kontakt').insert(post);
-    } catch (err) {
-      console.warn('[Kontakt] Supabase gem fejlede (gemt lokalt):', err);
-    }
+  /* Send til Apps Script (v8.3) */
+  try {
+    await scriptFetch(post);
+  } catch (err) {
+    console.warn('[Kontakt] Apps Script fejlede (gemt lokalt):', err);
   }
 
   f.style.display = 'none';
@@ -1407,17 +1637,9 @@ async function submitKontakt(e) {
 
    ⚠️  SIKKERHEDSADVARSEL — PRODUKTIONSOPGAVE:
    Admin-koden (CONFIG.adminKode = '1234') er gemt i offentligt
-   JavaScript og er IKKE reel adgangskontrol. Enhver kan se koden
-   ved at inspicere app.js i browseren.
-
-   For sikker administration i produktion kræves:
-   · Supabase Auth (e-mail/password login)
-   · Row Level Security (RLS) på alle Supabase-tabeller
-   · Admin-funktioner bag server-side kontrol (Edge Functions)
-
-   Denne løsning er acceptabel til intern testbrug, men må IKKE
-   bruges til at beskytte følsomme data i produktion.
-   Se supabase/OPSAETNING.md for implementeringsguide.
+   Administration i v8.3 kræver Google OAuth via admin.html.
+   Åbn admin.html separat — ikke via in-app navigation.
+   Ingen hardkodet PIN eller fallback-adgang.
    ================================================================ */
 let adminIN = false;
 let _adFane = 'arr';
@@ -1427,14 +1649,11 @@ function pgAdmin() {
 <div class="ph bg-mork"><h1>Administration</h1></div>
 <section class="sek">
   <div class="admin-login">
-    <p class="muted tc mb1">Log ind med Supabase Auth:<br>
-      <code style="font-size:.8rem">email@eksempel.dk:adgangskode</code></p>
-    <p class="muted tc mb1" style="font-size:.8rem">
-      Eller kun kode (lokal test: <code>1234</code>)</p>
-    <div class="fg"><label>Login</label><input type="password" id="ak-inp" maxlength="120"
-      placeholder="email@eksempel.dk:kode" autocomplete="current-password"></div>
-    <button class="knap-p fb" onclick="tjekKode()">Log ind</button>
-    <div id="ak-fejl" class="fejl-b" style="display:none">Forkert kode — prøv igen.</div>
+    <p class="muted tc mb1">Administration kræver Google-login.</p>
+    <p class="muted tc mb1" style="font-size:.85rem">
+      Åbn <strong>admin.html</strong> for at logge ind med din Google-konto.<br>
+      Kun autoriserede administratorer har adgang.</p>
+    <a href="./admin.html" class="knap-p fb" style="display:block;text-align:center;text-decoration:none">Åbn adminpanel →</a>
   </div>
 </section>`;
 
@@ -1464,51 +1683,17 @@ function pgAdmin() {
    Authentication → Users → Invite user. Tilføj user.id til
    admin_brugere-tabellen. Se MIGRATIONSGUIDE.md. */
 async function tjekKode() {
-  const v = document.getElementById('ak-inp')?.value || '';
+  /* v8.3: Administration foregår udelukkende via admin.html med Google Sign-In.
+     Denne funktion er ikke aktiv i produktion. */
   const fejlEl = document.getElementById('ak-fejl');
-  const sb = getSupabase();
-
-  if (sb) {
-    /* Forsøg Supabase Auth email/password — input-felt bruges som email:kode */
-    /* Format understøttet: "email@dk.dk:kode" ELLER kun kode (fallback) */
-    const delim = v.indexOf(':');
-    if (delim > 0) {
-      const email    = v.substring(0, delim).trim();
-      const password = v.substring(delim + 1).trim();
-      try {
-        const { data, error } = await sb.auth.signInWithPassword({ email, password });
-        if (!error && data?.session) {
-          adminIN = true;
-          navTil('admin');
-          return;
-        }
-        /* Auth fejl — vis besked og fortsæt IKKE til fallback */
-        if (fejlEl) {
-          fejlEl.textContent = 'Supabase-login fejlede — tjek email og kode.';
-          fejlEl.style.display = 'block';
-        }
-        return;
-      } catch (err) {
-        console.warn('[Admin] Auth fejl:', err);
-      }
-    }
-  }
-
-  /* Fallback: lokal kode (kun til test — IKKE til produktion) */
-  if (v === getKode()) {
-    adminIN = true;
-    navTil('admin');
-  } else {
-    if (fejlEl) {
-      fejlEl.textContent = 'Forkert kode — prøv igen.';
-      fejlEl.style.display = 'block';
-    }
+  if (fejlEl) {
+    fejlEl.textContent = 'Brug admin.html til at logge ind med Google.';
+    fejlEl.style.display = 'block';
   }
 }
 
 async function adminLogUd() {
-  const sb = getSupabase();
-  if (sb) { try { await sb.auth.signOut(); } catch {} }
+  /* v8.3: Log ud fra in-app admin-visning (admin.html håndterer separat) */
   adminIN = false;
   navTil('forside');
 }
@@ -1828,13 +2013,12 @@ function adInst() {
   </form>
 </div>
 <div class="ad-form">
-  <h3>Skift admin-kode</h3>
-  <form onsubmit="skiftKode(event)">
-    <div class="fg"><label>Nuværende kode</label><input type="password" name="gammel" required autocomplete="current-password"></div>
-    <div class="fg"><label>Ny kode</label><input type="password" name="ny" required minlength="4" autocomplete="new-password"></div>
-    <div class="fg"><label>Bekræft ny kode</label><input type="password" name="bk" required autocomplete="new-password"></div>
-    <button type="submit" class="knap-p">Skift kode</button>
-  </form>
+  <h3>Administratoradgang</h3>
+  <p class="muted mb1">Administratoradgang styres via Google-login. Tilføj eller fjern administratorer i Google Sheets → fanen "Administratorer".<br><br>Log ud sker automatisk ved lukning af fanen. For at tilføje en ny administrator: indsæt e-mailadressen i Administratorer-arket og klik "Gem indstillinger" i backend.</p>
+  <p class="muted">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+    Ingen hardkodede PIN-koder eller lokale fallback-koder.
+  </p>
 </div>`;
 }
 
@@ -1850,13 +2034,6 @@ function gemGolfbox(e){
   if(!url.startsWith('http')){alert('URL skal starte med https://');return;}
   DB.set('ek_golfbox',url);
   alert('GolfBox-link gemt ✓');
-}
-
-function skiftKode(e){
-  e.preventDefault(); const f=e.target;
-  if(f.gammel.value!==getKode()){alert('Nuværende kode forkert.');return;}
-  if(f.ny.value!==f.bk.value){alert('Nye koder matcher ikke.');return;}
-  DB.set('ek_kode',f.ny.value); alert('Kode ændret ✓'); f.reset();
 }
 
 /* ── Admin: Backup ── */
@@ -1923,185 +2100,20 @@ function tilfoejKal(id){
 }
 
 /* ================================================================
-   PUSH NOTIFIKATIONER — Web Push + lokal fallback
+   PÅMINDELSER OG KALENDER
+   Push-notifikationer via Web Push er fjernet i v8.3 (ingen Supabase).
+   Brevo via Apps Script er primær kommunikationskanal.
+   Daglige påmindelser: 14, 7 og 3 dage (konfigureres i Indstillinger-arket).
    ================================================================ */
 
-/* Registrér Web Push subscription hos Supabase */
-async function registrerPushSubscription(swReg) {
-  const vapidKey = CONFIG.vapidPublic;
-  if (!vapidKey || vapidKey === 'INDSÆT_DIN_VAPID_PUBLIC_KEY') return null;
-
-  try {
-    const sub = await swReg.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(vapidKey)
-    });
-
-    const subJson = sub.toJSON();
-
-    /* Gem subscription i Supabase */
-    if (CONFIG.supabaseUrl && CONFIG.supabaseUrl !== 'INDSÆT_DIN_SUPABASE_URL') {
-      await fetch(`${CONFIG.supabaseUrl}/rest/v1/push_subscriptions`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': CONFIG.supabaseAnon,
-          'Authorization': `Bearer ${CONFIG.supabaseAnon}`,
-          'Prefer': 'resolution=ignore-duplicates'
-        },
-        body: JSON.stringify({
-          endpoint: subJson.endpoint,
-          p256dh:   subJson.keys.p256dh,
-          auth:     subJson.keys.auth,
-          device_label: navigator.userAgent.substring(0, 80)
-        })
-      });
-    }
-
-    /* Synkronisér arrangementer til Supabase */
-    await synkroniserArrangementer();
-
-    DB.set('ek_push_subscription', subJson.endpoint);
-    return sub;
-  } catch (err) {
-    console.warn('[Push] Subscription fejlede:', err);
-    return null;
-  }
+/* aktPaam / tjekPaam — push-push deaktiveret.
+   Kalenderintegration (tilfoejKal) er bevaret. */
+function aktPaam(id) {
+  /* Midlertidig: tilbyd kun kalenderintegration */
+  if (confirm('Vil du tilføje arrangementet til din kalender?'))
+    tilfoejKal(id);
 }
-
-/* Synkronisér arrangementdata til Supabase (til push-scheduler) */
-async function synkroniserArrangementer() {
-  if (!CONFIG.supabaseUrl || CONFIG.supabaseUrl === 'INDSÆT_DIN_SUPABASE_URL') return;
-  const arrs = getArr().filter(a => erFremtidig(a.dato) && a.aaben);
-  for (const a of arrs) {
-    await fetch(`${CONFIG.supabaseUrl}/rest/v1/arrangements`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': CONFIG.supabaseAnon,
-        'Authorization': `Bearer ${CONFIG.supabaseAnon}`,
-        'Prefer': 'resolution=merge-duplicates'
-      },
-      body: JSON.stringify({
-        id:    a.id,
-        titel: a.titel,
-        dato:  a.dato,
-        sted:  a.sted || '',
-        aaben: a.aaben
-      })
-    }).catch(() => {});
-  }
-}
-
-/* Helper: konvertér VAPID public key fra base64 til Uint8Array */
-function urlBase64ToUint8Array(base64String) {
-  const padding = '='.repeat((4 - base64String.length % 4) % 4);
-  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
-  const rawData = window.atob(base64);
-  return Uint8Array.from([...rawData].map(char => char.charCodeAt(0)));
-}
-
-/* Vis push-dialog (første gang, brugerinitieret) */
-function visPushDialog() {
-  if (DB.get('ek_push_spurgt')) return;
-  /* Kræver Notification API */
-  if (!('Notification' in window) || !('serviceWorker' in navigator)) return;
-  if (Notification.permission !== 'default') { DB.set('ek_push_spurgt', true); return; }
-  setTimeout(() => {
-    const modal = document.getElementById('push-modal');
-    if (modal) modal.style.display = 'flex';
-  }, 4500);
-}
-
-async function accepterPush() {
-  const modal = document.getElementById('push-modal');
-  if (modal) modal.style.display = 'none';
-  DB.set('ek_push_spurgt', true);
-
-  /* Anmod tilladelse */
-  const perm = await Notification.requestPermission().catch(() => 'denied');
-
-  if (perm === 'granted') {
-    /* Forsøg rigtig Web Push-subscription */
-    const reg = await navigator.serviceWorker.ready.catch(() => null);
-    if (reg) {
-      const sub = await registrerPushSubscription(reg);
-      if (sub) {
-        console.log('[Push] Web Push aktiveret ✅');
-        return;
-      }
-    }
-    /* Fallback: lokal påmindelseslogik */
-    console.log('[Push] Lokal fallback aktiveret (ingen Supabase konfigureret)');
-  } else {
-    console.log('[Push] Tilladelse afvist');
-  }
-}
-
-function afvisPush() {
-  const modal = document.getElementById('push-modal');
-  if (modal) modal.style.display = 'none';
-  DB.set('ek_push_spurgt', true);
-}
-
-/* Aktiver påmindelser for enkelt arrangement (🔔-knap) */
-async function aktPaam(id) {
-  const a = getArr().find(x => x.id === id);
-  if (!a) return;
-
-  if (!('Notification' in window)) {
-    if (confirm(`Din browser understøtter ikke push-notifikationer.\nVil du tilføje "${a.titel}" til din kalender?`))
-      tilfoejKal(id);
-    return;
-  }
-  if (Notification.permission === 'denied') {
-    if (confirm(`Notifikationer er blokeret i dine indstillinger.\nVil du tilføje "${a.titel}" til din kalender?`))
-      tilfoejKal(id);
-    return;
-  }
-
-  let perm = Notification.permission;
-  if (perm === 'default') {
-    try { perm = await Notification.requestPermission(); } catch { perm = 'denied'; }
-  }
-
-  if (perm === 'granted') {
-    /* Gem lokal påmindelse (fallback) */
-    const pm = DB.get('ek_paam') || {};
-    pm[id] = { dato: a.dato, titel: a.titel, tider: [14, 7, 3] };
-    DB.set('ek_paam', pm);
-
-    /* Forsøg Web Push subscription */
-    const reg = await navigator.serviceWorker.ready.catch(() => null);
-    if (reg) await registrerPushSubscription(reg);
-
-    alert(`✅ Påmindelser aktiveret for "${a.titel}".\nDu får besked 14, 7 og 3 dage før.`);
-  } else {
-    if (confirm(`Notifikationer ikke tilladt.\nVil du tilføje "${a.titel}" til din kalender?`))
-      tilfoejKal(id);
-  }
-}
-
-/* Lokal påmindelses-tjek (kører ved app-åbning — fallback uden server) */
-function tjekPaam() {
-  if (!('Notification' in window) || Notification.permission !== 'granted') return;
-  const pm   = DB.get('ek_paam') || {};
-  const vist = DB.get('ek_paam_vist') || {};
-  const nu   = new Date();
-  Object.entries(pm).forEach(([id, p]) => {
-    (p.tider || []).forEach(dage => {
-      const k = `${id}_${dage}`;
-      if (vist[k]) return;
-      const gr = new Date(p.dato + 'T00:00:00');
-      gr.setDate(gr.getDate() - dage);
-      if (nu >= gr) {
-        try { new Notification(`Husk: ${p.titel}`, { body: `Om ${dage} dag${dage > 1 ? 'e' : ''}`, icon: './icons/icon-192.png' }); } catch {}
-        vist[k] = true;
-      }
-    });
-  });
-  DB.set('ek_paam_vist', vist);
-}
+function tjekPaam() { /* deaktiveret — se kommentar ovenfor */ }
 
 /* ================================================================
    EVENTS
@@ -2235,36 +2247,7 @@ function opdaterApp() {
   }
 }
 
-/* ================================================================
-   PUSH-DIALOG — spørg bruger om påmindelser (første gang)
-   ================================================================ */
-function visPushDialog() {
-  if (DB.get('ek_push_spurgt')) return;           // kun én gang
-  if (!('Notification' in window)) return;        // ikke understøttet
-  if (Notification.permission !== 'default') return; // allerede svaret
-
-  setTimeout(() => {
-    const modal = document.getElementById('push-modal');
-    if (modal) modal.style.display = 'flex';
-  }, 4500); // vent til animation er færdig
-}
-
-function accepterPush() {
-  const modal = document.getElementById('push-modal');
-  if (modal) modal.style.display = 'none';
-  DB.set('ek_push_spurgt', true);
-  Notification.requestPermission().then(perm => {
-    if (perm === 'granted') {
-      console.log('[Push] Tilladelse givet ✅');
-    }
-  });
-}
-
-function afvisPush() {
-  const modal = document.getElementById('push-modal');
-  if (modal) modal.style.display = 'none';
-  DB.set('ek_push_spurgt', true);
-}
+/* visPushDialog / accepterPush / afvisPush — FJERNET i v8.1 (se også linje ~1969) */
 
 /* ================================================================
    GOLFBOX — migrér gammelt forkert link i localStorage
@@ -2388,15 +2371,12 @@ document.addEventListener('DOMContentLoaded', () => {
   /* iOS installér-guide */
   visIosInstallGuide();
 
-  /* Push-notifikation dialog */
-  visPushDialog();
-
-  /* v8.0: Intro-animation (Ken Burns) — kun ved første besøg */
+  /* v8.1: Intro-animation (Ken Burns) — kun ved første besøg */
   startIntroAnimation();
 });
 
 /* ================================================================
-   INTRO-ANIMATION v8.0 (Ken Burns)
+   INTRO-ANIMATION v8.1 (Ken Burns + golf-bold)
    - Første besøg i sessionen (sessionStorage-flag)
    - Varer 6 sekunder i alt; kan springes over
    - Respekterer prefers-reduced-motion
@@ -2421,13 +2401,19 @@ function startIntroAnimation() {
   overlay.style.display = 'flex';
   overlay.classList.add('intro-aktiv');
 
+  /* Golf-bold: start rulning efter 1.5s */
+  setTimeout(() => {
+    const bold = overlay.querySelector('.intro-golf-bold');
+    if (bold) bold.classList.add('intro-bold-ruller');
+  }, 1500);
+
   /* Fade tekst ind efter 3s */
   setTimeout(() => {
     const tw = overlay.querySelector('.intro-tekst-wrap');
     if (tw) tw.classList.add('intro-tekst-synlig');
   }, 3000);
 
-  /* Afslut intro efter 6s */
+  /* Afslut intro efter 6.2s */
   setTimeout(() => lukIntro(), 6200);
 }
 
@@ -2478,7 +2464,18 @@ function visArrPopup() {
       .filter(a => erFremtidig(a.dato) && a.aaben && a.status !== 'lukket')
       .sort((a,b) => a.dato.localeCompare(b.dato))[0];
 
-    if (!næste) return; /* ingen arrangementer — ingen popup */
+    if (!næste) {
+      /* Ingen kommende arrangementer — vis sæson 2027-besked */
+      _visPopupMedData({
+        titel:  'Vi glæder os til sæson 2027',
+        meta:   'Vi ser frem til endnu en spændende sæson med golf, netværk, relationer og gode erhvervsoplevelser. Programmet offentliggøres snart.',
+        arrId:  null,
+        noegle: 'popup_saeson2027_v1',
+        ctaTekst: 'SE ERHVERVSKLUBBEN',
+        ctaAction: () => navTil('erhvervsklub'),
+      });
+      return;
+    }
 
     const noegle = 'popup_arr_' + næste.id;
     _visPopupMedData({
@@ -2504,7 +2501,7 @@ function _popupMetaTekst(a) {
   return dele.join(' · ');
 }
 
-function _visPopupMedData({ titel, meta, arrId, noegle }) {
+function _visPopupMedData({ titel, meta, arrId, noegle, ctaTekst, ctaAction }) {
   /* Allerede set? */
   if (localStorage.getItem(noegle) === '1') return;
 
@@ -2516,7 +2513,12 @@ function _visPopupMedData({ titel, meta, arrId, noegle }) {
 
   const cta = document.getElementById('arr-popup-cta');
   if (arrId) {
+    cta.textContent = ctaTekst || 'TILMELD MIG';
     cta.onclick = () => { lukkArrPopup(); navTil('tilmelding', { id: arrId }); };
+    cta.style.display = '';
+  } else if (ctaAction) {
+    cta.textContent = ctaTekst || 'LÆS MERE';
+    cta.onclick = () => { lukkArrPopup(); ctaAction(); };
     cta.style.display = '';
   } else {
     cta.style.display = 'none';
@@ -2524,6 +2526,9 @@ function _visPopupMedData({ titel, meta, arrId, noegle }) {
 
   overlay.style.display = 'flex';
   setTimeout(() => overlay.classList.add('arr-popup-synlig'), 20);
+
+  /* Gem nøgle når popup lukkes */
+  overlay._popupNoegle = noegle;
 }
 
 function lukkArrPopup() {
@@ -2531,22 +2536,18 @@ function lukkArrPopup() {
   if (!overlay) return;
   overlay.classList.remove('arr-popup-synlig');
   setTimeout(() => { overlay.style.display = 'none'; }, 350);
-  /* Gem at bruger har set popup — sæt flag baseret på nuværende arr */
-  const næste = getArr()
-    .filter(a => erFremtidig(a.dato) && a.aaben)
-    .sort((a,b) => a.dato.localeCompare(b.dato))[0];
-  if (næste) localStorage.setItem('popup_arr_' + næste.id, '1');
+  /* Gem at bruger har set popup */
+  if (overlay._popupNoegle) {
+    localStorage.setItem(overlay._popupNoegle, '1');
+  } else {
+    const næste = getArr()
+      .filter(a => erFremtidig(a.dato) && a.aaben)
+      .sort((a,b) => a.dato.localeCompare(b.dato))[0];
+    if (næste) localStorage.setItem('popup_arr_' + næste.id, '1');
+  }
 }
 
 async function _hentPopupConfig() {
-  /* Forsøger at hente admin-konfigureret popup fra Supabase */
-  if (!window._sb) return null;
-  try {
-    const { data } = await window._sb
-      .from('ek_popup_config')
-      .select('*')
-      .eq('aktiv', true)
-      .maybeSingle();
-    return data;
-  } catch { return null; }
+  /* v8.3: Ingen Supabase — popup styres via Apps Script/admin.html */
+  return null;
 }
