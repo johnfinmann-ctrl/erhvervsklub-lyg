@@ -1,6 +1,18 @@
 /* ================================================================
-   LYNGBYGAARD ERHVERVSKLUB — app.js v8.4
+   LYNGBYGAARD ERHVERVSKLUB — app.js v8.5
    Al konfiguration samlet øverst. Ret her – ingen andre steder.
+
+   CHANGELOG v8.5 (fra v8.4):
+   · Web Push (VAPID): abonner/framelding, iOS-vejledning
+   · Admin: Ny fane "Kommunikation" — påmindelsesindstillinger, historik, preview
+   · Admin: Manuel besked til alle erhvervsmedlemmer eller deltagere i et arrangement
+   · Admin: Testbesked til sikker testemail
+   · Admin: Nyt arrangement-push til alle med push-abonnement
+   · Admin: Oversigt over push-abonnenter
+   · Automatiske påmindelser: 7/2 dage før FRIST + 1 dag før arrangement
+   · Service Worker: pushsubscriptionchange-handler
+   · Version bump: v8.4 → v8.5
+   · Migration: v8.5-markør
 
    CHANGELOG v8.4 (fra v8.3.1):
    · Forside: overskrift "MERE END GOLF", undertekst "Relationer. Netværk. Forretning."
@@ -220,6 +232,12 @@ function init() {
     DB.set('ek_pakker', []);
     DB.set('ek_v84_upgrade', { dato: new Date().toISOString(), fra: 'v8.3.1' });
     console.log('[v8.4] Migrationsmarkør sat — golfpakker med priser ryddet ✓');
+  }
+
+  /* ── v8.5: Markér migration — web push + kommunikationssystem ── */
+  if (!DB.get('ek_v85_upgrade')) {
+    DB.set('ek_v85_upgrade', { dato: new Date().toISOString(), fra: 'v8.4' });
+    console.log('[v8.5] Migrationsmarkør sat — web push og kommunikationssystem ✓');
   }
 
   /* ── v8.1: Arkivér 2026-arrangementer ──
@@ -654,7 +672,7 @@ ${nyheder.length ? `
   <p>Lyngbygaard Golf · Lyngbygårdsvej 29, 8220 Brabrand</p>
   <p class="kont-tlf-linje"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.17h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 8.91a16 16 0 0 0 6 6l.81-.81a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 21.9 16.92z"/></svg> <a href="tel:87441070">87 44 10 70</a></p>
   <p class="foot-credit">Bygget af Nordic Operations · nordicoperations.dk</p>
-  <p class="foot-version">LYG Erhvervsklub v8.4</p>
+  <p class="foot-version">LYG Erhvervsklub v8.5</p>
 </footer>`;
 }
 
@@ -1979,7 +1997,7 @@ function pgAdmin() {
   </div>
 </section>`;
 
-  const faner=[['arr','Arrangementer'],['tilm','Tilmeldinger'],['kont','Kontakthenvendelser'],['sp','Sponsorer'],['golf','Firmapakker'],['indh','Indhold'],['inst','Indstillinger'],['bk','Backup']];
+  const faner=[['arr','Arrangementer'],['tilm','Tilmeldinger'],['kont','Kontakthenvendelser'],['sp','Sponsorer'],['golf','Firmapakker'],['indh','Indhold'],['inst','Indstillinger'],['komm','Kommunikation'],['bk','Backup']];
   return `
 <div class="ph bg-mork" style="display:flex;justify-content:space-between;align-items:center">
   <div><h1>Administration</h1></div>
@@ -1996,6 +2014,7 @@ function pgAdmin() {
   ${_adFane==='golf' ? adGolf() : ''}
   ${_adFane==='indh' ? adIndhold() : ''}
   ${_adFane==='inst' ? adInst() : ''}
+  ${_adFane==='komm' ? adKomm() : ''}
   ${_adFane==='bk'   ? adBk()   : ''}
 </section>`;
 }
@@ -2019,7 +2038,11 @@ async function adminLogUd() {
   adminIN = false;
   navTil('forside');
 }
-function skiftFane(f) { _adFane=f; navTil('admin'); }
+function skiftFane(f) {
+  _adFane=f;
+  navTil('admin');
+  if (f === 'komm') setTimeout(_initKommFane, 150);
+}
 
 /* ── Admin: Arrangementer ── */
 function adArr() {
@@ -2899,4 +2922,497 @@ function lukkArrPopup() {
 async function _hentPopupConfig() {
   /* v8.3: Ingen Supabase — popup styres via Apps Script/admin.html */
   return null;
+}
+
+/* ================================================================
+   WEB PUSH — VAPID (v8.5)
+   Frivillige push-notifikationer. iOS kræver PWA installeret på hjemmeskærm.
+   Email-fallback sker automatisk via Apps Script.
+   ================================================================ */
+
+/**
+ * Hent VAPID public key fra Apps Script og abonner på push.
+ * Kaldes fra bruger-initieret handling (knap-klik), da push kræver brugergestus.
+ *
+ * iOS-flow: Detektér iOS → vis installationsvejledning → bed om push-tilladelse.
+ * Android/Desktop: Direkte push-abonnement.
+ */
+async function abonnerPush() {
+  const statusEl = document.getElementById('push-status');
+  const knap     = document.getElementById('push-knap');
+
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+    if (statusEl) statusEl.textContent = 'Din browser understøtter ikke push-notifikationer.';
+    return;
+  }
+
+  // iOS-detektion: kræver PWA installeret på hjemmeskærm (iOS 16.4+)
+  const erIOS     = /iP(hone|ad|od)/.test(navigator.userAgent);
+  const erInstall = window.matchMedia('(display-mode: standalone)').matches ||
+                    window.navigator.standalone === true;
+
+  if (erIOS && !erInstall) {
+    visIOSPushVejledning();
+    return;
+  }
+
+  if (erIOS) {
+    const iosVer = parseFloat((navigator.userAgent.match(/OS (\d+)_/) || [])[1] || 0);
+    if (iosVer < 16) {
+      if (statusEl) statusEl.innerHTML = '<span style="color:#b8973a">⚠️ Push-notifikationer kræver iOS 16.4 eller nyere.</span>';
+      return;
+    }
+  }
+
+  if (statusEl) statusEl.textContent = 'Henter konfiguration…';
+  if (knap) knap.disabled = true;
+
+  try {
+    // Hent VAPID public key fra server (sikkert — kun public key eksponeres)
+    const r = await scriptGet({ action: 'getVapidPublicKey' });
+    if (!r.ok) throw new Error(r.fejl || 'Kunne ikke hente push-konfiguration');
+
+    const vapidPublicKey = r.vapidPublicKey;
+    const appServerKey   = _urlBase64ToUint8Array(vapidPublicKey);
+
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly:      true,
+      applicationServerKey: appServerKey,
+    });
+
+    // Gem subscription i Apps Script backend
+    const subJson = sub.toJSON();
+    const platform = _detekterPlatform();
+
+    await scriptFetch({
+      action:   'pushSubscribe',
+      endpoint: subJson.endpoint,
+      keys:     subJson.keys,
+      platform,
+    });
+
+    // Gem lokalt at push er aktiveret
+    DB.set('ek_push_aktiv', { endpoint: subJson.endpoint, platform, dato: new Date().toISOString() });
+
+    if (statusEl) statusEl.innerHTML = '<span style="color:#22c55e">✓ Push-notifikationer er aktiveret!</span>';
+    if (knap) { knap.textContent = 'Deaktivér push'; knap.onclick = afmeldPush; knap.disabled = false; }
+
+    // Lyt på subscription-changes fra service worker
+    navigator.serviceWorker.addEventListener('message', _haandterPushMessage);
+
+  } catch(e) {
+    console.warn('[Push] Fejl ved abonnement:', e);
+    let fejlTekst = 'Push-abonnement fejlede.';
+    if (e.name === 'NotAllowedError') {
+      fejlTekst = 'Du har blokeret push-notifikationer. Tillad dem i browserindstillingerne.';
+    }
+    if (statusEl) statusEl.innerHTML = `<span style="color:#ef4444">${fejlTekst}</span>`;
+    if (knap) knap.disabled = false;
+  }
+}
+
+/**
+ * Afmeld push-notifikationer.
+ */
+async function afmeldPush() {
+  const statusEl = document.getElementById('push-status');
+  const knap     = document.getElementById('push-knap');
+  if (knap) knap.disabled = true;
+
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
+    if (sub) {
+      await scriptFetch({ action: 'pushUnsubscribe', endpoint: sub.toJSON().endpoint });
+      await sub.unsubscribe();
+    }
+    DB.del('ek_push_aktiv');
+    if (statusEl) statusEl.innerHTML = '<span style="color:#6b7280">Push-notifikationer er deaktiveret.</span>';
+    if (knap) { knap.textContent = 'Aktiver push-notifikationer'; knap.onclick = abonnerPush; knap.disabled = false; }
+  } catch(e) {
+    if (statusEl) statusEl.textContent = 'Fejl ved afmelding. Prøv igen.';
+    if (knap) knap.disabled = false;
+  }
+}
+
+/**
+ * Tjek om push allerede er aktiveret og opdater UI derefter.
+ */
+async function tjekPushStatus(statusEl, knap) {
+  if (!statusEl || !knap) return;
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+    statusEl.textContent = 'Din browser understøtter ikke push-notifikationer.';
+    knap.style.display = 'none';
+    return;
+  }
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
+    if (sub) {
+      statusEl.innerHTML = '<span style="color:#22c55e">✓ Push-notifikationer er aktiveret</span>';
+      knap.textContent = 'Deaktivér push';
+      knap.onclick = afmeldPush;
+    } else {
+      statusEl.innerHTML = '<span style="color:#6b7280">Push-notifikationer er ikke aktiveret</span>';
+      knap.textContent = 'Aktiver push-notifikationer';
+      knap.onclick = abonnerPush;
+    }
+  } catch(e) {
+    statusEl.textContent = 'Push-status ukendt.';
+  }
+}
+
+/**
+ * Vis iOS-installationsvejledning (PWA påkrævet før push på iOS).
+ */
+function visIOSPushVejledning() {
+  const modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:flex-end;padding:0';
+  modal.innerHTML = `
+<div style="background:#fff;border-radius:16px 16px 0 0;padding:28px 24px 40px;width:100%;max-width:480px;margin:0 auto">
+  <div style="text-align:center;margin-bottom:16px">
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#0d2b1a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="2" width="18" height="20" rx="2" ry="2"/><line x1="12" y1="6" x2="12" y2="10"/><line x1="12" y1="14" x2="12.01" y2="14"/>
+    </svg>
+  </div>
+  <h3 style="text-align:center;margin:0 0 12px;font-size:1.1rem;color:#0d2b1a">Aktiver push på iPhone/iPad</h3>
+  <p style="font-size:.9rem;color:#374151;margin:0 0 16px">Push-notifikationer på iOS kræver, at appen er installeret på din hjemmeskærm:</p>
+  <ol style="font-size:.9rem;color:#374151;padding-left:1.2rem;line-height:1.8;margin:0 0 20px">
+    <li>Tryk på <strong>Del</strong>-knappen <span style="font-size:1rem">⬆️</span> i Safari-browserens bundlinje</li>
+    <li>Vælg <strong>"Føj til hjemmeskærm"</strong></li>
+    <li>Tryk <strong>Tilføj</strong> øverst til højre</li>
+    <li>Åbn appen fra hjemmeskærmen og prøv igen</li>
+  </ol>
+  <p style="font-size:.8rem;color:#6b7280;margin:0 0 16px">Kræver iOS 16.4 eller nyere · Safari 16.4+</p>
+  <button onclick="this.closest('div[style*=\"position:fixed\"]').remove()"
+          style="width:100%;padding:12px;background:#0d2b1a;color:#fff;border:none;border-radius:8px;font-size:1rem;cursor:pointer">
+    Forstået
+  </button>
+</div>`;
+  document.body.appendChild(modal);
+  modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+}
+
+/**
+ * Konverter base64url-kodet VAPID public key til Uint8Array.
+ * Nødvendigt for PushManager.subscribe({ applicationServerKey }).
+ */
+function _urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64  = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const raw     = window.atob(base64);
+  return new Uint8Array([...raw].map(char => char.charCodeAt(0)));
+}
+
+/**
+ * Detektér platform til brug i push-subscription metadata.
+ */
+function _detekterPlatform() {
+  const ua = navigator.userAgent;
+  if (/iP(hone|ad|od)/.test(ua)) return 'ios';
+  if (/Android/.test(ua)) return 'android';
+  if (/Windows/.test(ua)) return 'windows';
+  if (/Mac/.test(ua)) return 'mac';
+  return 'ukendt';
+}
+
+/**
+ * Håndter besked fra Service Worker (subscription changed).
+ */
+function _haandterPushMessage(evt) {
+  if (evt.data?.type === 'PUSH_SUBSCRIPTION_CHANGED') {
+    const sub = evt.data.subscription;
+    if (sub) {
+      scriptFetch({ action: 'pushSubscribe', endpoint: sub.endpoint, keys: sub.keys, platform: _detekterPlatform() })
+        .catch(e => console.warn('[Push] Fejl ved auto-fornyelse:', e));
+    }
+  }
+}
+
+/* ================================================================
+   ADMIN — KOMMUNIKATION (v8.5)
+   Fane: Kommunikation — påmindelser, historik, push, manuel besked
+   ================================================================ */
+
+function adKomm() {
+  return `
+<div class="ad-hd">
+  <h2>📢 Kommunikation og push-notifikationer</h2>
+  <p class="muted mb1">Automatiske og manuelle beskeder til deltagere og erhvervsmedlemmer.</p>
+</div>
+
+<!-- Push-notifikationer status -->
+<div class="ad-sek">
+  <h3 class="ad-sek-h">🔔 Web Push-notifikationer</h3>
+  <div class="push-info-boks">
+    <p><strong>Hvad er Web Push?</strong> Rigtige push-notifikationer via browseren — gratis, ingen app-store nødvendig.</p>
+    <ul class="push-support-liste">
+      <li>✅ Chrome (Android, Windows, Mac, Linux)</li>
+      <li>✅ Firefox (Android, Windows, Mac)</li>
+      <li>✅ Safari (macOS 13+, iOS 16.4+ — kræver hjemmeskærm-installation)</li>
+      <li>✅ Edge (Windows, Mac)</li>
+      <li>⚠️ <em>E-mail bruges automatisk som fallback</em></li>
+    </ul>
+  </div>
+
+  <div class="push-vapid-note">
+    <strong>⚠️ Teknisk note — VAPID-signering:</strong><br>
+    Apps Script understøtter ikke ECDSA (ES256), som kræves af Web Push RFC 8292.
+    Push-endpoints (FCM, Mozilla, Apple) vil afvise requests med HMAC-signeret JWT.<br>
+    <strong>Anbefalet løsning:</strong> Brug en Cloudflare Worker som VAPID-proxy
+    (gratis, 100.000 kald/dag). Se <code>_sendVapidPush()</code> i Code.gs for detaljer.<br>
+    <em>Alternativt:</em> E-mail via Brevo dækker alle tilfælde frem til VAPID-løsning er implementeret.
+  </div>
+
+  <div style="margin-top:1rem">
+    <h4>Aktive push-abonnementer</h4>
+    <div id="push-abonnenter-vis">Henter…</div>
+    <button class="knap-sek sm" onclick="hentPushAbonnenter()">Opdater liste</button>
+  </div>
+</div>
+
+<!-- Automatiske påmindelser -->
+<div class="ad-sek">
+  <h3 class="ad-sek-h">⏰ Automatiske påmindelser (v8.5)</h3>
+  <p class="muted mb1">Påmindelserne sendes automatisk via en daglig trigger i Apps Script.</p>
+  <div class="paamind-grid">
+    <div class="paamind-kort">
+      <strong>7 dage før tilmeldingsfristen</strong><br>
+      <span class="muted" style="font-size:.85rem">E-mail + push til alle tilmeldte</span>
+    </div>
+    <div class="paamind-kort">
+      <strong>2 dage før tilmeldingsfristen</strong><br>
+      <span class="muted" style="font-size:.85rem">E-mail + push til alle tilmeldte</span>
+    </div>
+    <div class="paamind-kort">
+      <strong>1 dag før arrangementet</strong><br>
+      <span class="muted" style="font-size:.85rem">E-mail + push til alle tilmeldte</span>
+    </div>
+  </div>
+
+  <h4 style="margin-top:1.5rem">Forventede udsendelser (næste 30 dage)</h4>
+  <div id="paamind-preview-vis">Henter…</div>
+  <button class="knap-sek sm" onclick="hentPaamindPreview()">Opdater preview</button>
+</div>
+
+<!-- Manuel besked -->
+<div class="ad-sek">
+  <h3 class="ad-sek-h">✉️ Send manuel besked</h3>
+  <p class="muted mb1">Vælg målgruppe og skriv besked. Tilmeldte deltagere modtager ikke opfordringer til at tilmelde sig.</p>
+  <form onsubmit="sendManuelBesked(event)">
+    <div class="form-row">
+      <label>Målgruppe</label>
+      <select id="mb-maalgruppe" class="input-felt">
+        <option value="alle_medl">Alle erhvervsmedlemmer</option>
+        <option value="">— Eller vælg specifikt arrangement —</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <label>Emne</label>
+      <input type="text" id="mb-emne" class="input-felt" placeholder="Emne for beskeden" required>
+    </div>
+    <div class="form-row">
+      <label>Indhold</label>
+      <textarea id="mb-indhold" class="input-felt" rows="6" placeholder="Skriv beskeden her…" required></textarea>
+    </div>
+    <div class="form-row">
+      <label class="check-label">
+        <input type="checkbox" id="mb-push" checked>
+        Send også push-notifikation (til abonnenter i målgruppen)
+      </label>
+    </div>
+    <div style="display:flex;gap:.75rem;flex-wrap:wrap;margin-top:1rem">
+      <button type="submit" class="knap-p">Send besked</button>
+      <button type="button" class="knap-sek" onclick="sendTestBesked()">Send testbesked</button>
+    </div>
+    <div id="mb-status" class="form-status" style="margin-top:.75rem"></div>
+  </form>
+</div>
+
+<!-- Nyt arrangement push -->
+<div class="ad-sek">
+  <h3 class="ad-sek-h">🆕 Besked om nyt arrangement</h3>
+  <p class="muted mb1">Send push-notifikation til alle abonnenter om et nyt arrangement. Allerede tilmeldte modtager ikke denne besked.</p>
+  <div class="form-row">
+    <label>Arrangement</label>
+    <select id="ny-arr-sel" class="input-felt">
+      <option value="">Vælg arrangement…</option>
+    </select>
+  </div>
+  <button class="knap-p" onclick="sendNyArrBesked()" style="margin-top:.75rem">Send push-besked</button>
+  <div id="ny-arr-status" class="form-status" style="margin-top:.75rem"></div>
+</div>
+
+<!-- Sendehistorik -->
+<div class="ad-sek">
+  <h3 class="ad-sek-h">📋 Sendehistorik</h3>
+  <div id="email-historik-vis">Henter…</div>
+  <button class="knap-sek sm" onclick="hentEmailHistorik()">Opdater historik</button>
+</div>`;
+}
+
+/* ── Admin kommunikation: datahentning og handlinger ── */
+
+async function hentPushAbonnenter() {
+  const el = document.getElementById('push-abonnenter-vis');
+  if (!el) return;
+  el.textContent = 'Henter…';
+  try {
+    const r = await adminFetch({ action: 'adminGetPushAbonnenter' });
+    if (!r.ok) throw new Error(r.fejl);
+    if (!r.abonnenter?.length) {
+      el.innerHTML = '<p class="muted">Ingen aktive push-abonnementer endnu.</p>';
+      return;
+    }
+    el.innerHTML = `
+<p><strong>${r.total}</strong> aktive abonnementer</p>
+<table class="ad-tbl" style="margin-top:.5rem">
+  <thead><tr><th>Platform</th><th>E-mail</th><th>Oprettet</th></tr></thead>
+  <tbody>${r.abonnenter.map(a=>`
+    <tr><td>${esc(a.platform)}</td><td>${esc(a.email)||'–'}</td><td>${esc(a.oprettet)}</td></tr>`).join('')}
+  </tbody>
+</table>`;
+  } catch(e) {
+    el.innerHTML = `<p class="muted" style="color:#ef4444">Fejl: ${esc(e.message)}</p>`;
+  }
+}
+
+async function hentPaamindPreview() {
+  const el = document.getElementById('paamind-preview-vis');
+  if (!el) return;
+  el.textContent = 'Henter…';
+  try {
+    const r = await adminFetch({ action: 'adminGetPaamindPreview' });
+    if (!r.ok) throw new Error(r.fejl);
+    if (!r.preview?.length) {
+      el.innerHTML = '<p class="muted">Ingen forventede udsendelser i de næste 30 dage.</p>';
+      return;
+    }
+    el.innerHTML = `<table class="ad-tbl">
+      <thead><tr><th>Dato</th><th>Arrangement</th><th>Type</th><th>Deltagere</th></tr></thead>
+      <tbody>${r.preview.map(p=>`
+        <tr>
+          <td>${esc(p.udsendelsesDato)}</td>
+          <td>${esc(p.arrTitel)}</td>
+          <td>${esc(p.type)}</td>
+          <td>${p.aktiveDeltagere}</td>
+        </tr>`).join('')}
+      </tbody></table>`;
+  } catch(e) {
+    el.innerHTML = `<p class="muted" style="color:#ef4444">Fejl: ${esc(e.message)}</p>`;
+  }
+}
+
+async function sendManuelBesked(evt) {
+  evt.preventDefault();
+  const statusEl  = document.getElementById('mb-status');
+  const maalgruppe = document.getElementById('mb-maalgruppe')?.value || 'alle_medl';
+  const emne       = document.getElementById('mb-emne')?.value?.trim() || '';
+  const indhold    = document.getElementById('mb-indhold')?.value?.trim() || '';
+  const inkluderPush = document.getElementById('mb-push')?.checked ?? true;
+
+  if (!emne || !indhold) {
+    if (statusEl) statusEl.innerHTML = '<span style="color:#ef4444">Udfyld emne og indhold.</span>';
+    return;
+  }
+
+  if (!confirm(`Bekræft: Send e-mail til "${maalgruppe === 'alle_medl' ? 'alle erhvervsmedlemmer' : 'valgte deltagere'}"?\n\nEmne: ${emne}`))
+    return;
+
+  if (statusEl) statusEl.textContent = 'Sender…';
+  try {
+    const r = await adminFetch({ action: 'adminSendManuelBesked', maalgruppe, emne, indhold, inkluderPush });
+    if (!r.ok) throw new Error(r.fejl);
+    if (statusEl) statusEl.innerHTML = `<span style="color:#22c55e">✓ Sendt til ${r.modtagere} modtagere (${r.emailSendt} e-mails, ${r.pushSendt} push).</span>`;
+  } catch(e) {
+    if (statusEl) statusEl.innerHTML = `<span style="color:#ef4444">Fejl: ${esc(e.message)}</span>`;
+  }
+}
+
+async function sendTestBesked() {
+  const statusEl = document.getElementById('mb-status');
+  const emne     = document.getElementById('mb-emne')?.value?.trim() || 'Testbesked';
+  const indhold  = document.getElementById('mb-indhold')?.value?.trim() || 'Testindhold';
+
+  if (statusEl) statusEl.textContent = 'Sender testbesked…';
+  try {
+    const r = await adminFetch({ action: 'adminSendTestBesked', emne, indhold, type: 'manuel' });
+    if (!r.ok) throw new Error(r.fejl || 'Sæt TEST_EMAIL i Script Properties');
+    if (statusEl) statusEl.innerHTML = `<span style="color:#22c55e">✓ Testbesked sendt til ${esc(r.testEmail)}</span>`;
+  } catch(e) {
+    if (statusEl) statusEl.innerHTML = `<span style="color:#ef4444">Fejl: ${esc(e.message)}</span>`;
+  }
+}
+
+async function sendNyArrBesked() {
+  const sel     = document.getElementById('ny-arr-sel');
+  const statusEl= document.getElementById('ny-arr-status');
+  const arrId   = sel?.value;
+  if (!arrId) {
+    if (statusEl) statusEl.innerHTML = '<span style="color:#ef4444">Vælg et arrangement.</span>';
+    return;
+  }
+  if (!confirm('Send push-notifikation om nyt arrangement til alle abonnenter (der ikke allerede er tilmeldt)?')) return;
+  if (statusEl) statusEl.textContent = 'Sender…';
+  try {
+    const r = await adminFetch({ action: 'adminSendNyArrangement', arrId });
+    if (!r.ok) throw new Error(r.fejl);
+    if (statusEl) statusEl.innerHTML = `<span style="color:#22c55e">✓ ${r.pushSendt} push-notifikationer sendt.</span>`;
+  } catch(e) {
+    if (statusEl) statusEl.innerHTML = `<span style="color:#ef4444">Fejl: ${esc(e.message)}</span>`;
+  }
+}
+
+async function hentEmailHistorik() {
+  const el = document.getElementById('email-historik-vis');
+  if (!el) return;
+  el.textContent = 'Henter…';
+  try {
+    const r = await adminFetch({ action: 'adminGetEmaillog', limit: 50 });
+    if (!r.ok) throw new Error(r.fejl);
+    const rows = r.log || [];
+    if (!rows.length) {
+      el.innerHTML = '<p class="muted">Ingen e-mailhistorik endnu.</p>';
+      return;
+    }
+    el.innerHTML = `<table class="ad-tbl">
+      <thead><tr><th>Dato</th><th>Modtager</th><th>Type</th><th>Status</th></tr></thead>
+      <tbody>${rows.map(r=>`
+        <tr>
+          <td style="font-size:.8rem">${esc(r.sendt||r[5]||'')}</td>
+          <td style="font-size:.8rem">${esc(r.modtager||r[3]||'')}</td>
+          <td style="font-size:.8rem">${esc(r.type||r[4]||'')}</td>
+          <td style="font-size:.8rem;color:${(r.status||r[6])==='sendt'?'#22c55e':'#ef4444'}">${esc(r.status||r[6]||'')}</td>
+        </tr>`).join('')}
+      </tbody></table>`;
+  } catch(e) {
+    el.innerHTML = `<p class="muted" style="color:#ef4444">Fejl: ${esc(e.message)}</p>`;
+  }
+}
+
+/* ── Hjælpefunktion til admin-kald (POST med adminToken) ── */
+async function adminFetch(body) {
+  const adminToken = DB.get('ek_admin_token');
+  if (!adminToken) throw new Error('Ikke logget ind som admin');
+  return scriptFetch({ ...body, adminToken });
+}
+
+/* ── Kommunikation-fane auto-load ── */
+function _initKommFane() {
+  setTimeout(() => {
+    hentPushAbonnenter();
+    hentPaamindPreview();
+    hentEmailHistorik();
+    // Udfyld arrangement-dropdown
+    const sel = document.getElementById('ny-arr-sel');
+    if (sel) {
+      (window._serverArr || []).forEach(a => {
+        const opt = document.createElement('option');
+        opt.value = a.id;
+        opt.textContent = a.titel + (a.dato ? ` (${fmtDato(a.dato)})` : '');
+        sel.appendChild(opt);
+      });
+    }
+  }, 100);
 }

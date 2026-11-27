@@ -5185,3 +5185,154 @@ textarea:focus-visible {
   display: flex;
   flex-wrap: wrap;
 }
+
+/* ================================================================
+   v8.5 — KOMMUNIKATION & PUSH-NOTIFIKATIONER
+   ================================================================ */
+
+/* Admin kommunikations-sektioner */
+.ad-sek {
+  background: #f8f9fa;
+  border-radius: 10px;
+  padding: 1.2rem;
+  margin-bottom: 1rem;
+  border: 1px solid #e5e7eb;
+}
+.ad-sek-h {
+  font-size: .95rem;
+  color: var(--p);
+  margin: 0 0 .75rem;
+  font-weight: 700;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: .5rem;
+}
+
+/* Push info boks */
+.push-info-boks {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: .8rem 1rem;
+  margin-bottom: .75rem;
+  font-size: .88rem;
+}
+.push-info-boks p { margin: 0 0 .5rem; }
+.push-support-liste {
+  margin: 0;
+  padding-left: 1.2rem;
+  font-size: .85rem;
+  color: var(--txt);
+  line-height: 1.8;
+}
+
+/* VAPID teknisk note */
+.push-vapid-note {
+  background: #fffbea;
+  border: 1px solid #b8973a;
+  border-radius: 8px;
+  padding: .75rem 1rem;
+  font-size: .82rem;
+  color: #374151;
+  line-height: 1.6;
+}
+.push-vapid-note code {
+  background: #f3f4f6;
+  padding: .1rem .3rem;
+  border-radius: 3px;
+  font-size: .8rem;
+}
+
+/* Påmindelser grid */
+.paamind-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: .6rem;
+}
+.paamind-kort {
+  background: var(--p);
+  color: var(--hvid);
+  border-radius: 8px;
+  padding: .9rem 1rem;
+  font-size: .85rem;
+  line-height: 1.4;
+}
+.paamind-kort .muted {
+  opacity: .75;
+}
+
+/* Form */
+.form-row {
+  display: flex;
+  flex-direction: column;
+  gap: .3rem;
+  margin-bottom: .75rem;
+}
+.form-row label {
+  font-size: .85rem;
+  font-weight: 600;
+  color: var(--txt);
+}
+.input-felt {
+  width: 100%;
+  padding: .55rem .75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 7px;
+  font-size: .9rem;
+  font-family: inherit;
+  color: var(--txt);
+  background: #fff;
+  box-sizing: border-box;
+  transition: border-color .2s;
+}
+.input-felt:focus { outline: none; border-color: var(--p); }
+textarea.input-felt { resize: vertical; min-height: 100px; }
+.check-label {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  font-size: .88rem;
+  cursor: pointer;
+  font-weight: normal !important;
+}
+.form-status { font-size: .88rem; min-height: 1.2rem; }
+
+/* Admin tabel */
+.ad-tbl {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .85rem;
+  margin-top: .5rem;
+}
+.ad-tbl th {
+  background: var(--p);
+  color: var(--hvid);
+  padding: .4rem .6rem;
+  text-align: left;
+  font-weight: 600;
+  font-size: .78rem;
+}
+.ad-tbl td {
+  padding: .4rem .6rem;
+  border-bottom: 1px solid #e5e7eb;
+  vertical-align: top;
+}
+.ad-tbl tr:last-child td { border-bottom: none; }
+.ad-tbl tr:nth-child(even) td { background: #f9fafb; }
+
+/* Push-status (bruger-vendt) */
+#push-status {
+  font-size: .88rem;
+  min-height: 1.2rem;
+  margin-bottom: .5rem;
+  color: var(--mut);
+}
+#push-knap {
+  min-width: 200px;
+}
+
+/* sm knap variant */
+.knap-sek.sm {
+  font-size: .8rem;
+  padding: .35rem .7rem;
+  margin-top: .5rem;
+}

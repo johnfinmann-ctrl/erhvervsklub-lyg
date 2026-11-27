@@ -1,5 +1,5 @@
 /* ================================================================
-   Lyngbygaard Erhvervsklub — Service Worker v8.4
+   Lyngbygaard Erhvervsklub — Service Worker v8.5
 
    VERSIONSSTYRING:
    Skift CACHE_VERSION ved hver GitHub-upload.
@@ -11,14 +11,14 @@
    · Offline fallback → cached index.html
    ================================================================ */
 
-const CACHE_VERSION = 'lyg-erhverv-v8.4';
+const CACHE_VERSION = 'lyg-erhverv-v8.5';
 const BASE          = self.registration.scope;
 
 const PRECACHE_URLS = [
   BASE + 'index.html',
-  BASE + 'style.css?v=8.4',
-  BASE + 'app.js?v=8.4',
-  BASE + 'manifest.json?v=8.4',
+  BASE + 'style.css?v=8.5',
+  BASE + 'app.js?v=8.5',
+  BASE + 'manifest.json?v=8.5',
   BASE + 'icons/icon-192.png',
   BASE + 'icons/icon-512.png',
   BASE + 'images/golfer-1-address.png',
@@ -107,19 +107,26 @@ self.addEventListener('message', event => {
   if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
-/* ── PUSH EVENT — modtag og vis notifikation ── */
+/* ── PUSH EVENT — modtag og vis notifikation (v8.5) ── */
 self.addEventListener('push', event => {
-  let data = { title: 'LYG Erhvervsklub', body: 'Nyt fra Erhvervsklubben', data: {} };
+  let data = { title: 'LYG Erhvervsklub', body: 'Nyt fra Erhvervsklubben', icon: null, badge: null, url: null };
   if (event.data) {
-    try { data = { ...data, ...event.data.json() }; } catch {}
+    try {
+      const parsed = event.data.json();
+      data = { ...data, ...parsed };
+    } catch {
+      // Prøv som plain text
+      data.body = event.data.text() || data.body;
+    }
   }
   event.waitUntil(
     self.registration.showNotification(data.title, {
-      body:  data.body,
-      icon:  BASE + 'icons/icon-192.png',
-      badge: BASE + 'icons/icon-192.png',
-      data:  data.data || {},
-      vibrate: [100, 50, 100]
+      body:    data.body,
+      icon:    data.icon  || BASE + 'icons/icon-192.png',
+      badge:   data.badge || BASE + 'icons/icon-96.png',
+      data:    { url: data.url || BASE + 'index.html' },
+      vibrate: [100, 50, 100],
+      requireInteraction: false,
     })
   );
 });
@@ -127,12 +134,40 @@ self.addEventListener('push', event => {
 /* ── NOTIFICATION CLICK ── */
 self.addEventListener('notificationclick', event => {
   event.notification.close();
+  const targetUrl = event.notification.data?.url || BASE + 'index.html';
   event.waitUntil(
-    clients.matchAll({ type: 'window' }).then(list => {
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+      // Forsøg at fokusere eksisterende vindue
       for (const c of list) {
-        if (c.url.startsWith(BASE) && 'focus' in c) return c.focus();
+        if (c.url.startsWith(BASE) && 'focus' in c) {
+          c.navigate(targetUrl).catch(() => {});
+          return c.focus();
+        }
       }
-      return clients.openWindow(BASE + 'index.html');
+      return clients.openWindow(targetUrl);
     })
+  );
+});
+
+/* ── PUSH SUBSCRIPTION CHANGE — opdater subscription automatisk ── */
+self.addEventListener('pushsubscriptionchange', event => {
+  // Subscription er udløbet eller ændret — forsøg at genabonnere
+  event.waitUntil(
+    self.registration.pushManager.getSubscription()
+      .then(sub => {
+        if (sub) return sub; // Stadig aktiv
+        // Genabonnér (kræver applicationServerKey — gemmes i klienten)
+        return self.registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          // applicationServerKey sættes af klienten, ikke SW — udsend besked
+        }).catch(() => null);
+      })
+      .then(newSub => {
+        if (!newSub) return;
+        // Underret app.js om subscription change via clients.matchAll
+        return clients.matchAll().then(cs => {
+          cs.forEach(c => c.postMessage({ type: 'PUSH_SUBSCRIPTION_CHANGED', subscription: newSub.toJSON() }));
+        });
+      })
   );
 });
