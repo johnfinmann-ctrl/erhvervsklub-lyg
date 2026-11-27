@@ -1,6 +1,14 @@
 /* ================================================================
-   LYNGBYGAARD ERHVERVSKLUB — app.js v8.5
+   LYNGBYGAARD ERHVERVSKLUB — app.js v8.6
    Al konfiguration samlet øverst. Ret her – ingen andre steder.
+
+   CHANGELOG v8.6 (fra v8.5):
+   · Web Push via Cloudflare Worker — rigtig ES256/ECDSA signering og AES-128-GCM kryptering
+   · VAPID public key hentes fra CF Worker /public-key (ikke direkte fra Apps Script)
+   · Admin Kommunikation: kanal-valg (email / push / begge)
+   · Fjernet VAPID-limiterings-advarsel (løst med CF Worker)
+   · CF Worker status-banner i admin-panelet
+   · Version bump: v8.5 → v8.6
 
    CHANGELOG v8.5 (fra v8.4):
    · Web Push (VAPID): abonner/framelding, iOS-vejledning
@@ -13,6 +21,7 @@
    · Service Worker: pushsubscriptionchange-handler
    · Version bump: v8.4 → v8.5
    · Migration: v8.5-markør
+
 
    CHANGELOG v8.4 (fra v8.3.1):
    · Forside: overskrift "MERE END GOLF", undertekst "Relationer. Netværk. Forretning."
@@ -70,6 +79,12 @@ const CONFIG = {
      Indsæt den genererede Web App URL nedenfor efter deployment.
      ─────────────────────────────────────────────────────────── */
   scriptUrl: 'INDSÆT_APPS_SCRIPT_WEB_APP_URL',
+
+  /* v8.6: Cloudflare Worker URL til Web Push.
+     Sæt til URL for din deployede push-worker, f.eks.:
+     'https://lyg-push-worker.din-subdomain.workers.dev'
+     Lad stå tom hvis CF Worker ikke er deployeret endnu. */
+  pushWorkerUrl: '',
 
   /* REQUEST_TOKEN: Samme værdi som i Apps Script Properties.
      Bruges som enkel identifikation af kald fra appen — ikke som
@@ -238,6 +253,12 @@ function init() {
   if (!DB.get('ek_v85_upgrade')) {
     DB.set('ek_v85_upgrade', { dato: new Date().toISOString(), fra: 'v8.4' });
     console.log('[v8.5] Migrationsmarkør sat — web push og kommunikationssystem ✓');
+  }
+
+  /* ── v8.6: Cloudflare Worker til Web Push ── */
+  if (!DB.get('ek_v86_upgrade')) {
+    DB.set('ek_v86_upgrade', { dato: new Date().toISOString(), fra: 'v8.5' });
+    console.log('[v8.6] Migrationsmarkør sat — Cloudflare Worker Web Push ✓');
   }
 
   /* ── v8.1: Arkivér 2026-arrangementer ──
@@ -672,7 +693,7 @@ ${nyheder.length ? `
   <p>Lyngbygaard Golf · Lyngbygårdsvej 29, 8220 Brabrand</p>
   <p class="kont-tlf-linje"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.17h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 8.91a16 16 0 0 0 6 6l.81-.81a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 21.9 16.92z"/></svg> <a href="tel:87441070">87 44 10 70</a></p>
   <p class="foot-credit">Bygget af Nordic Operations · nordicoperations.dk</p>
-  <p class="foot-version">LYG Erhvervsklub v8.5</p>
+  <p class="foot-version">LYG Erhvervsklub v8.6</p>
 </footer>`;
 }
 
@@ -2925,7 +2946,7 @@ async function _hentPopupConfig() {
 }
 
 /* ================================================================
-   WEB PUSH — VAPID (v8.5)
+   WEB PUSH — VAPID via Cloudflare Worker (v8.6)
    Frivillige push-notifikationer. iOS kræver PWA installeret på hjemmeskærm.
    Email-fallback sker automatisk via Apps Script.
    ================================================================ */
@@ -2968,11 +2989,20 @@ async function abonnerPush() {
   if (knap) knap.disabled = true;
 
   try {
-    // Hent VAPID public key fra server (sikkert — kun public key eksponeres)
-    const r = await scriptGet({ action: 'getVapidPublicKey' });
-    if (!r.ok) throw new Error(r.fejl || 'Kunne ikke hente push-konfiguration');
-
-    const vapidPublicKey = r.vapidPublicKey;
+    // Hent VAPID public key — fra CF Worker (foretrukket) eller Apps Script
+    let vapidPublicKey = null;
+    if (CONFIG.pushWorkerUrl) {
+      try {
+        const cfResp = await fetch(CONFIG.pushWorkerUrl + '/public-key');
+        const cfData = await cfResp.json();
+        if (cfData.ok && cfData.publicKey) vapidPublicKey = cfData.publicKey;
+      } catch(e) { console.warn('[Push] CF Worker ikke tilgængelig, prøver Apps Script'); }
+    }
+    if (!vapidPublicKey) {
+      const r = await scriptGet({ action: 'getVapidPublicKey' });
+      if (!r.ok) throw new Error(r.fejl || 'Kunne ikke hente push-konfiguration');
+      vapidPublicKey = r.vapidPublicKey;
+    }
     const appServerKey   = _urlBase64ToUint8Array(vapidPublicKey);
 
     const reg = await navigator.serviceWorker.ready;
@@ -3136,35 +3166,30 @@ function _haandterPushMessage(evt) {
    ================================================================ */
 
 function adKomm() {
+  const cfWorkerOk = CONFIG.pushWorkerUrl && !CONFIG.pushWorkerUrl.startsWith('INDSÆT');
   return `
 <div class="ad-hd">
   <h2>📢 Kommunikation og push-notifikationer</h2>
   <p class="muted mb1">Automatiske og manuelle beskeder til deltagere og erhvervsmedlemmer.</p>
 </div>
 
-<!-- Push-notifikationer status -->
-<div class="ad-sek">
-  <h3 class="ad-sek-h">🔔 Web Push-notifikationer</h3>
+<!-- CF Worker status -->
+<div class="ad-sek" style="border-left:4px solid ${cfWorkerOk ? '#22c55e' : '#b8973a'}">
+  <h3 class="ad-sek-h">🔔 Web Push — Cloudflare Worker (v8.6)</h3>
   <div class="push-info-boks">
-    <p><strong>Hvad er Web Push?</strong> Rigtige push-notifikationer via browseren — gratis, ingen app-store nødvendig.</p>
-    <ul class="push-support-liste">
+    <p><strong>${cfWorkerOk ? '✅ Cloudflare Worker er konfigureret' : '⚠️ Cloudflare Worker er ikke konfigureret endnu'}</strong></p>
+    ${cfWorkerOk
+      ? `<p>Push-notifikationer sendes via CF Worker med rigtig ECDSA ES256-signering og AES-128-GCM kryptering. URL: <code>${CONFIG.pushWorkerUrl}</code></p>`
+      : `<p>Sæt <code>CONFIG.pushWorkerUrl</code> i app.js til din CF Worker URL. Se installationsvejledningen.</p><p>E-mail via Brevo bruges som fallback indtil CF Worker er deployeret.</p>`
+    }
+    <ul class="push-support-liste" style="margin-top:.75rem">
       <li>✅ Chrome (Android, Windows, Mac, Linux)</li>
       <li>✅ Firefox (Android, Windows, Mac)</li>
       <li>✅ Safari (macOS 13+, iOS 16.4+ — kræver hjemmeskærm-installation)</li>
       <li>✅ Edge (Windows, Mac)</li>
-      <li>⚠️ <em>E-mail bruges automatisk som fallback</em></li>
+      <li>📧 <em>E-mail bruges automatisk som fallback</em></li>
     </ul>
   </div>
-
-  <div class="push-vapid-note">
-    <strong>⚠️ Teknisk note — VAPID-signering:</strong><br>
-    Apps Script understøtter ikke ECDSA (ES256), som kræves af Web Push RFC 8292.
-    Push-endpoints (FCM, Mozilla, Apple) vil afvise requests med HMAC-signeret JWT.<br>
-    <strong>Anbefalet løsning:</strong> Brug en Cloudflare Worker som VAPID-proxy
-    (gratis, 100.000 kald/dag). Se <code>_sendVapidPush()</code> i Code.gs for detaljer.<br>
-    <em>Alternativt:</em> E-mail via Brevo dækker alle tilfælde frem til VAPID-løsning er implementeret.
-  </div>
-
   <div style="margin-top:1rem">
     <h4>Aktive push-abonnementer</h4>
     <div id="push-abonnenter-vis">Henter…</div>
@@ -3174,8 +3199,8 @@ function adKomm() {
 
 <!-- Automatiske påmindelser -->
 <div class="ad-sek">
-  <h3 class="ad-sek-h">⏰ Automatiske påmindelser (v8.5)</h3>
-  <p class="muted mb1">Påmindelserne sendes automatisk via en daglig trigger i Apps Script.</p>
+  <h3 class="ad-sek-h">⏰ Automatiske påmindelser</h3>
+  <p class="muted mb1">Påmindelserne sendes automatisk via en daglig trigger i Apps Script (e-mail + push).</p>
   <div class="paamind-grid">
     <div class="paamind-kort">
       <strong>7 dage før tilmeldingsfristen</strong><br>
@@ -3190,7 +3215,6 @@ function adKomm() {
       <span class="muted" style="font-size:.85rem">E-mail + push til alle tilmeldte</span>
     </div>
   </div>
-
   <h4 style="margin-top:1.5rem">Forventede udsendelser (næste 30 dage)</h4>
   <div id="paamind-preview-vis">Henter…</div>
   <button class="knap-sek sm" onclick="hentPaamindPreview()">Opdater preview</button>
@@ -3199,13 +3223,21 @@ function adKomm() {
 <!-- Manuel besked -->
 <div class="ad-sek">
   <h3 class="ad-sek-h">✉️ Send manuel besked</h3>
-  <p class="muted mb1">Vælg målgruppe og skriv besked. Tilmeldte deltagere modtager ikke opfordringer til at tilmelde sig.</p>
+  <p class="muted mb1">Vælg målgruppe, kanal og skriv besked. Tilmeldte deltagere modtager ikke opfordringer til tilmelding.</p>
   <form onsubmit="sendManuelBesked(event)">
     <div class="form-row">
       <label>Målgruppe</label>
       <select id="mb-maalgruppe" class="input-felt">
         <option value="alle_medl">Alle erhvervsmedlemmer</option>
         <option value="">— Eller vælg specifikt arrangement —</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <label>Kanal</label>
+      <select id="mb-kanal" class="input-felt">
+        <option value="begge">E-mail + push (begge)</option>
+        <option value="email">Kun e-mail</option>
+        <option value="push">Kun push-notifikation</option>
       </select>
     </div>
     <div class="form-row">
@@ -3216,12 +3248,6 @@ function adKomm() {
       <label>Indhold</label>
       <textarea id="mb-indhold" class="input-felt" rows="6" placeholder="Skriv beskeden her…" required></textarea>
     </div>
-    <div class="form-row">
-      <label class="check-label">
-        <input type="checkbox" id="mb-push" checked>
-        Send også push-notifikation (til abonnenter i målgruppen)
-      </label>
-    </div>
     <div style="display:flex;gap:.75rem;flex-wrap:wrap;margin-top:1rem">
       <button type="submit" class="knap-p">Send besked</button>
       <button type="button" class="knap-sek" onclick="sendTestBesked()">Send testbesked</button>
@@ -3230,17 +3256,33 @@ function adKomm() {
   </form>
 </div>
 
+<!-- Testbesked kanal-valg -->
+<div class="ad-sek">
+  <h3 class="ad-sek-h">🧪 Testbesked</h3>
+  <p class="muted mb1">Sendes kun til testadresse (TEST_EMAIL i Script Properties). Aldrig til rigtige medlemmer.</p>
+  <div class="form-row">
+    <label>Kanal til test</label>
+    <select id="test-kanal" class="input-felt">
+      <option value="begge">E-mail + push (begge)</option>
+      <option value="email">Kun e-mail</option>
+      <option value="push">Kun push</option>
+    </select>
+  </div>
+  <button class="knap-sek" onclick="sendTestBesked()" style="margin-top:.5rem">Send testbesked nu</button>
+  <div id="test-status" class="form-status" style="margin-top:.5rem"></div>
+</div>
+
 <!-- Nyt arrangement push -->
 <div class="ad-sek">
   <h3 class="ad-sek-h">🆕 Besked om nyt arrangement</h3>
-  <p class="muted mb1">Send push-notifikation til alle abonnenter om et nyt arrangement. Allerede tilmeldte modtager ikke denne besked.</p>
+  <p class="muted mb1">Send push + e-mail til alle abonnenter om et nyt arrangement. Allerede tilmeldte modtager ikke denne besked.</p>
   <div class="form-row">
     <label>Arrangement</label>
     <select id="ny-arr-sel" class="input-felt">
       <option value="">Vælg arrangement…</option>
     </select>
   </div>
-  <button class="knap-p" onclick="sendNyArrBesked()" style="margin-top:.75rem">Send push-besked</button>
+  <button class="knap-p" onclick="sendNyArrBesked()" style="margin-top:.75rem">Send besked</button>
   <div id="ny-arr-status" class="form-status" style="margin-top:.75rem"></div>
 </div>
 
@@ -3306,23 +3348,24 @@ async function hentPaamindPreview() {
 
 async function sendManuelBesked(evt) {
   evt.preventDefault();
-  const statusEl  = document.getElementById('mb-status');
+  const statusEl   = document.getElementById('mb-status');
   const maalgruppe = document.getElementById('mb-maalgruppe')?.value || 'alle_medl';
+  const kanal      = document.getElementById('mb-kanal')?.value || 'begge';
   const emne       = document.getElementById('mb-emne')?.value?.trim() || '';
   const indhold    = document.getElementById('mb-indhold')?.value?.trim() || '';
-  const inkluderPush = document.getElementById('mb-push')?.checked ?? true;
 
   if (!emne || !indhold) {
     if (statusEl) statusEl.innerHTML = '<span style="color:#ef4444">Udfyld emne og indhold.</span>';
     return;
   }
 
-  if (!confirm(`Bekræft: Send e-mail til "${maalgruppe === 'alle_medl' ? 'alle erhvervsmedlemmer' : 'valgte deltagere'}"?\n\nEmne: ${emne}`))
+  const kanalTekst = kanal === 'email' ? 'kun e-mail' : kanal === 'push' ? 'kun push' : 'e-mail + push';
+  if (!confirm(`Bekræft: Send besked (${kanalTekst}) til "${maalgruppe === 'alle_medl' ? 'alle erhvervsmedlemmer' : 'valgte deltagere'}"?\n\nEmne: ${emne}`))
     return;
 
   if (statusEl) statusEl.textContent = 'Sender…';
   try {
-    const r = await adminFetch({ action: 'adminSendManuelBesked', maalgruppe, emne, indhold, inkluderPush });
+    const r = await adminFetch({ action: 'adminSendManuelBesked', maalgruppe, emne, indhold, kanal });
     if (!r.ok) throw new Error(r.fejl);
     if (statusEl) statusEl.innerHTML = `<span style="color:#22c55e">✓ Sendt til ${r.modtagere} modtagere (${r.emailSendt} e-mails, ${r.pushSendt} push).</span>`;
   } catch(e) {
@@ -3331,15 +3374,16 @@ async function sendManuelBesked(evt) {
 }
 
 async function sendTestBesked() {
-  const statusEl = document.getElementById('mb-status');
-  const emne     = document.getElementById('mb-emne')?.value?.trim() || 'Testbesked';
-  const indhold  = document.getElementById('mb-indhold')?.value?.trim() || 'Testindhold';
+  const statusEl = document.getElementById('test-status') || document.getElementById('mb-status');
+  const kanal    = document.getElementById('test-kanal')?.value || 'begge';
+  const emne     = document.getElementById('mb-emne')?.value?.trim() || 'Testbesked v8.6';
+  const indhold  = document.getElementById('mb-indhold')?.value?.trim() || 'Dette er en testbesked fra LYG Erhvervsklub v8.6';
 
   if (statusEl) statusEl.textContent = 'Sender testbesked…';
   try {
-    const r = await adminFetch({ action: 'adminSendTestBesked', emne, indhold, type: 'manuel' });
+    const r = await adminFetch({ action: 'adminSendTestBesked', emne, indhold, kanal, type: 'manuel' });
     if (!r.ok) throw new Error(r.fejl || 'Sæt TEST_EMAIL i Script Properties');
-    if (statusEl) statusEl.innerHTML = `<span style="color:#22c55e">✓ Testbesked sendt til ${esc(r.testEmail)}</span>`;
+    if (statusEl) statusEl.innerHTML = `<span style="color:#22c55e">✓ Testbesked (${kanal}) sendt til ${esc(r.testEmail)}</span>`;
   } catch(e) {
     if (statusEl) statusEl.innerHTML = `<span style="color:#ef4444">Fejl: ${esc(e.message)}</span>`;
   }

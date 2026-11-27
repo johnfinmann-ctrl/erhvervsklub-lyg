@@ -1,5 +1,5 @@
 /* ================================================================
-   Lyngbygaard Erhvervsklub — Service Worker v8.5
+   Lyngbygaard Erhvervsklub — Service Worker v8.6
 
    VERSIONSSTYRING:
    Skift CACHE_VERSION ved hver GitHub-upload.
@@ -11,14 +11,14 @@
    · Offline fallback → cached index.html
    ================================================================ */
 
-const CACHE_VERSION = 'lyg-erhverv-v8.5';
+const CACHE_VERSION = 'lyg-erhverv-v8.6';
 const BASE          = self.registration.scope;
 
 const PRECACHE_URLS = [
   BASE + 'index.html',
-  BASE + 'style.css?v=8.5',
-  BASE + 'app.js?v=8.5',
-  BASE + 'manifest.json?v=8.5',
+  BASE + 'style.css?v=8.6',
+  BASE + 'app.js?v=8.6',
+  BASE + 'manifest.json?v=8.6',
   BASE + 'icons/icon-192.png',
   BASE + 'icons/icon-512.png',
   BASE + 'images/golfer-1-address.png',
