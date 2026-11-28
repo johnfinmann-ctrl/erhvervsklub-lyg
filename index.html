@@ -20,11 +20,11 @@
   <title>LYG Erhvervsklub</title>
 
   <!-- PWA -->
-  <link rel="manifest" href="./manifest.json?v=8.9">
+  <link rel="manifest" href="./manifest.json?v=8.9.1">
   <link rel="apple-touch-icon" href="./icons/icon-192.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
 
-  <link rel="stylesheet" href="./style.css?v=8.9">
+  <link rel="stylesheet" href="./style.css?v=8.9.1">
 </head>
 <body>
 
@@ -38,7 +38,7 @@
        style="border-radius:50%;border:3px solid #b8973a;"
        onerror="this.style.display='none'">
   <div style="color:#b8973a;font-size:1.1rem;font-weight:800;letter-spacing:.12em;">ERHVERVSKLUBBEN</div>
-  <div style="color:rgba(245,240,230,.5);font-size:.75rem;">v8.9</div>
+  <div style="color:rgba(245,240,230,.5);font-size:.75rem;">v8.9.1</div>
 </div>
 
 <!-- ══ INTRO OVERLAY (golf-kugle animation) ════════════════════ -->
@@ -53,8 +53,49 @@
   </div>
 </div>
 
+<!-- ══ TOP-NAVIGATION (vist kun på PC via CSS) ══════════════════ -->
+<nav id="top-nav" class="top-nav bot-nav-hidden" role="navigation" aria-label="Topnavigation">
+  <div class="top-nav-inner">
+    <button class="top-nav-logo" onclick="navTil('forside')" aria-label="Forside">
+      <img src="./images/lyg-logo-transparent.png" alt="LYG" width="36" height="36"
+           onerror="this.style.display='none'">
+      <span>LYG ERHVERVSKLUB</span>
+    </button>
+    <div class="top-nav-links" role="list">
+      <button class="tn-link aktiv" data-side="forside" role="listitem" onclick="navTil('forside')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Forside
+      </button>
+      <button class="tn-link" data-side="kalender" role="listitem" onclick="navTil('kalender')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Kalender
+      </button>
+      <button class="tn-link" data-side="tilmelding" role="listitem" onclick="navTil('tilmelding')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+        Tilmeld
+      </button>
+      <button class="tn-link" data-side="golfarr" role="listitem" onclick="navTil('golfarr')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="6" r="3"/><path d="M12 9v12"/><path d="M9 21h6"/></svg>
+        EK-Golf
+      </button>
+      <button class="tn-link" data-side="om" role="listitem" onclick="navTil('om')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Om EK
+      </button>
+      <button class="tn-link" data-side="nyheder" role="listitem" onclick="navTil('nyheder')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/></svg>
+        Nyheder
+      </button>
+      <button class="tn-link" data-side="kontakt" role="listitem" onclick="navTil('kontakt')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13.6 19.79 19.79 0 0 1 1.61 5a2 2 0 0 1 1.99-2H6.6a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 10.5a16 16 0 0 0 6 6l.94-.94a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 21.73 18z"/></svg>
+        Kontakt
+      </button>
+    </div>
+  </div>
+</nav>
+
 <!-- ══ APP WRAPPER ═════════════════════════════════════════════ -->
-<div id="app-wrap">
+<div id="app-wrap" class="app-wrap">
 
   <!-- Informationsbjælke (næste arrangement) -->
   <div id="info-bjaelke" role="banner" aria-label="Næste arrangement"></div>
@@ -69,7 +110,7 @@
   <main id="main-content" role="main" aria-label="Sideindhold"></main>
 
   <!-- ══ BUNDNAVIGATION ══════════════════════════════════════════ -->
-  <nav id="bottom-nav" role="navigation" aria-label="Primær navigation">
+  <nav id="bottom-nav" class="bot-nav" role="navigation" aria-label="Primær navigation">
 
     <!-- Forside -->
     <button class="nav-item active" data-side="forside" aria-label="Forside">
@@ -174,7 +215,7 @@
   </div>
 </div>
 
-<script src="./app.js?v=8.9"></script>
+<script src="./app.js?v=8.9.1"></script>
 
 <script>
 // Oversigt-knap aktiverer menu i stedet for tom side

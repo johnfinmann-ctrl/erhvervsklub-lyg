@@ -1,5 +1,5 @@
 /* ================================================================
-   LYNGBYGAARD ERHVERVSKLUB — app.js v8.9
+   LYNGBYGAARD ERHVERVSKLUB — app.js v8.9.1
    Al konfiguration samlet øverst. Ret her – ingen andre steder.
 
    CHANGELOG v8.9:
@@ -83,20 +83,21 @@ const CONFIG = {
 
 /* ================================================================
    10 OFFICIELLE ARRANGEMENTER SÆSON 2027
-   Baseret på EK's historiske program — verificerede tider og steder.
+   Kilde: lyg.dk/erhverv/ — kun verificerede data.
+   Manglende oplysninger er markeret "Information følger".
    ================================================================ */
 const ARR_2027 = [
   {
     id: 'e27-01',
     dato: '2027-02-03',
-    tid: '17.00–21.00',
-    titel: 'SIM Golf — Vinter Netværk',
-    sted: 'Golfarena Aarhus, Hasselager Centervej 1',
+    tid: 'Information følger',
+    titel: 'SIM-Golf',
+    sted: 'Information følger',
     type: 'Golf / Netværk',
-    besk: 'Årets første erhvervsarrangement. Netværk og konkurrence på indoor simulator-bane med middag og hygge efterfølgende.',
-    maks: 24,
-    frist: '2027-01-27',
-    pris: 'Inkl. i medlemskabet',
+    besk: 'Indoor golf på simulator. Netværk og konkurrence i trygge rammer — ideel til vinternetværk.',
+    maks: null,
+    frist: null,
+    pris: 'Information følger',
     aaben: true,
     status: 'aktiv',
     billede: ''
@@ -104,104 +105,107 @@ const ARR_2027 = [
   {
     id: 'e27-02',
     dato: '2027-03-03',
-    tid: '17.00–21.00',
-    titel: 'SIM Golf — Forårsrunde',
-    sted: 'Golfarena Aarhus, Hasselager Centervej 1',
+    tid: 'Information følger',
+    titel: 'SIM-Golf',
+    sted: 'Information følger',
     type: 'Golf / Netværk',
-    besk: 'Anden runde på indoor simulator inden sæsonstarten. Konkurrence, netværk og forplejning.',
-    maks: 24,
-    frist: '2027-02-24',
-    pris: 'Inkl. i medlemskabet',
+    besk: 'Anden runde med indoor golf på simulator. God mulighed for netværk inden udendørssæsonens start.',
+    maks: null,
+    frist: null,
+    pris: 'Information følger',
     aaben: true,
     status: 'aktiv',
     billede: ''
   },
   {
     id: 'e27-03',
-    dato: '2027-04-14',
-    tid: '15.00–20.00',
-    titel: 'Sæsonåbning — Første Runde',
-    sted: 'Lyngbygaard Golf, Lyngbygårdsvej 29, Brabrand',
-    type: 'Golf / Netværk',
-    besk: 'Officiel åbning af golfsæsonen 2027 for erhvervsklubben. Networking, golf og festlig middag i Brasseriet.',
-    maks: 48,
-    frist: '2027-04-07',
-    pris: 'Inkl. i medlemskabet',
+    dato: '2027-03-09',
+    tid: 'Information følger',
+    titel: 'TrygFondens Familiehus på AUH, Skejby',
+    sted: 'TrygFondens Familiehus, AUH Skejby',
+    type: 'Netværk / Besøg',
+    besk: 'Erhvervsklubbens besøg hos TrygFondens Familiehus på Aarhus Universitetshospital i Skejby.',
+    maks: null,
+    frist: null,
+    pris: 'Information følger',
     aaben: true,
     status: 'aktiv',
     billede: ''
   },
   {
     id: 'e27-04',
-    dato: '2027-05-07',
-    tid: '10.00–17.00',
-    titel: 'Hjemmekamp mod Himmerland BC',
-    sted: 'Lyngbygaard Golf, Lyngbygårdsvej 29, Brabrand',
-    type: 'Golf / Venskabskamp',
-    besk: 'Traditionsrig venskabskamp mod Himmerland Business Club. Rytterspil, forplejning og netværk med naboklubben.',
-    maks: 40,
-    frist: '2027-04-30',
-    pris: 'Inkl. i medlemskabet',
+    dato: '2027-04-02',
+    tid: 'Information følger',
+    titel: 'GNAGS-koncert med påhæng inkl. middag',
+    sted: 'Information følger',
+    type: 'Kultur / Socialt',
+    besk: 'Aften med GNAGS-koncert og middag — en hyggelig og uformel oplevelse for erhvervsklubbens medlemmer.',
+    maks: null,
+    frist: null,
+    pris: 'Information følger',
     aaben: true,
     status: 'aktiv',
     billede: ''
   },
   {
     id: 'e27-05',
-    dato: '2027-05-29',
-    tid: '',
-    titel: 'Udlandsrejse — Skotland 2027',
-    sted: 'Skotland (Royal Troon / Turnberry)',
+    dato: '2027-04-17',
+    datoSlut: '2027-04-20',
+    tid: 'Information følger',
+    titel: 'Rom, Marco Simone',
+    sted: 'Marco Simone Golf & Country Club, Rom',
     type: 'Golfrejse',
-    besk: 'Årets udlandsrejse til Skotland 29. maj – 1. juni. Golf på legendariske baner, skotsk whisky og uforglemmelige oplevelser.',
-    maks: 20,
-    frist: '2027-04-15',
-    pris: 'Pris oplyses ved tilmelding',
+    besk: 'Firedages golfrejse til Marco Simone Golf & Country Club i Rom — stedet for Ryder Cup 2023.',
+    maks: null,
+    frist: null,
+    pris: 'Information følger',
     aaben: true,
     status: 'aktiv',
     billede: ''
   },
   {
     id: 'e27-06',
-    dato: '2027-06-10',
-    tid: '15.00–21.00',
-    titel: 'Sommerturnering & Netværksmiddag',
-    sted: 'Lyngbygaard Golf, Lyngbygårdsvej 29, Brabrand',
-    type: 'Turnering / Netværk',
-    besk: 'Erhvervsklubbens store sommerturnering med efterfølgende gala-middag. Årets sportslige og sociale højdepunkt før sommerferien.',
-    maks: 72,
-    frist: '2027-06-03',
-    pris: 'Inkl. i medlemskabet',
+    dato: '2027-05-12',
+    tid: 'Information følger',
+    titel: 'Tange Sø',
+    sted: 'Tange Sø',
+    type: 'Golf / Natur',
+    besk: 'Arrangement ved Tange Sø — Danmarks største indsø. Information om program og indhold følger.',
+    maks: null,
+    frist: null,
+    pris: 'Information følger',
     aaben: true,
     status: 'aktiv',
     billede: ''
   },
   {
     id: 'e27-07',
-    dato: '2027-08-19',
-    tid: '10.00–18.00',
-    titel: 'Danish Golf Championship — VIP',
-    sted: 'Great Northern Golf Club',
-    type: 'Golfoplevelse / VIP',
-    besk: 'Se Danmarksmesterskabet i golf fra VIP-tribunen med erhvervsklubben. Eksklusive faciliter, forplejning og netværk.',
-    maks: 30,
-    frist: '2027-08-05',
-    pris: 'Pris oplyses ved tilmelding',
+    dato: '2027-06-08',
+    datoSlut: '2027-06-09',
+    tid: 'Information følger',
+    titel: 'Barsebäck',
+    sted: 'Barsebäck Golf & Country Club, Sverige',
+    type: 'Golfrejse',
+    besk: 'Todages golftur til Barsebäck Golf & Country Club i Sverige — klassisk bane med fin atmosfære.',
+    maks: null,
+    frist: null,
+    pris: 'Information følger',
     aaben: true,
     status: 'aktiv',
     billede: ''
   },
   {
     id: 'e27-08',
-    dato: '2027-09-03',
-    tid: '',
-    titel: 'Jyllandstur 2027',
-    sted: 'Nordvestjysk & Holstebro Golfklub',
+    dato: '2027-09-07',
+    datoSlut: '2027-09-08',
+    tid: 'Information følger',
+    titel: 'Esbjerg (Marbæk)',
+    sted: 'Marbæk Golfklub, Esbjerg',
     type: 'Golfrejse',
-    besk: 'Todages golftur til Jylland 3.–4. september. Golf på to flotte jyske baner, fælles middag og god kammeratskab.',
-    maks: 24,
-    frist: '2027-08-20',
-    pris: 'Pris oplyses ved tilmelding',
+    besk: 'Todages golftur til Marbæk Golfklub ved Esbjerg — links-golf med Vesterhavet som kulisse.',
+    maks: null,
+    frist: null,
+    pris: 'Information følger',
     aaben: true,
     status: 'aktiv',
     billede: ''
@@ -209,29 +213,29 @@ const ARR_2027 = [
   {
     id: 'e27-09',
     dato: '2027-10-08',
-    tid: '10.00–17.00',
-    titel: 'EK-Mesterskaberne 2027',
-    sted: 'Silkeborg Ry Golfklub',
+    tid: 'Information følger',
+    titel: 'EK-Mesterskaber i Lyngbygaard',
+    sted: 'Lyngbygaard Golf',
     type: 'Mesterskab',
-    besk: 'Erhvervsklubbens eget mesterskab på Silkeborg Ry Golfklub. Hvem løfter pokalen i 2027? Konkurrence, præmier og festlig eftermiddag.',
-    maks: 48,
-    frist: '2027-10-01',
-    pris: 'Inkl. i medlemskabet',
+    besk: 'Erhvervsklubbens eget mesterskab afholdes på hjemmebanen Lyngbygaard Golf. Hvem løfter trofæet i 2027?',
+    maks: null,
+    frist: null,
+    pris: 'Information følger',
     aaben: true,
     status: 'aktiv',
     billede: ''
   },
   {
     id: 'e27-10',
-    dato: '2027-11-19',
-    tid: '17.00–23.00',
-    titel: 'Julefrokost & Gokart 2027',
-    sted: 'Racehall Aarhus / Tangkrogen',
+    dato: '2027-11-26',
+    tid: 'Information følger',
+    titel: 'Julefrokost',
+    sted: 'Information følger',
     type: 'Socialt arrangement',
-    besk: 'Årets hyggeligste event! Gokart-konkurrence, julefrokost og fest. En festlig afslutning på erhvervsåret 2027.',
-    maks: 60,
-    frist: '2027-11-05',
-    pris: 'Pris oplyses ved tilmelding',
+    besk: 'Årets afsluttende julefrokost for Lyngbygaard Erhvervsklub. En hyggelig og festlig aften der markerer årets afslutning.',
+    maks: null,
+    frist: null,
+    pris: 'Information følger',
     aaben: true,
     status: 'aktiv',
     billede: ''
@@ -357,9 +361,12 @@ function navTil(side, params = {}) {
   // Scroll til top
   window.scrollTo(0,0);
 
-  // Opdater nav
+  // Opdater bottom-nav og top-nav active state
   document.querySelectorAll('#bottom-nav .nav-item').forEach(b => {
     b.classList.toggle('active', b.dataset.side === side);
+  });
+  document.querySelectorAll('#top-nav .tn-link').forEach(b => {
+    b.classList.toggle('aktiv', b.dataset.side === side);
   });
 
   // Render side
@@ -399,6 +406,7 @@ function efterRender(side, params) {
   }
   if (side === 'forside') {
     hentForsideTilmelding();
+    setTimeout(heroInit, 100);
   }
 }
 
@@ -425,58 +433,111 @@ function opdaterInfoBjaelke() {
 }
 
 /* ================================================================
-   FORSIDE
+   FORSIDE — v8.9.1
    ================================================================ */
 function pgForside(params = {}) {
   const naest = naestArr();
   const arr = hentAktiveArr();
-  const kommende = arr.filter(a => a.dato >= new Date().toISOString().slice(0,10)).slice(0,3);
+  const idag = new Date().toISOString().slice(0,10);
+  const kommende = arr.filter(a => a.dato >= idag).slice(0,4);
+
+  /* Ken Burns hero — 4 billeder, 5 sekunders overgang */
+  const heroBilleder = [
+    CONFIG.billeder.hero,
+    CONFIG.billeder.arr,
+    CONFIG.billeder.ek,
+    CONFIG.billeder.klubhus
+  ];
 
   return `
 <div class="side-forside">
 
-  <!-- Hero -->
-  <div class="hero-wrap">
-    <div class="hero-bg" style="background-image:url('${CONFIG.billeder.hero}')"></div>
-    <div class="hero-overlay"></div>
+  <!-- ══ HERO (Ken Burns 4-foto slideshow) ══ -->
+  <div class="hero-wrap" id="hero-wrap">
+    <div class="hero-slides" id="hero-slides">
+      ${heroBilleder.map((src, i) => `
+      <div class="hero-slide ${i===0?'aktiv':''}" style="background-image:url('${src}')" aria-hidden="${i!==0}"></div>`).join('')}
+    </div>
+    <div class="hero-gradient"></div>
     <div class="hero-content">
       <div class="hero-logo-wrap">
-        <img src="${CONFIG.billeder.logo}" alt="LYG Logo" class="hero-logo" onerror="this.style.display='none'">
+        <img src="${CONFIG.billeder.logo}" alt="Lyngbygaard Golf logo" class="hero-logo" onerror="this.style.display='none'">
       </div>
-      <p class="hero-over">LYNGBYGAARD GOLF</p>
-      <h1 class="hero-titel">ERHVERVSKLUBBEN</h1>
-      <p class="hero-sub">Golf · Relationer · Forretning</p>
+      <p class="hero-eyebrow">LYNGBYGAARD GOLF · ERHVERVSKLUBBEN</p>
+      <h1 class="hero-titel-serif">MERE END GOLF</h1>
+      <p class="hero-tagline">Stærke relationer. Nye muligheder. Fælles oplevelser.</p>
+      <div class="hero-cta-gruppe">
+        <button class="hero-cta-p" onclick="navTil('kalender')">Arrangementer 2027</button>
+        <button class="hero-cta-s" onclick="navTil('om')">Bliv en del af netværket</button>
+      </div>
+    </div>
+    <div class="hero-prikker" id="hero-prikker">
+      ${heroBilleder.map((_,i) => `<button class="hero-prik ${i===0?'aktiv':''}" onclick="heroSkift(${i})" aria-label="Billede ${i+1}"></button>`).join('')}
     </div>
   </div>
 
-  <!-- Næste arrangement — PRIMÆR CTA -->
-  ${naest ? `
-  <div class="naest-arr-banner" onclick="navTil('kalender', {id:'${naest.id}'})">
-    <div class="nab-top">
-      <span class="nab-label">NÆSTE ARRANGEMENT</span>
-      <span class="nab-badge">${(() => { const d = dageHidtil(naest.dato); return d === 0 ? 'I DAG' : d === 1 ? 'OM 1 DAG' : `OM ${d} DAGE`; })()}</span>
+  <!-- PC-layout: næste arr + kommende side om side -->
+  <div class="forside-pc-grid">
+
+    <!-- Næste arrangement — PRIMÆR CTA -->
+    <div class="naest-arr-kolonne">
+      ${naest ? `
+      <div class="naest-arr-banner" onclick="navTil('kalender',{id:'${naest.id}'})">
+        <div class="nab-top">
+          <span class="nab-label">NÆSTE ARRANGEMENT</span>
+          <span class="nab-badge">${(() => { const d = dageHidtil(naest.dato); return d === 0 ? 'I DAG' : d === 1 ? 'OM 1 DAG' : `OM ${d} DAGE`; })()}</span>
+        </div>
+        <h2 class="nab-titel">${esc(naest.titel)}</h2>
+        <div class="nab-meta">
+          <span class="nab-meta-item">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            ${datoStr(naest.dato)}
+          </span>
+          ${naest.tid && naest.tid !== 'Information følger' ? `<span class="nab-meta-item">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            ${esc(naest.tid)}
+          </span>` : ''}
+          ${naest.sted && naest.sted !== 'Information følger' ? `<span class="nab-meta-item">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            ${esc(naest.sted)}
+          </span>` : ''}
+        </div>
+        <p class="nab-besk">${esc(naest.besk)}</p>
+        <div class="nab-cta-wrap">
+          <button class="knap-p nab-cta" onclick="event.stopPropagation();navTil('tilmelding',{id:'${naest.id}'})">Tilmeld dig</button>
+          <button class="knap-sek nab-info" onclick="event.stopPropagation();navTil('kalender',{id:'${naest.id}'})">Læs mere</button>
+        </div>
+      </div>` : `
+      <div class="naest-arr-banner ingen-arr">
+        <p class="nab-label">SÆSON 2027</p>
+        <h2 class="nab-titel">10 arrangementer klar</h2>
+        <button class="knap-p" onclick="navTil('kalender')">Se årskalender</button>
+      </div>`}
     </div>
-    <h2 class="nab-titel">${esc(naest.titel)}</h2>
-    <div class="nab-meta">
-      <span>📅 ${datoStr(naest.dato)}</span>
-      ${naest.tid ? `<span>🕐 ${esc(naest.tid)}</span>` : ''}
-      <span>📍 ${esc(naest.sted)}</span>
+
+    <!-- Kommende arrangementer (mini-liste) -->
+    <div class="kommende-kolonne">
+      <div class="forside-sek kommende-sek">
+        <h2 class="sek-h">Årskalender 2027</h2>
+        <div class="mini-arr-liste">
+          ${kommende.map(a => `
+          <div class="mini-arr-kort ${naest && a.id === naest.id ? 'naest-fremhaevet' : ''}" onclick="navTil('kalender',{id:'${a.id}'})">
+            <div class="mak-dato">
+              <span class="mak-dag">${new Date(a.dato+'T12:00:00').getDate()}</span>
+              <span class="mak-mdr">${new Date(a.dato+'T12:00:00').toLocaleDateString('da-DK',{month:'short'})}</span>
+            </div>
+            <div class="mak-info">
+              <strong class="mak-titel">${esc(a.titel)}</strong>
+              <span class="mak-type">${esc(a.type)}</span>
+            </div>
+            <svg class="mak-pil" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </div>`).join('')}
+        </div>
+        <button class="knap-sek full-w" onclick="navTil('kalender')">Se alle 10 arrangementer</button>
+      </div>
     </div>
-    <p class="nab-besk">${esc(naest.besk)}</p>
-    <div class="nab-cta-wrap">
-      <button class="knap-p nab-cta" onclick="event.stopPropagation();navTil('tilmelding',{id:'${naest.id}'})">
-        TILMELD DIG →
-      </button>
-      <button class="knap-sek nab-info" onclick="event.stopPropagation();navTil('kalender',{id:'${naest.id}'})">
-        Læs mere
-      </button>
-    </div>
-  </div>` : `
-  <div class="naest-arr-banner ingen-arr">
-    <p class="nab-label">SÆSON 2027</p>
-    <h2 class="nab-titel">Alle 10 arrangementer er klar</h2>
-    <button class="knap-p" onclick="navTil('kalender')">SE ÅRSKALENDER →</button>
-  </div>`}
+
+  </div><!-- /forside-pc-grid -->
 
   <!-- Stats -->
   <div class="stats-bjaelke">
@@ -487,50 +548,44 @@ function pgForside(params = {}) {
     <div class="stat-item"><span class="stat-tal">35+</span><span class="stat-lbl">Års tradition</span></div>
   </div>
 
-  <!-- Kommende events (mini) -->
-  ${kommende.length ? `
-  <div class="forside-sek">
-    <h2 class="sek-h">Kommende arrangementer</h2>
-    <div class="mini-arr-liste">
-      ${kommende.map(a => `
-      <div class="mini-arr-kort" onclick="navTil('kalender',{id:'${a.id}'})">
-        <div class="mak-dato">
-          <span class="mak-dag">${new Date(a.dato+'T12:00:00').getDate()}</span>
-          <span class="mak-mdr">${new Date(a.dato+'T12:00:00').toLocaleDateString('da-DK',{month:'short'})}</span>
-        </div>
-        <div class="mak-info">
-          <strong class="mak-titel">${esc(a.titel)}</strong>
-          <span class="mak-type">${esc(a.type)}</span>
-        </div>
-        <svg class="mak-pil" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-      </div>`).join('')}
-    </div>
-    <button class="knap-sek full-w" onclick="navTil('kalender')">Se alle 10 arrangementer →</button>
-  </div>` : ''}
-
   <!-- Om EK -->
   <div class="forside-sek om-ek-sek">
     <h2 class="sek-h">Mere end golf</h2>
     <p class="sek-p">Erhvervsklubben samler virksomheder og beslutningstagere i Aarhus-regionen om relationer, netværk og golf. Med over 100 erhvervsmedlemmer er vi et af regionens stærkeste forretningsnetværk.</p>
     <div class="om-punkter-grid">
-      <div class="om-p"><span class="om-ikon">🤝</span><strong>Netværk</strong><span>100+ virksomheder</span></div>
-      <div class="om-p"><span class="om-ikon">⛳</span><strong>Golf & sport</strong><span>Turneringer og rejser</span></div>
-      <div class="om-p"><span class="om-ikon">🏆</span><strong>EK-Mesterskabet</strong><span>Årets høydepunkt</span></div>
-      <div class="om-p"><span class="om-ikon">📅</span><strong>10 events/år</strong><span>Fra SIM til julefrokost</span></div>
+      <div class="om-p">
+        <svg class="om-ikon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <strong>Netværk</strong><span>100+ virksomheder</span>
+      </div>
+      <div class="om-p">
+        <svg class="om-ikon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+        <strong>Golf & sport</strong><span>Turneringer og rejser</span>
+      </div>
+      <div class="om-p">
+        <svg class="om-ikon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg>
+        <strong>EK-Mesterskabet</strong><span>Årets højdepunkt</span>
+      </div>
+      <div class="om-p">
+        <svg class="om-ikon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <strong>10 events/år</strong><span>Fra SIM til julefrokost</span>
+      </div>
     </div>
-    <button class="knap-sek" onclick="navTil('om')">Om Erhvervsklubben →</button>
+    <button class="knap-sek" onclick="navTil('om')">Om Erhvervsklubben</button>
   </div>
 
   <!-- EK-Golf -->
   <div class="forside-sek ekgolf-sek">
     <h2 class="sek-h">EK-Golf onsdage</h2>
     <p class="sek-p">Meld dig til erhvervsklubbens uformelle onsdagsgolf. Åbent for alle niveauer — fra begynder til rutineret spiller. Socialt og afslappet.</p>
-    <button class="knap-p" onclick="navTil('om')">Læs om EK-Golf →</button>
+    <button class="knap-p" onclick="navTil('om')">Læs om EK-Golf</button>
   </div>
 
   <!-- Push-notifikationer (kun hvis konfigureret) -->
   <div id="push-sektion" style="display:none" class="forside-sek push-sek">
-    <h2 class="sek-h">🔔 Push-notifikationer</h2>
+    <h2 class="sek-h">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      Push-notifikationer
+    </h2>
     <p class="sek-p">Bliv automatisk informeret om nye arrangementer, påmindelser og ændringer — direkte på din telefon.</p>
     <div id="push-status-vis"></div>
     <button class="knap-sek" id="push-knap" onclick="togglePush()">Aktiver notifikationer</button>
@@ -538,18 +593,46 @@ function pgForside(params = {}) {
 
   <!-- Footer -->
   <footer class="app-footer">
-    <div class="footer-logo">
-      <img src="${CONFIG.billeder.logo}" alt="LYG" height="32" onerror="this.style.display='none'">
-      <span>LYG Erhvervsklub</span>
+    <div class="footer-inner">
+      <div class="footer-logo-blok">
+        <img src="${CONFIG.billeder.logo}" alt="LYG" class="footer-logo-img" onerror="this.style.display='none'">
+        <span class="footer-klub-navn">LYG Erhvervsklub</span>
+      </div>
+      <div class="footer-info-blok">
+        <span>${esc(CONFIG.adresse)}</span>
+        <span><a href="tel:${CONFIG.telefon}">${esc(CONFIG.telefon)}</a> · <a href="mailto:${CONFIG.email}">${esc(CONFIG.email)}</a></span>
+        <span><a href="${CONFIG.website}" target="_blank" rel="noopener">lyg.dk</a></span>
+      </div>
+      <div class="footer-credit-blok">
+        <span>Udviklet af <a href="https://nordic-operations.dk" target="_blank" rel="noopener">Nordic Operations</a></span>
+        <span class="footer-ver">v8.9.1</span>
+      </div>
     </div>
-    <p class="footer-adresse">${esc(CONFIG.adresse)}</p>
-    <p class="footer-kontakt"><a href="tel:${CONFIG.telefon}">${esc(CONFIG.telefon)}</a> · <a href="mailto:${CONFIG.email}">${esc(CONFIG.email)}</a></p>
-    <p class="footer-lyg"><a href="${CONFIG.website}" target="_blank" rel="noopener">lyg.dk</a></p>
-    <p class="footer-credit">Udviklet af <a href="https://nordic-operations.dk" target="_blank" rel="noopener">Nordic Operations</a></p>
-    <p class="footer-ver">v8.9</p>
   </footer>
 </div>`;
 }
+
+/* Ken Burns slideshow-controller */
+let _heroTimer = null;
+let _heroAktiv = 0;
+
+function heroInit() {
+  if (_heroTimer) clearInterval(_heroTimer);
+  _heroAktiv = 0;
+  _heroTimer = setInterval(() => heroSkift((_heroAktiv + 1) % 4), 5000);
+}
+
+function heroSkift(idx) {
+  _heroAktiv = idx;
+  document.querySelectorAll('.hero-slide').forEach((el, i) => {
+    el.classList.toggle('aktiv', i === idx);
+    el.setAttribute('aria-hidden', i !== idx);
+  });
+  document.querySelectorAll('.hero-prik').forEach((el, i) => {
+    el.classList.toggle('aktiv', i === idx);
+  });
+}
+
 
 function hentForsideTilmelding() {
   // Vis push-sektion kun hvis CF Worker er konfigureret
@@ -594,9 +677,10 @@ function pgKalender(params = {}) {
           <span class="ak-type-badge">${esc(a.type)}</span>
           <h2 class="ak-titel">${esc(a.titel)}</h2>
           <div class="ak-meta">
-            ${a.tid ? `<span>🕐 ${esc(a.tid)}</span>` : ''}
-            <span>📍 ${esc(a.sted)}</span>
-            ${a.maks ? `<span>👥 Maks ${a.maks} deltagere</span>` : ''}
+            ${a.tid && a.tid !== 'Information følger' ? `<span class="ak-meta-item"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ${esc(a.tid)}</span>` : ''}
+            ${a.sted && a.sted !== 'Information følger' ? `<span class="ak-meta-item"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> ${esc(a.sted)}</span>` : ''}
+            ${a.maks ? `<span class="ak-meta-item"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Maks ${a.maks} deltagere</span>` : ''}
+            ${a.datoSlut ? `<span class="ak-meta-item"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Til ${datoKort(a.datoSlut)}</span>` : ''}
           </div>
         </div>
         ${dage >= 0 && dage <= 7 ? `<span class="ak-haaster">${dage===0?'I DAG':`${dage}d`}</span>` : ''}
@@ -609,7 +693,8 @@ function pgKalender(params = {}) {
         ${fristen ? 'Tilmeldingsfrist udløbet' : `Tilmeldingsfrist: ${datoStr(a.frist)}`}
       </div>` : ''}
 
-      ${a.pris ? `<div class="ak-pris">💳 ${esc(a.pris)}</div>` : ''}
+      ${a.pris && a.pris !== 'Information følger' ? `<div class="ak-pris"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg> ${esc(a.pris)}</div>` : ''}
+      ${a.pris === 'Information følger' ? `<div class="ak-pris info-folger"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Information følger</div>` : ''}
 
       <div class="ak-knapper">
         ${tilmeldt ? `
@@ -620,7 +705,10 @@ function pgKalender(params = {}) {
         ` : `
           <button class="knap-p" onclick="navTil('tilmelding',{id:'${esc(a.id)}'})">Tilmeld dig</button>
         `}
-        <button class="knap-sek sm" onclick="tilfoejKalender('${esc(a.id)}')">📅 Tilføj til kalender</button>
+        <button class="knap-sek sm" onclick="tilfoejKalender('${esc(a.id)}')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Tilføj til kalender
+        </button>
       </div>
 
       <div id="afmeld-dialog-${a.id}" class="afmeld-dialog" style="display:none">
@@ -784,10 +872,10 @@ function opdaterTilmeldFormular(arrId) {
   infoEl.innerHTML = `
     <div class="valgt-arr-info">
       <strong>${esc(valgt.titel)}</strong>
-      <span>📅 ${datoStr(valgt.dato)}${valgt.tid?' · 🕐 '+esc(valgt.tid):''}</span>
-      <span>📍 ${esc(valgt.sted)}</span>
-      ${valgt.pris ? `<span>💳 ${esc(valgt.pris)}</span>` : ''}
-      ${valgt.maks ? `<span>👥 Maks ${valgt.maks} deltagere</span>` : ''}
+      <span>${datoStr(valgt.dato)}${valgt.tid && valgt.tid !== 'Information følger' ?' · '+esc(valgt.tid):''}</span>
+      ${valgt.sted && valgt.sted !== 'Information følger' ? `<span>${esc(valgt.sted)}</span>` : ''}
+      ${valgt.pris && valgt.pris !== 'Information følger' ? `<span>${esc(valgt.pris)}</span>` : ''}
+      ${valgt.maks ? `<span>Maks ${valgt.maks} deltagere</span>` : ''}
     </div>`;
   formEl.style.display = 'block';
   // Forudfyld e-mail hvis gemt
@@ -892,7 +980,7 @@ function tilfoejKalender(arrId) {
   const start = arr.dato.replace(/-/g,'') + (arr.tid ? 'T' + arr.tid.split('–')[0].replace(/\./g,'') + '00' : '');
   const slut  = arr.dato.replace(/-/g,'') + (arr.tid && arr.tid.includes('–') ? 'T' + arr.tid.split('–')[1].replace(/\./g,'') + '00' : '');
   const ics = [
-    'BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//LYG Erhvervsklub//v8.9//DA',
+    'BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//LYG Erhvervsklub//v8.9.1/DA',
     'BEGIN:VEVENT',
     `DTSTART:${start}`,
     slut !== start ? `DTEND:${slut}` : '',
@@ -1581,8 +1669,8 @@ async function sendManuelBesked(evt) {
 async function sendTestBesked() {
   const statusEl = document.getElementById('mb-status');
   const kanal = document.getElementById('mb-kanal')?.value || 'begge';
-  const emne  = document.getElementById('mb-emne')?.value?.trim() || 'Testbesked v8.9';
-  const indhold = document.getElementById('mb-indhold')?.value?.trim() || 'Dette er en testbesked fra LYG Erhvervsklub v8.9';
+  const emne  = document.getElementById('mb-emne')?.value?.trim() || 'Testbesked v8.9.1';
+  const indhold = document.getElementById('mb-indhold')?.value?.trim() || 'Dette er en testbesked fra LYG Erhvervsklub v8.9.1';
   if (statusEl) { statusEl.style.display='block'; statusEl.className='form-status info'; statusEl.textContent='Sender testbesked…'; }
   try {
     const r = await adminFetch({ action:'adminSendTestBesked', emne, indhold, kanal, type:'manuel' });
@@ -1725,7 +1813,7 @@ function init() {
   if (!DB.get('ek_v89_init')) {
     DB.set('ek_tilm', DB.get('ek_tilm') || []);
     DB.set('ek_v89_init', { dato: new Date().toISOString(), fra: 'v8.9' });
-    console.log('[v8.9] Initialiseret');
+    console.log('[v8.9.1] Initialiseret');
   }
 
   setupNav();

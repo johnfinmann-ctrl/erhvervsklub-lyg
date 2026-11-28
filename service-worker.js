@@ -11,7 +11,7 @@
    · Offline fallback → cached index.html
    ================================================================ */
 
-const CACHE_VERSION = 'lyg-erhverv-v8.9';
+const CACHE_VERSION = 'lyg-erhverv-v8.9.1';
 const BASE          = self.registration.scope;
 
 const PRECACHE_URLS = [
@@ -34,7 +34,7 @@ self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_VERSION)
       .then(c => c.addAll(PRECACHE_URLS))
-      .catch(err => console.warn('[SW v8.9] Precache fejl:', err))
+      .catch(err => console.warn('[SW v8.9.1] Precache fejl:', err))
   );
   self.skipWaiting();
 });
@@ -46,7 +46,7 @@ self.addEventListener('activate', event => {
       .then(keys => Promise.all(
         keys
           .filter(k => k.startsWith('lyg-erhverv-') && k !== CACHE_VERSION)
-          .map(k => { console.log('[SW v8.9] Slet gammel cache:', k); return caches.delete(k); })
+          .map(k => { console.log('[SW v8.9.1] Slet gammel cache:', k); return caches.delete(k); })
       ))
       .then(() => self.clients.claim())
   );

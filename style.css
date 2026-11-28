@@ -1,5 +1,5 @@
 /* ================================================================
-   LYNGBYGAARD ERHVERVSKLUB — style.css v8.9
+   LYNGBYGAARD ERHVERVSKLUB — style.css v8.9.1
    Premium Business Club Design
    Farve-tokens: mørkegrøn · guld · creme
    Kontrast: WCAG AA overholdt på alle tekstelementer
@@ -355,52 +355,164 @@ textarea.input-felt { resize: vertical; }
    FORSIDE
    ================================================================ */
 
-/* Hero */
+/* ── HERO — Ken Burns 4-foto slideshow ───────────────────────── */
 .hero-wrap {
   position: relative;
-  height: 55vw;
-  min-height: 220px;
-  max-height: 360px;
+  height: 60vw;
+  min-height: 240px;
+  max-height: 380px;
   overflow: hidden;
   margin: -1rem -1rem 0;
 }
-.hero-bg {
+.hero-slides {
+  position: absolute;
+  inset: 0;
+}
+.hero-slide {
   position: absolute;
   inset: 0;
   background-size: cover;
   background-position: center;
-  animation: kenBurns 12s ease-in-out infinite alternate;
+  opacity: 0;
+  animation: kenBurns 20s ease-in-out infinite alternate;
+  transition: opacity 1.2s ease;
 }
-@keyframes kenBurns {
-  from { transform: scale(1); }
-  to   { transform: scale(1.06); }
+.hero-slide.aktiv {
+  opacity: 1;
 }
-.hero-overlay {
+/* Hvert slide har individuel Ken Burns-retning */
+.hero-slide:nth-child(1) { animation-name: kenBurns1; }
+.hero-slide:nth-child(2) { animation-name: kenBurns2; }
+.hero-slide:nth-child(3) { animation-name: kenBurns3; }
+.hero-slide:nth-child(4) { animation-name: kenBurns4; }
+@keyframes kenBurns1 { from { transform: scale(1) translate(0,0); }    to { transform: scale(1.08) translate(-2%,-1%); } }
+@keyframes kenBurns2 { from { transform: scale(1.06) translate(1%,0); } to { transform: scale(1) translate(0,0); } }
+@keyframes kenBurns3 { from { transform: scale(1) translate(0,1%); }   to { transform: scale(1.07) translate(-1%,0); } }
+@keyframes kenBurns4 { from { transform: scale(1.05) translate(0,0); } to { transform: scale(1) translate(1%,-1%); } }
+
+.hero-gradient {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to bottom, rgba(13,43,26,.4) 0%, rgba(13,43,26,.7) 100%);
+  background: linear-gradient(
+    to bottom,
+    rgba(13,43,26,.25) 0%,
+    rgba(13,43,26,.5) 50%,
+    rgba(13,43,26,.82) 100%
+  );
+  z-index: 1;
 }
 .hero-content {
   position: absolute;
   inset: 0;
+  z-index: 2;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-end;
   text-align: center;
-  padding: 1rem;
+  padding: 1.25rem 1rem 2.5rem;
 }
-.hero-logo-wrap { margin-bottom: .5rem; }
-.hero-logo { width: 56px; height: 56px; object-fit: contain; filter: drop-shadow(0 2px 8px rgba(0,0,0,.4)); }
-.hero-over { color: var(--g); font-size: .7rem; font-weight: 700; letter-spacing: .15em; text-transform: uppercase; }
-.hero-titel {
+.hero-logo-wrap { margin-bottom: .6rem; }
+.hero-logo {
+  width: 54px;
+  height: 54px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 10px rgba(0,0,0,.5)) brightness(1.1);
+}
+.hero-eyebrow {
+  color: var(--g);
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  margin-bottom: .5rem;
+  opacity: .9;
+}
+/* Serif overskrift — eksklusivt udtryk */
+.hero-titel-serif {
+  font-family: Georgia, 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
   color: var(--wh);
-  font-size: clamp(1.5rem, 6vw, 2.4rem);
-  font-weight: 900;
-  letter-spacing: .06em;
-  line-height: 1.1;
+  font-size: clamp(1.9rem, 7vw, 2.8rem);
+  font-weight: 700;
+  letter-spacing: .02em;
+  line-height: 1.08;
+  margin-bottom: .5rem;
+  text-shadow: 0 2px 12px rgba(0,0,0,.35);
 }
-.hero-sub { color: rgba(255,255,255,.8); font-size: .85rem; margin-top: .25rem; }
+.hero-tagline {
+  color: rgba(245,240,230,.88);
+  font-size: clamp(.82rem, 2.5vw, 1rem);
+  font-style: italic;
+  margin-bottom: 1rem;
+  letter-spacing: .01em;
+}
+.hero-cta-gruppe {
+  display: flex;
+  gap: .6rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.hero-cta-p {
+  background: var(--g);
+  color: var(--p);
+  font-weight: 800;
+  font-size: .84rem;
+  letter-spacing: .05em;
+  padding: .65rem 1.4rem;
+  border-radius: var(--r-s);
+  border: none;
+  cursor: pointer;
+  transition: background .15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.hero-cta-p:hover { background: var(--g2); }
+.hero-cta-s {
+  background: transparent;
+  color: var(--cr);
+  font-weight: 600;
+  font-size: .84rem;
+  letter-spacing: .03em;
+  padding: .65rem 1.4rem;
+  border-radius: var(--r-s);
+  border: 1.5px solid rgba(245,240,230,.5);
+  cursor: pointer;
+  transition: background .15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.hero-cta-s:hover { background: rgba(245,240,230,.12); }
+/* Slideshow prikker */
+.hero-prikker {
+  position: absolute;
+  bottom: .6rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  display: flex;
+  gap: .4rem;
+}
+.hero-prik {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: rgba(245,240,230,.4);
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: background .2s, transform .2s;
+}
+.hero-prik.aktiv {
+  background: var(--g);
+  transform: scale(1.3);
+}
+
+/* PC-grid: næste arr + kommende side om side */
+.forside-pc-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.naest-arr-kolonne { flex: 1; }
+.kommende-kolonne { flex: 1; }
+.kommende-sek { margin-bottom: 0; }
 
 /* Næste arrangement-banner */
 .naest-arr-banner {
@@ -841,13 +953,113 @@ textarea.input-felt { resize: vertical; }
 .mb1 { margin-bottom: .6rem; }
 
 /* ================================================================
-   DESKTOP — MED FULD SKÆRM
+   DIVERSE HJÆLPEKLASSER
+   ================================================================ */
+/* SVG-ikon i om-sektionen */
+.om-ikon-svg { flex-shrink: 0; color: var(--g); }
+
+/* Meta-items i næste-arrangement boks */
+.nab-meta-item {
+  display: flex;
+  align-items: center;
+  gap: .35rem;
+  font-size: .82rem;
+  color: var(--txt2);
+  margin-bottom: .2rem;
+}
+.nab-meta-item svg { flex-shrink: 0; color: var(--g); }
+
+/* Meta-items i kalender-kort */
+.ak-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  font-size: .8rem;
+  color: var(--txt2);
+  margin-right: .6rem;
+  margin-bottom: .2rem;
+}
+.ak-meta-item svg { flex-shrink: 0; color: var(--p3); }
+
+/* "Information følger" label */
+.info-folger {
+  color: var(--muted) !important;
+  font-style: italic;
+}
+.info-folger svg { color: var(--muted); }
+
+/* Fremhævet næste arrangement i kompakt liste */
+.naest-fremhaevet {
+  background: rgba(184,151,58,.1);
+  border-left: 3px solid var(--g);
+  border-radius: 0 var(--r-s) var(--r-s) 0;
+  padding-left: .6rem;
+}
+
+/* ── Kompakt footer ───────────────────────────────────────────── */
+.side-footer {
+  margin-top: 2rem;
+  background: var(--p);
+  margin-left: -1rem;
+  margin-right: -1rem;
+  padding: 1.25rem 1rem;
+}
+.footer-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .9rem;
+  text-align: center;
+  max-width: 900px;
+  margin: 0 auto;
+}
+.footer-logo-blok {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .35rem;
+}
+.footer-logo-img {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  filter: brightness(1.15);
+}
+.footer-klub-navn {
+  color: var(--g);
+  font-size: .78rem;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.footer-info-blok {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .2rem;
+}
+.footer-info-blok a,
+.footer-info-blok span {
+  color: rgba(245,240,230,.65);
+  font-size: .75rem;
+  text-decoration: none;
+}
+.footer-info-blok a:hover { color: var(--cr); }
+.footer-sep { margin: 0 .4rem; opacity: .4; }
+.footer-credit-blok {
+  color: rgba(245,240,230,.4);
+  font-size: .68rem;
+}
+.footer-credit-blok a { color: rgba(245,240,230,.5); text-decoration: none; }
+.footer-credit-blok a:hover { color: var(--cr); }
+
+/* ================================================================
+   BREAKPOINT 640px — tablet lite
    ================================================================ */
 @media (min-width: 640px) {
   :root { --bar-h: 40px; }
   [class^="side-"] { padding: 1.5rem 2rem 3rem; max-width: 720px; }
-  .hero-wrap { height: 320px; max-height: 400px; }
-  .hero-titel { font-size: 2.4rem; }
+  .hero-wrap { height: 320px; max-height: 440px; }
   .stats-bjaelke { max-width: 480px; margin: 0 auto 1.25rem; }
   .forside-sek { padding: 1.5rem; }
   .kontakt-grid { flex-direction: row; }
@@ -856,3 +1068,182 @@ textarea.input-felt { resize: vertical; }
   .sponsor-fordele-grid { grid-template-columns: repeat(3, 1fr); }
   .golf-arr-grid { display: grid; grid-template-columns: 1fr 1fr; }
 }
+
+/* ================================================================
+   BREAKPOINT 768px — iPad / tablet
+   ================================================================ */
+@media (min-width: 768px) {
+  /* Hero lidt højere */
+  .hero-wrap { height: 50vw; max-height: 480px; }
+  .hero-titel-serif { font-size: 3rem; }
+  .hero-tagline { font-size: 1.05rem; }
+  .hero-logo { width: 68px; height: 68px; }
+
+  /* Kalender: 2 kolonner */
+  .ak-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+  /* Forside: PC-grid begynder */
+  .forside-pc-grid {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 1.25rem;
+  }
+  .naest-arr-kolonne { flex: 0 0 54%; }
+  .kommende-kolonne { flex: 1; }
+
+  /* Footer vandret */
+  .footer-inner { flex-direction: row; justify-content: space-between; text-align: left; }
+  .footer-logo-blok { align-items: flex-start; }
+  .footer-info-blok { align-items: flex-start; }
+  .footer-credit-blok { text-align: right; }
+
+  /* Sponsor */
+  .sponsor-fordele-grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+/* ================================================================
+   BREAKPOINT 1024px — PC / laptop
+   ================================================================ */
+@media (min-width: 1024px) {
+  /* ── Top-navigation vises, bottom-nav skjules ── */
+  .top-nav { display: flex !important; }
+  .bot-nav, #bottom-nav { display: none !important; }
+
+  /* ── Indholdsbrede: 1200–1400px ── */
+  .app-wrap {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 0 2.5rem;
+  }
+  [class^="side-"] {
+    max-width: 100%;
+    padding: 2rem 0 4rem;
+  }
+
+  /* Hero: fuld indholdsbredde, større */
+  .hero-wrap {
+    height: 52vw;
+    max-height: 600px;
+    margin-left: -2.5rem;
+    margin-right: -2.5rem;
+    border-radius: 0;
+  }
+  .hero-wrap { margin-top: -2rem; }
+  .hero-titel-serif { font-size: clamp(2.8rem, 4vw, 3.8rem); }
+  .hero-tagline { font-size: 1.15rem; }
+  .hero-logo { width: 80px; height: 80px; }
+  .hero-content { padding-bottom: 3.5rem; }
+  .hero-cta-p, .hero-cta-s { font-size: .9rem; padding: .75rem 1.75rem; }
+
+  /* ── Forside: næste arr + kommende side om side ── */
+  .forside-pc-grid {
+    display: grid;
+    grid-template-columns: 3fr 2fr;
+    gap: 2rem;
+    align-items: start;
+    margin-top: 2rem;
+  }
+  .naest-arr-kolonne { }
+  .kommende-kolonne { }
+  .forside-sek { padding: 2rem; }
+  .stats-bjaelke { max-width: 100%; }
+
+  /* ── Kalender: 3 kolonner ── */
+  .ak-grid { grid-template-columns: repeat(3, 1fr); gap: 1.25rem; }
+  .ak-kort { }
+
+  /* ── Footer vandret, kompakt ── */
+  .side-footer {
+    margin-left: -2.5rem;
+    margin-right: -2.5rem;
+    padding: 1.5rem 2.5rem;
+  }
+  .footer-inner {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    text-align: left;
+  }
+  .footer-logo-blok { flex-direction: row; align-items: center; gap: .75rem; }
+  .footer-info-blok { flex-direction: row; gap: 0; align-items: center; }
+  .footer-sep { margin: 0 .6rem; }
+  .footer-credit-blok { text-align: right; }
+
+  /* ── Admin ── */
+  .admin-tabs { gap: .5rem; }
+
+  /* ── Sponsor ── */
+  .sponsor-fordele-grid { grid-template-columns: repeat(4, 1fr); }
+
+  /* ── Golf ── */
+  .golf-arr-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+/* ================================================================
+   BREAKPOINT 1440px — stor PC / widescreen
+   ================================================================ */
+@media (min-width: 1440px) {
+  .app-wrap { max-width: 1400px; }
+  .hero-wrap { max-height: 680px; }
+  .hero-titel-serif { font-size: 4rem; }
+  .forside-pc-grid { gap: 2.5rem; }
+  .ak-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+/* ── Top-navigation (skjult på mobil, vist på PC) ──────────────── */
+.top-nav {
+  display: none;
+  background: var(--p);
+  border-bottom: 1px solid rgba(184,151,58,.25);
+  position: sticky;
+  top: 0;
+  z-index: 90;
+  padding: 0 2.5rem;
+}
+.top-nav-inner {
+  max-width: 1320px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  height: 60px;
+  gap: 0;
+}
+.top-nav-logo {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  margin-right: 2rem;
+  text-decoration: none;
+}
+.top-nav-logo img { width: 36px; height: 36px; object-fit: contain; }
+.top-nav-logo span {
+  color: var(--g);
+  font-size: .78rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+.top-nav-links {
+  display: flex;
+  gap: 0;
+  flex: 1;
+}
+.tn-link {
+  display: flex;
+  align-items: center;
+  gap: .35rem;
+  padding: .5rem 1rem;
+  color: rgba(245,240,230,.75);
+  font-size: .84rem;
+  font-weight: 600;
+  letter-spacing: .02em;
+  text-transform: uppercase;
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color .15s, border-color .15s;
+}
+.tn-link:hover { color: var(--cr); }
+.tn-link.aktiv { color: var(--g); border-bottom-color: var(--g); }
+.tn-link svg { flex-shrink: 0; }
