@@ -3,15 +3,45 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Lyngbygaard Erhvervsklub</title>
-  <!-- GitHub Pages SPA redirect: sender bruger til index.html med korrekt sti -->
-  <script>
-    // Gem den oprindelige URL og redirect til index.html
-    sessionStorage.setItem('lyg_redirect', location.pathname + location.search);
-    location.replace(location.origin + '/erhvervsklub-lyg/');
-  </script>
+  <title>Side ikke fundet — LYG Erhvervsklub</title>
+  <meta name="robots" content="noindex">
+  <style>
+    :root { --p:#0d2b1a; --g:#b8973a; --cr:#f5f0e6; }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body {
+      font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+      background:var(--p);
+      color:var(--cr);
+      min-height:100dvh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      padding:2rem;
+    }
+    .wrap { max-width:400px; }
+    .nr { font-size:5rem; font-weight:900; color:var(--g); line-height:1; margin-bottom:.5rem; }
+    h1 { font-size:1.4rem; font-weight:800; margin-bottom:.75rem; }
+    p { font-size:.9rem; opacity:.75; margin-bottom:1.5rem; }
+    a {
+      display:inline-block;
+      background:var(--g);
+      color:var(--p);
+      font-weight:800;
+      font-size:.9rem;
+      padding:.7rem 1.5rem;
+      border-radius:.5rem;
+      text-decoration:none;
+    }
+    a:hover { opacity:.9; }
+  </style>
 </head>
 <body>
-  <p>Omdirigerer…</p>
+  <div class="wrap">
+    <div class="nr">404</div>
+    <h1>Siden findes ikke</h1>
+    <p>Den side, du leder efter, eksisterer ikke eller er blevet flyttet.</p>
+    <a href="./index.html">Gå til forsiden</a>
+  </div>
 </body>
 </html>

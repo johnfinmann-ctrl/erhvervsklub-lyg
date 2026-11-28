@@ -1,1332 +1,228 @@
 <!DOCTYPE html>
-<!--
-  LYG Erhvervsklub Admin v8.3
-  ======================================================
-  SIKKERHED:
-  · Login kræver Google OAuth (Google Sign-In)
-  · Kun e-mailadresser i ADMIN_EMAILS (Apps Script Properties) har adgang
-  · Admin-token valideres server-side ved HVERT API-kald
-  · adminToken sendes i POST body — aldrig i URL (v8.3 fix)
-  · Ingen hardkodet PIN eller fallback-adgang
-  · Apps Script URL og REQUEST_TOKEN konfigureres i CONFIG herunder
-  · Brevo API-nøgle og andre hemmeligheder er ALDRIG i denne fil
-
-  NYT I v8.3:
-  · adminGetAll bruger POST — adminToken i body, ikke URL
-  · CSV-eksport af deltagerlister
-  · Manuel afmeldingsregistrering
-  · Ventelistehåndtering (vis og aktiver)
-  · E-maillog med retry (undgår dobbeltudsendelse)
-  · Send ændringer, aflysninger og praktiske oplysninger
-  · Sæsonhåndtering via Indstillinger
-  ======================================================
--->
 <html lang="da">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LYG Erhvervsklub Admin</title>
-<meta name="robots" content="noindex, nofollow">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Admin — LYG Erhvervsklub</title>
+  <style>
+    :root {
+      --p:#0d2b1a; --p2:#163d25; --g:#b8973a; --g2:#d4b05a;
+      --cr:#f5f0e6; --txt:#1a2e1f; --txt2:#3d5245; --muted:#647a6b;
+      --ok:#1a7340; --err:#c0392b;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    body{
+      font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',system-ui,sans-serif;
+      font-size:16px;line-height:1.6;color:var(--txt);
+      background:#f7f4ee;min-height:100dvh;
+    }
+    .hd{
+      background:var(--p);border-bottom:2px solid var(--g);
+      padding:1rem 1.5rem;display:flex;align-items:center;gap:1rem;
+    }
+    .hd img{width:40px;height:40px;border-radius:50%;border:2px solid var(--g);}
+    .hd h1{color:var(--g);font-size:1.1rem;font-weight:800;letter-spacing:.04em;}
+    .hd span{color:rgba(245,240,230,.6);font-size:.8rem;}
 
-<!-- Google Sign-In (GSI) -->
-<script src="https://accounts.google.com/gsi/client" async defer></script>
+    .wrap{max-width:520px;margin:0 auto;padding:2rem 1rem;}
 
-<style>
-  :root {
-    --p:    #0d2b1a;
-    --p2:   #163d25;
-    --g:    #b8973a;
-    --hvid: #ffffff;
-    --mut:  #6b7280;
-    --txt:  #1a1a1a;
-    --fejl: #c0392b;
-    --ok:   #27ae60;
-    --bg:   #f4f6f4;
-    --kant: #e0e4e0;
-    --info: #1a6fa0;
-  }
+    .login-kort{
+      background:#fff;border-radius:1rem;padding:2rem;
+      box-shadow:0 4px 24px rgba(13,43,26,.12);
+      border-top:4px solid var(--g);
+    }
+    .login-kort h2{font-size:1.2rem;font-weight:800;color:var(--p);margin-bottom:.5rem;}
+    .login-kort p{font-size:.9rem;color:var(--txt2);margin-bottom:1.5rem;}
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--txt); font-size: 15px; }
+    #g-login-wrap{display:flex;justify-content:center;}
 
-  /* Header */
-  .adm-header {
-    background: var(--p); color: var(--hvid); padding: 14px 20px;
-    display: flex; align-items: center; justify-content: space-between; gap: 12px;
-    position: sticky; top: 0; z-index: 100;
-  }
-  .adm-header h1 { font-size: 1.1rem; font-weight: 700; }
-  .adm-header .sub { font-size: .8rem; color: rgba(255,255,255,.65); }
-  .adm-user { font-size: .8rem; color: var(--g); }
-  .adm-logout { background: none; border: 1px solid rgba(255,255,255,.3); color: var(--hvid);
-    padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: .8rem; }
-  .adm-logout:hover { background: rgba(255,255,255,.1); }
+    .info-boks{
+      background:var(--cr);border-radius:.75rem;padding:1rem;margin-top:1rem;
+      font-size:.82rem;color:var(--txt2);border:1px solid #d8d0c0;
+    }
+    .info-boks strong{color:var(--p);display:block;margin-bottom:.3rem;}
 
-  /* Login-skærm */
-  #login-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
-  .login-kort {
-    background: var(--hvid); border-radius: 12px; padding: 32px 28px;
-    max-width: 420px; width: 100%; box-shadow: 0 4px 24px rgba(0,0,0,.08); text-align: center;
-  }
-  .login-logo { font-size: 2.5rem; margin-bottom: 8px; }
-  .login-kort h2 { color: var(--p); font-size: 1.3rem; margin-bottom: 4px; }
-  .login-kort p { color: var(--mut); font-size: .9rem; margin-bottom: 24px; }
-  .google-btn {
-    display: flex; align-items: center; justify-content: center; gap: 10px;
-    background: var(--hvid); border: 2px solid var(--kant); border-radius: 8px;
-    padding: 12px 20px; cursor: pointer; font-size: 1rem; font-weight: 600; color: var(--txt);
-    width: 100%; transition: border-color .2s, box-shadow .2s; margin-bottom: 16px;
-  }
-  .google-btn:hover { border-color: var(--p); box-shadow: 0 2px 8px rgba(13,43,26,.12); }
-  .login-info { font-size: .8rem; color: var(--mut); line-height: 1.5; }
-  .login-fejl { color: var(--fejl); font-size: .9rem; margin-top: 12px; display: none; }
+    .status{
+      margin-top:1rem;padding:.7rem 1rem;border-radius:.5rem;
+      font-size:.88rem;font-weight:600;display:none;
+    }
+    .status.ok{background:#e8f5ed;color:var(--ok);border:1px solid #a3d9b4;}
+    .status.fejl{background:#fdecea;color:var(--err);border:1px solid #f5c0bb;}
+    .status.info{background:#fff8e1;color:#c17a00;border:1px solid #f5e09a;}
 
-  /* Main layout */
-  #admin-screen { display: none; }
-  .adm-layout { display: flex; min-height: calc(100vh - 54px); }
-  .adm-sidebar {
-    width: 210px; background: var(--hvid); border-right: 1px solid var(--kant);
-    padding: 16px 0; flex-shrink: 0;
-  }
-  .adm-sidebar a {
-    display: block; padding: 10px 18px; color: var(--txt); text-decoration: none;
-    font-size: .9rem; border-left: 3px solid transparent; transition: all .15s;
-  }
-  .adm-sidebar a:hover  { background: var(--bg); color: var(--p); }
-  .adm-sidebar a.aktiv  { border-color: var(--g); background: #f0f4f1; color: var(--p); font-weight: 600; }
-  .adm-sidebar .sep { border-top: 1px solid var(--kant); margin: 8px 0; }
-  .adm-sidebar .nav-gruppe { padding: 8px 18px 4px; font-size: .75rem; color: var(--mut); font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
+    .log-ud-sek{
+      background:#fff;border-radius:1rem;padding:1.5rem;margin-top:1.5rem;
+      box-shadow:0 2px 12px rgba(13,43,26,.08);display:none;
+    }
+    .log-ud-sek h3{font-size:1rem;font-weight:800;color:var(--p);margin-bottom:.5rem;}
+    .log-ud-sek p{font-size:.88rem;color:var(--txt2);margin-bottom:1rem;}
 
-  .adm-indhold { flex: 1; padding: 24px 20px; max-width: 960px; }
-
-  /* Sektionsoverskrift */
-  .sek-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
-  .sek-header h2 { font-size: 1.1rem; color: var(--p); }
-  .sek-header .knapgruppe { display: flex; gap: 8px; flex-wrap: wrap; }
-
-  /* Tabel */
-  .adm-tabel { width: 100%; border-collapse: collapse; background: var(--hvid); border-radius: 8px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.06); margin-bottom: 20px; }
-  .adm-tabel th { background: #f0f4f1; color: var(--p); font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; padding: 10px 12px; text-align: left; }
-  .adm-tabel td { padding: 10px 12px; border-top: 1px solid var(--kant); font-size: .9rem; }
-  .adm-tabel tr:hover td { background: #fafcfa; }
-
-  /* Badges */
-  .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: .75rem; font-weight: 600; }
-  .badge-ok     { background: #d4edda; color: #1a5c2e; }
-  .badge-fejl   { background: #f8d7da; color: #842029; }
-  .badge-vente  { background: #fff3cd; color: #664d03; }
-  .badge-info   { background: #d1ecf1; color: #0c5460; }
-  .badge-graa   { background: var(--bg); color: var(--mut); }
-
-  /* Formularer */
-  .adm-form { background: var(--hvid); border-radius: 8px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,.06); margin-bottom: 20px; }
-  .adm-form h3 { font-size: 1rem; color: var(--p); margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid var(--kant); }
-  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-  .form-grid.cols3 { grid-template-columns: 1fr 1fr 1fr; }
-  .form-grid.full { grid-template-columns: 1fr; }
-  .form-felt { display: flex; flex-direction: column; gap: 4px; }
-  .form-felt label { font-size: .8rem; color: var(--mut); font-weight: 600; }
-  .form-felt input, .form-felt select, .form-felt textarea {
-    padding: 8px 10px; border: 1px solid var(--kant); border-radius: 6px; font-size: .9rem; color: var(--txt); background: var(--hvid);
-    transition: border-color .15s;
-  }
-  .form-felt input:focus, .form-felt select:focus, .form-felt textarea:focus { outline: none; border-color: var(--p); }
-  .form-felt textarea { resize: vertical; min-height: 80px; }
-
-  /* Knapper */
-  .btn { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-size: .9rem; font-weight: 600; transition: all .15s; display: inline-flex; align-items: center; gap: 6px; }
-  .btn-p    { background: var(--p); color: var(--hvid); }
-  .btn-p:hover { background: var(--p2); }
-  .btn-g    { background: var(--g); color: var(--hvid); }
-  .btn-g:hover { opacity: .9; }
-  .btn-ok   { background: var(--ok); color: var(--hvid); }
-  .btn-ok:hover { opacity: .9; }
-  .btn-fejl { background: var(--fejl); color: var(--hvid); }
-  .btn-fejl:hover { opacity: .9; }
-  .btn-hvid { background: var(--hvid); color: var(--txt); border: 1px solid var(--kant); }
-  .btn-hvid:hover { border-color: var(--p); color: var(--p); }
-  .btn-sm   { padding: 4px 10px; font-size: .8rem; }
-
-  /* Alert boks */
-  .alert { padding: 10px 14px; border-radius: 6px; margin-bottom: 14px; font-size: .9rem; display: none; }
-  .alert-ok   { background: #d4edda; color: #1a5c2e; border: 1px solid #c3e6cb; }
-  .alert-fejl { background: #f8d7da; color: #842029; border: 1px solid #f5c6cb; }
-  .alert-info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
-  .alert.vis  { display: block; }
-
-  /* Loading */
-  .loading { text-align: center; padding: 40px; color: var(--mut); }
-  .loading::after { content: '⛳'; animation: spin 1s linear infinite; display: inline-block; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  /* Tekstområde til masseudsendelse */
-  .masse-boks { background: var(--hvid); border-radius: 8px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,.06); margin-bottom: 20px; }
-  .masse-boks h3 { font-size: 1rem; color: var(--p); margin-bottom: 14px; }
-  .masse-boks select, .masse-boks textarea { width: 100%; margin-bottom: 10px; padding: 8px 10px; border: 1px solid var(--kant); border-radius: 6px; font-size: .9rem; }
-
-  /* Info-blok */
-  .info-blok { background: #e8f4f8; border: 1px solid #bee3ef; border-radius: 6px; padding: 12px 14px; font-size: .85rem; color: #0c5460; margin-bottom: 16px; }
-  .info-blok strong { display: block; margin-bottom: 4px; }
-
-  /* Email log */
-  .email-status { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
-  .email-status.ok    { background: var(--ok); }
-  .email-status.fejl  { background: var(--fejl); }
-  .email-status.retry { background: var(--g); }
-
-  /* Responsiv */
-  @media (max-width: 700px) {
-    .adm-sidebar { width: 160px; }
-    .form-grid { grid-template-columns: 1fr; }
-    .form-grid.cols3 { grid-template-columns: 1fr; }
-  }
-  @media (max-width: 540px) {
-    .adm-layout { flex-direction: column; }
-    .adm-sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--kant); display: flex; flex-wrap: wrap; padding: 8px; }
-    .adm-sidebar a { padding: 7px 12px; border-left: none; border-bottom: 2px solid transparent; }
-    .adm-sidebar a.aktiv { border-bottom-color: var(--g); background: transparent; }
-    .adm-sidebar .sep, .adm-sidebar .nav-gruppe { display: none; }
-  }
-</style>
+    .knap-p{
+      display:inline-flex;align-items:center;justify-content:center;
+      background:var(--g);color:var(--p);font-weight:800;font-size:.9rem;
+      padding:.7rem 1.5rem;border-radius:.5rem;border:none;cursor:pointer;
+      text-decoration:none;
+    }
+    .knap-p:hover{background:var(--g2);}
+    .knap-sek{
+      display:inline-flex;align-items:center;justify-content:center;
+      background:transparent;color:var(--p);font-weight:700;font-size:.88rem;
+      padding:.65rem 1.4rem;border-radius:.5rem;border:1.5px solid var(--p);cursor:pointer;
+    }
+    .knap-sek:hover{background:rgba(13,43,26,.06);}
+    .mt1{margin-top:.75rem;}
+    .gap{display:flex;gap:.6rem;flex-wrap:wrap;margin-top:1rem;}
+  </style>
 </head>
 <body>
 
-<!-- ══ LOGIN SKÆRM ══ -->
-<div id="login-screen">
-  <div class="login-kort">
-    <div class="login-logo">⛳</div>
-    <h2>LYG Erhvervsklub</h2>
-    <p>Administration — kun autoriserede administratorer</p>
-    <button class="google-btn" onclick="startGoogleLogin()">
-      <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
-      Log ind med Google
-    </button>
-    <p class="login-info">Kun godkendte administratorer har adgang.<br>Din e-mailadresse bekræftes automatisk.</p>
-    <p class="login-fejl" id="login-fejl"></p>
+<header class="hd">
+  <img src="./images/lyg-logo-transparent.png" alt="LYG" onerror="this.style.display='none'">
+  <div>
+    <h1>Administration</h1>
+    <span>LYG Erhvervsklub v8.9</span>
   </div>
+</header>
+
+<div class="wrap">
+
+  <div class="login-kort" id="login-sek">
+    <h2>Admin-login</h2>
+    <p>Log ind med din Google-konto. Kun autoriserede administratorer har adgang til backend-funktioner.</p>
+    <div id="g-login-wrap">
+      <!-- Google Identity Services Sign-In knap -->
+      <div id="g_id_onload"
+           data-client_id="INDSÆT_GOOGLE_OAUTH_CLIENT_ID"
+           data-callback="onGoogleLogin"
+           data-auto_prompt="false">
+      </div>
+      <div class="g_id_signin"
+           data-type="standard"
+           data-theme="filled_blue"
+           data-text="signin_with"
+           data-shape="rectangular"
+           data-logo_alignment="left"
+           data-width="280">
+      </div>
+    </div>
+    <div id="login-status" class="status"></div>
+    <div class="info-boks">
+      <strong>ℹ️ Information</strong>
+      Kun e-mail-adresser registreret i Script Properties (ADMIN_EMAILS) har adgang.
+      Kontakt Lyngbygaard Golf for at få tilføjet din konto.
+    </div>
+  </div>
+
+  <div class="log-ud-sek" id="logget-ind-sek">
+    <h3 id="admin-navn">Admin</h3>
+    <p id="admin-email-vis" style="font-size:.82rem;color:var(--muted)"></p>
+    <p>Du er logget ind som administrator. Vend tilbage til appen for at administrere arrangementer og kommunikation.</p>
+    <div class="gap">
+      <a href="./index.html" class="knap-p">Gå til appen →</a>
+      <button class="knap-sek" onclick="logUd()">Log ud</button>
+    </div>
+  </div>
+
 </div>
 
-<!-- ══ ADMIN SKÆRM ══ -->
-<div id="admin-screen">
-  <header class="adm-header">
-    <div>
-      <h1>⛳ LYG Erhvervsklub Admin</h1>
-      <div class="sub">v8.3 · <span id="hdr-dato"></span></div>
-    </div>
-    <div style="display:flex;align-items:center;gap:12px">
-      <span class="adm-user" id="hdr-email"></span>
-      <button class="adm-logout" onclick="logUd()">Log ud</button>
-    </div>
-  </header>
-
-  <div class="adm-layout">
-    <nav class="adm-sidebar">
-      <div class="nav-gruppe">Indhold</div>
-      <a href="#" onclick="visSek('arrangementer')" id="nav-arrangementer">📅 Arrangementer</a>
-      <a href="#" onclick="visSek('tilmeldinger')"  id="nav-tilmeldinger">👥 Tilmeldinger</a>
-      <a href="#" onclick="visSek('venteliste')"    id="nav-venteliste">⏳ Venteliste</a>
-      <div class="sep"></div>
-      <div class="nav-gruppe">Kommunikation</div>
-      <a href="#" onclick="visSek('paamindelser')"  id="nav-paamindelser">📧 E-mail & beskeder</a>
-      <a href="#" onclick="visSek('emaillog')"      id="nav-emaillog">📋 E-maillog</a>
-      <div class="sep"></div>
-      <div class="nav-gruppe">Hjemmeside</div>
-      <a href="#" onclick="visSek('nyheder')"       id="nav-nyheder">📰 Nyheder</a>
-      <a href="#" onclick="visSek('sponsorer')"     id="nav-sponsorer">🏆 Sponsorer</a>
-      <a href="#" onclick="visSek('popup')"         id="nav-popup">💬 Popup</a>
-      <a href="#" onclick="visSek('infobjaelke')"   id="nav-infobjaelke">📢 Infobjælke</a>
-      <div class="sep"></div>
-      <div class="nav-gruppe">System</div>
-      <a href="#" onclick="visSek('indstillinger')" id="nav-indstillinger">⚙️ Indstillinger</a>
-    </nav>
-
-    <main class="adm-indhold">
-      <div id="adm-alert" class="alert"></div>
-
-      <!-- ARRANGEMENTER -->
-      <section id="sek-arrangementer" style="display:none">
-        <div class="sek-header">
-          <h2>📅 Arrangementer</h2>
-          <div class="knapgruppe">
-            <button class="btn btn-p" onclick="nytArr()">+ Nyt arrangement</button>
-          </div>
-        </div>
-        <div id="arr-liste" class="loading"></div>
-        <div id="arr-form" style="display:none">
-          <div class="adm-form">
-            <h3 id="arr-form-titel">Nyt arrangement</h3>
-            <input type="hidden" id="arr-id">
-            <div class="form-grid">
-              <div class="form-felt">
-                <label>Titel *</label>
-                <input type="text" id="arr-titel" placeholder="SIM Golf-dag 2027">
-              </div>
-              <div class="form-felt">
-                <label>Dato *</label>
-                <input type="date" id="arr-dato">
-              </div>
-              <div class="form-felt">
-                <label>Tidspunkt fra</label>
-                <input type="time" id="arr-tid-fra">
-              </div>
-              <div class="form-felt">
-                <label>Tidspunkt til</label>
-                <input type="time" id="arr-tid-til">
-              </div>
-              <div class="form-felt">
-                <label>Max deltagere (0 = ubegr.)</label>
-                <input type="number" id="arr-maks" value="0" min="0">
-              </div>
-              <div class="form-felt">
-                <label>Pris</label>
-                <input type="text" id="arr-pris" placeholder="250 kr./person">
-              </div>
-              <div class="form-felt">
-                <label>Status</label>
-                <select id="arr-status">
-                  <option value="aktiv">Aktiv</option>
-                  <option value="aflyst">Aflyst</option>
-                  <option value="slettet">Slettet</option>
-                </select>
-              </div>
-              <div class="form-felt">
-                <label>Tilmelding åben</label>
-                <select id="arr-aaben">
-                  <option value="true">Ja — tilmelding åben</option>
-                  <option value="false">Nej — tilmelding lukket</option>
-                </select>
-              </div>
-              <div class="form-felt">
-                <label>Lokation</label>
-                <input type="text" id="arr-lokation" placeholder="Lyngbygaard Golf, Clubhuset">
-              </div>
-              <div class="form-felt">
-                <label>Billedsti (valgfrit)</label>
-                <input type="text" id="arr-billede" placeholder="./images/arr-foto.jpg">
-              </div>
-            </div>
-            <div class="form-grid full" style="margin-top:14px">
-              <div class="form-felt">
-                <label>Beskrivelse</label>
-                <textarea id="arr-beskrivelse" rows="4" placeholder="Kort beskrivelse af arrangementet..."></textarea>
-              </div>
-            </div>
-            <div style="margin-top:16px;display:flex;gap:10px">
-              <button class="btn btn-p" onclick="gemArr()">💾 Gem arrangement</button>
-              <button class="btn btn-hvid" onclick="lukArrForm()">Annuller</button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- TILMELDINGER -->
-      <section id="sek-tilmeldinger" style="display:none">
-        <div class="sek-header">
-          <h2>👥 Tilmeldinger</h2>
-          <div class="knapgruppe">
-            <select id="filter-arr" onchange="filterTilm()" style="padding:7px 10px;border:1px solid var(--kant);border-radius:6px;font-size:.9rem">
-              <option value="">Alle arrangementer</option>
-            </select>
-            <button class="btn btn-hvid" onclick="eksporterCSV()">⬇️ CSV-eksport</button>
-          </div>
-        </div>
-        <div class="info-blok">
-          <strong>Persondata</strong>
-          Tilmeldingsdata vises kun til brug for planlægning. Eksporterede lister må kun deles internt og slettes efter brug (GDPR).
-        </div>
-        <div id="tilm-liste" class="loading"></div>
-      </section>
-
-      <!-- VENTELISTE -->
-      <section id="sek-venteliste" style="display:none">
-        <div class="sek-header">
-          <h2>⏳ Venteliste</h2>
-        </div>
-        <div id="vente-liste" class="loading"></div>
-      </section>
-
-      <!-- E-MAIL & BESKEDER -->
-      <section id="sek-paamindelser" style="display:none">
-        <div class="sek-header">
-          <h2>📧 E-mail & beskeder</h2>
-        </div>
-        <div class="info-blok">
-          <strong>Send til alle tilmeldte i et arrangement</strong>
-          Vælg arrangement og beskedtype nedenfor. Alle aktive tilmeldinger modtager beskeden.
-        </div>
-
-        <div class="masse-boks">
-          <h3>📧 Manuel påminding</h3>
-          <select id="paamind-arr">
-            <option value="">— Vælg arrangement —</option>
-          </select>
-          <button class="btn btn-p" onclick="sendPaamind()">Send påminding til alle tilmeldte</button>
-        </div>
-
-        <div class="masse-boks">
-          <h3>⚠️ Vigtig ændring i arrangementet</h3>
-          <select id="aendring-arr">
-            <option value="">— Vælg arrangement —</option>
-          </select>
-          <textarea id="aendring-tekst" rows="4" placeholder="Beskriv ændringen... (fx ny dato, nyt lokale, ændret tidspunkt)"></textarea>
-          <button class="btn btn-g" onclick="sendAendring()">Send ændringsbesked</button>
-        </div>
-
-        <div class="masse-boks">
-          <h3>🚫 Aflysning</h3>
-          <select id="aflysning-arr">
-            <option value="">— Vælg arrangement —</option>
-          </select>
-          <textarea id="aflysning-tekst" rows="3" placeholder="Årsag til aflysning (valgfrit)..."></textarea>
-          <button class="btn btn-fejl" onclick="sendAflysning()">Send aflysningsbesked (arrangement markeres aflyst)</button>
-        </div>
-
-        <div class="masse-boks">
-          <h3>📋 Praktiske oplysninger</h3>
-          <select id="praktisk-arr">
-            <option value="">— Vælg arrangement —</option>
-          </select>
-          <textarea id="praktisk-tekst" rows="4" placeholder="Parkering, påklædning, mødetidspunkt, hvad medbringes..."></textarea>
-          <button class="btn btn-p" onclick="sendPraktisk()">Send til alle tilmeldte</button>
-        </div>
-      </section>
-
-      <!-- E-MAILLOG -->
-      <section id="sek-emaillog" style="display:none">
-        <div class="sek-header">
-          <h2>📋 E-maillog</h2>
-          <div class="knapgruppe">
-            <label style="font-size:.85rem;display:flex;align-items:center;gap:6px">
-              <input type="checkbox" id="vis-alle-mails" onchange="hentEmaillog()"> Vis alle (inkl. sendte)
-            </label>
-          </div>
-        </div>
-        <div class="info-blok">
-          <strong>Retry af fejlede e-mails</strong>
-          Klik "Gensend" for at forsøge igen. Allerede sendte e-mails kan ikke gensendes (undgår dobbeltudsendelse).
-        </div>
-        <div id="email-liste" class="loading"></div>
-      </section>
-
-      <!-- NYHEDER -->
-      <section id="sek-nyheder" style="display:none">
-        <div class="sek-header">
-          <h2>📰 Nyheder</h2>
-          <button class="btn btn-p" onclick="nyNyhed()">+ Ny nyhed</button>
-        </div>
-        <div id="nyheder-form" style="display:none" class="adm-form">
-          <h3 id="nyhed-form-titel">Ny nyhed</h3>
-          <input type="hidden" id="nyhed-id">
-          <div class="form-grid">
-            <div class="form-felt"><label>Titel *</label><input type="text" id="nyhed-titel"></div>
-            <div class="form-felt"><label>Dato *</label><input type="date" id="nyhed-dato"></div>
-            <div class="form-felt"><label>Aktiv</label><select id="nyhed-aktiv"><option value="true">Ja</option><option value="false">Nej</option></select></div>
-            <div class="form-felt"><label>Billedsti</label><input type="text" id="nyhed-billede"></div>
-            <div class="form-felt"><label>Link URL</label><input type="url" id="nyhed-url"></div>
-            <div class="form-felt"><label>Link tekst</label><input type="text" id="nyhed-link-tekst"></div>
-          </div>
-          <div class="form-grid full" style="margin-top:12px">
-            <div class="form-felt"><label>Tekst *</label><textarea id="nyhed-tekst" rows="4"></textarea></div>
-          </div>
-          <div style="margin-top:12px;display:flex;gap:10px">
-            <button class="btn btn-p" onclick="gemNyhed()">💾 Gem</button>
-            <button class="btn btn-hvid" onclick="lukNyhedForm()">Annuller</button>
-          </div>
-        </div>
-        <div id="nyheder-liste" class="loading"></div>
-      </section>
-
-      <!-- SPONSORER -->
-      <section id="sek-sponsorer" style="display:none">
-        <div class="sek-header">
-          <h2>🏆 Sponsorer</h2>
-          <button class="btn btn-p" onclick="nySponsor()">+ Ny sponsor</button>
-        </div>
-        <div id="sponsor-form" style="display:none" class="adm-form">
-          <h3>Sponsor</h3>
-          <input type="hidden" id="sponsor-id">
-          <div class="form-grid">
-            <div class="form-felt"><label>Navn *</label><input type="text" id="sponsor-navn"></div>
-            <div class="form-felt"><label>Niveau</label><select id="sponsor-niveau"><option>Guld</option><option>Sølv</option><option>Bronze</option><option>Partner</option></select></div>
-            <div class="form-felt"><label>Email</label><input type="email" id="sponsor-email"></div>
-            <div class="form-felt"><label>Telefon</label><input type="tel" id="sponsor-tlf"></div>
-            <div class="form-felt"><label>Aktiv</label><select id="sponsor-aktiv"><option value="true">Ja</option><option value="false">Nej</option></select></div>
-            <div class="form-felt"><label>Website</label><input type="url" id="sponsor-web"></div>
-          </div>
-          <div style="margin-top:12px;display:flex;gap:10px">
-            <button class="btn btn-p" onclick="gemSponsor()">💾 Gem</button>
-            <button class="btn btn-hvid" onclick="lukSponsorForm()">Annuller</button>
-          </div>
-        </div>
-        <div id="sponsor-liste" class="loading"></div>
-      </section>
-
-      <!-- POPUP -->
-      <section id="sek-popup" style="display:none">
-        <div class="sek-header"><h2>💬 Popup</h2></div>
-        <div class="adm-form">
-          <h3>Velkomst-popup</h3>
-          <div class="form-grid">
-            <div class="form-felt"><label>Aktiv</label><select id="popup-aktiv"><option value="true">Ja</option><option value="false">Nej</option></select></div>
-            <div class="form-felt"><label>Nøgle (unik ID)</label><input type="text" id="popup-noegle" placeholder="popup_v1"></div>
-            <div class="form-felt"><label>Titel</label><input type="text" id="popup-titel"></div>
-            <div class="form-felt"><label>CTA tekst</label><input type="text" id="popup-cta-tekst"></div>
-            <div class="form-felt"><label>CTA URL</label><input type="url" id="popup-cta-url"></div>
-          </div>
-          <div class="form-grid full" style="margin-top:12px">
-            <div class="form-felt"><label>Tekst</label><textarea id="popup-tekst" rows="3"></textarea></div>
-          </div>
-          <div style="margin-top:12px">
-            <button class="btn btn-p" onclick="gemPopup()">💾 Gem popup</button>
-          </div>
-        </div>
-      </section>
-
-      <!-- INFOBJÆLKE -->
-      <section id="sek-infobjaelke" style="display:none">
-        <div class="sek-header"><h2>📢 Infobjælke</h2></div>
-        <div class="adm-form">
-          <h3>Rullende infobjælke</h3>
-          <div class="form-grid">
-            <div class="form-felt"><label>Aktiv</label><select id="ib-aktiv"><option value="true">Ja</option><option value="false">Nej</option></select></div>
-            <div class="form-felt"><label>Link URL</label><input type="url" id="ib-url"></div>
-            <div class="form-felt"><label>Link tekst</label><input type="text" id="ib-link-tekst"></div>
-          </div>
-          <div class="form-grid full" style="margin-top:12px">
-            <div class="form-felt"><label>Tekst (vises rullende)</label><textarea id="ib-tekst" rows="2"></textarea></div>
-          </div>
-          <div style="margin-top:12px">
-            <button class="btn btn-p" onclick="gemInfobjaelke()">💾 Gem infobjælke</button>
-          </div>
-        </div>
-      </section>
-
-      <!-- INDSTILLINGER -->
-      <section id="sek-indstillinger" style="display:none">
-        <div class="sek-header"><h2>⚙️ Indstillinger</h2></div>
-        <div class="info-blok">
-          <strong>Sæsonhåndtering og systemkonfiguration</strong>
-          Disse indstillinger gemmes i Google Sheets og bruges af Apps Script backend.
-        </div>
-        <div id="indstil-liste" class="loading"></div>
-        <div class="adm-form" style="margin-top:20px">
-          <h3>Tilføj/opdatér indstilling</h3>
-          <div class="form-grid">
-            <div class="form-felt"><label>Nøgle</label><input type="text" id="indstil-noegle" placeholder="aktiv_saeson"></div>
-            <div class="form-felt"><label>Værdi</label><input type="text" id="indstil-vaerdi" placeholder="2027"></div>
-          </div>
-          <div class="form-grid full" style="margin-top:10px">
-            <div class="form-felt"><label>Beskrivelse</label><input type="text" id="indstil-beskrivelse" placeholder="Kort forklaring"></div>
-          </div>
-          <div style="margin-top:12px">
-            <button class="btn btn-p" onclick="gemIndstilling()">💾 Gem indstilling</button>
-          </div>
-        </div>
-      </section>
-    </main>
-  </div>
-</div>
-
+<!-- Google Identity Services -->
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
-// ══════════════════════════════════════════════════════════════
-// KONFIGURATION — TILPAS EFTER DEPLOYMENT
-// ══════════════════════════════════════════════════════════════
-const ADM_CFG = {
-  // Apps Script Web App URL (fra deployment)
-  scriptUrl:    'INDSÆT_APPS_SCRIPT_WEB_APP_URL',
-  // REQUEST_TOKEN: Samme som i Script Properties (IKKE Brevo-nøgle)
-  requestToken: 'INDSÆT_REQUEST_TOKEN',
-  // Google Sign-In Client ID
-  googleClientId: 'INDSÆT_GOOGLE_CLIENT_ID.apps.googleusercontent.com',
-};
+/* ================================================================
+   Admin-login via Google Identity Services
+   - Modtager credential (JWT) fra Google
+   - Sender til Apps Script til servervalidering
+   - Gemmer token i localStorage (bruges af app.js adminFetch)
+   ================================================================ */
 
-// ══════════════════════════════════════════════════════════════
-// AUTH STATE
-// ══════════════════════════════════════════════════════════════
-let _adminToken = sessionStorage.getItem('lyg_admin_token') || null;
-let _adminEmail = sessionStorage.getItem('lyg_admin_email') || null;
-let _allData    = null;
+const SCRIPT_URL    = 'INDSÆT_APPS_SCRIPT_WEB_APP_URL';
+const REQUEST_TOKEN = 'INDSÆT_REQUEST_TOKEN';
 
-// ══════════════════════════════════════════════════════════════
-// API HELPERS — adminToken sendes i POST body (v8.3 sikkerhedsopdatering)
-// ══════════════════════════════════════════════════════════════
-
-/** POST-kald med adminToken i body (aldrig i URL) */
-async function apiPost(params = {}) {
-  const resp = await fetch(ADM_CFG.scriptUrl, {
-    method:  'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body:    JSON.stringify({
-      ...params,
-      token:      ADM_CFG.requestToken,
-      adminToken: _adminToken,
-    }),
-  });
-  if (!resp.ok) throw new Error('HTTP ' + resp.status);
-  return resp.json();
-}
-
-/** POST-kald uden adminToken (login og offentlige handlinger) */
-async function apiPostPublic(params = {}) {
-  const resp = await fetch(ADM_CFG.scriptUrl, {
-    method:  'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body:    JSON.stringify({ ...params, token: ADM_CFG.requestToken }),
-  });
-  if (!resp.ok) throw new Error('HTTP ' + resp.status);
-  return resp.json();
-}
-
-// ══════════════════════════════════════════════════════════════
-// ALERT
-// ══════════════════════════════════════════════════════════════
-function visAlert(tekst, type = 'info') {
-  const el = document.getElementById('adm-alert');
-  el.className = 'alert alert-' + type + ' vis';
+function visStatus(tekst, type) {
+  const el = document.getElementById('login-status');
   el.textContent = tekst;
-  setTimeout(() => el.classList.remove('vis'), 5000);
+  el.className = 'status ' + type;
+  el.style.display = 'block';
 }
 
-// ══════════════════════════════════════════════════════════════
-// GOOGLE LOGIN
-// ══════════════════════════════════════════════════════════════
-function startGoogleLogin() {
-  if (!ADM_CFG.googleClientId || ADM_CFG.googleClientId.includes('INDSÆT')) {
-    document.getElementById('login-fejl').style.display = 'block';
-    document.getElementById('login-fejl').textContent = 'Google Client ID er ikke konfigureret i admin.html.';
+async function onGoogleLogin(response) {
+  if (!response?.credential) {
+    visStatus('Login mislykkedes. Prøv igen.', 'fejl');
     return;
   }
-  google.accounts.id.initialize({
-    client_id:         ADM_CFG.googleClientId,
-    callback:          handleGoogleCredential,
-    auto_select:       false,
-    cancel_on_tap_outside: true,
-  });
-  google.accounts.id.prompt();
-}
+  visStatus('Verificerer adgang…', 'info');
 
-async function handleGoogleCredential(response) {
   try {
-    const res = await apiPostPublic({ action: 'adminLogin', idToken: response.credential });
-    if (!res.ok) {
-      document.getElementById('login-fejl').style.display = 'block';
-      document.getElementById('login-fejl').textContent = res.fejl || 'Adgang nægtet.';
-      return;
+    if (SCRIPT_URL.startsWith('INDSÆT')) {
+      throw new Error('Apps Script URL er ikke konfigureret. Ret SCRIPT_URL i admin.html.');
     }
-    _adminToken = res.adminToken;
-    _adminEmail = res.email;
-    sessionStorage.setItem('lyg_admin_token', _adminToken);
-    sessionStorage.setItem('lyg_admin_email', _adminEmail);
-    visAdminSkærm();
+
+    // Send credential til Apps Script til servervalidering
+    const r = await fetch(SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'adminLogin',
+        googleCredential: response.credential,
+        token: REQUEST_TOKEN
+      })
+    });
+    if (!r.ok) throw new Error('Serverfejl: ' + r.status);
+    const data = await r.json();
+
+    if (!data.ok) throw new Error(data.fejl || 'Adgang nægtet');
+
+    // Gem admin-token (returneres fra server)
+    localStorage.setItem('ek_admin_token', data.adminToken);
+    localStorage.setItem('ek_admin_email', data.email);
+    localStorage.setItem('ek_admin_navn', data.navn || data.email);
+
+    visStatus('✓ Logget ind som ' + data.email, 'ok');
+
+    // Opdater UI
+    document.getElementById('login-sek').style.display = 'none';
+    const loggetIndSek = document.getElementById('logget-ind-sek');
+    loggetIndSek.style.display = 'block';
+    document.getElementById('admin-navn').textContent = data.navn || 'Administrator';
+    document.getElementById('admin-email-vis').textContent = data.email;
+
+    // Redirect til app efter 1.5 sek
+    setTimeout(() => { window.location.href = './index.html'; }, 1500);
+
   } catch(e) {
-    document.getElementById('login-fejl').style.display = 'block';
-    document.getElementById('login-fejl').textContent = 'Fejl: ' + e.message;
+    visStatus('Fejl: ' + e.message, 'fejl');
+    console.error('[Admin login]', e);
   }
 }
 
 function logUd() {
-  _adminToken = null;
-  _adminEmail = null;
-  sessionStorage.removeItem('lyg_admin_token');
-  sessionStorage.removeItem('lyg_admin_email');
-  document.getElementById('admin-screen').style.display = 'none';
-  document.getElementById('login-screen').style.display = 'flex';
-}
-
-// ══════════════════════════════════════════════════════════════
-// NAVIGATION
-// ══════════════════════════════════════════════════════════════
-function visAdminSkærm() {
-  document.getElementById('login-screen').style.display = 'none';
-  document.getElementById('admin-screen').style.display = 'block';
-  document.getElementById('hdr-email').textContent = _adminEmail || '';
-  document.getElementById('hdr-dato').textContent  = new Date().toLocaleDateString('da-DK');
-  hentAlleData();
-  visSek('arrangementer');
-}
-
-function visSek(id) {
-  document.querySelectorAll('[id^=sek-]').forEach(s => s.style.display = 'none');
-  document.querySelectorAll('.adm-sidebar a').forEach(a => a.classList.remove('aktiv'));
-  document.getElementById('sek-' + id).style.display = 'block';
-  const nav = document.getElementById('nav-' + id);
-  if (nav) nav.classList.add('aktiv');
-
-  // Indlæs data for sektionen
-  if (id === 'tilmeldinger')  renderTilmeldinger();
-  if (id === 'venteliste')    renderVenteliste();
-  if (id === 'nyheder')       renderNyheder();
-  if (id === 'sponsorer')     renderSponsorer();
-  if (id === 'popup')         renderPopup();
-  if (id === 'infobjaelke')   renderInfobjaelke();
-  if (id === 'emaillog')      hentEmaillog();
-  if (id === 'indstillinger') renderIndstillinger();
-  if (id === 'paamindelser')  renderArrDropdowns();
-}
-
-// ══════════════════════════════════════════════════════════════
-// DATA HENTNING
-// ══════════════════════════════════════════════════════════════
-async function hentAlleData() {
-  try {
-    const res = await apiPost({ action: 'adminGetAll' });
-    if (res.ok) {
-      _allData = res.data;
-      renderArrangementer();
-    } else {
-      visAlert('Fejl ved datahentning: ' + (res.fejl || 'Ukendt'), 'fejl');
-    }
-  } catch(e) {
-    visAlert('Netværksfejl: ' + e.message, 'fejl');
+  localStorage.removeItem('ek_admin_token');
+  localStorage.removeItem('ek_admin_email');
+  localStorage.removeItem('ek_admin_navn');
+  document.getElementById('login-sek').style.display = 'block';
+  document.getElementById('logget-ind-sek').style.display = 'none';
+  visStatus('Logget ud.', 'info');
+  // Revoke Google session
+  if (window.google?.accounts?.id) {
+    google.accounts.id.disableAutoSelect();
   }
 }
 
-// ══════════════════════════════════════════════════════════════
-// ARRANGEMENTER
-// ══════════════════════════════════════════════════════════════
-function renderArrangementer() {
-  if (!_allData || !_allData.ARR) return;
-  const { headers, rows } = _allData.ARR;
-
-  const tilmData = _allData.TILM ? _allData.TILM.rows : [];
-  const tilmHdr  = _allData.TILM ? _allData.TILM.headers : [];
-  const statusKol = tilmHdr.indexOf('Status');
-  const arrIdKol  = tilmHdr.indexOf('ArrID');
-
-  const aktive = rows.filter(r => r[headers.indexOf('Status')] !== 'slettet')
-    .sort((a,b) => new Date(a[headers.indexOf('Dato')]) - new Date(b[headers.indexOf('Dato')]));
-
-  const idKol = headers.indexOf('ID');
-  const tilKol = headers.indexOf('Titel');
-  const datKol = headers.indexOf('Dato');
-  const makKol = headers.indexOf('Maks');
-  const stKol  = headers.indexOf('Status');
-  const aabKol = headers.indexOf('Aaben');
-
-  if (!aktive.length) {
-    document.getElementById('arr-liste').innerHTML = '<p style="color:var(--mut);padding:20px">Ingen arrangementer endnu. Klik "+ Nyt arrangement" for at komme i gang.</p>';
-    return;
-  }
-
-  let html = `<table class="adm-tabel"><thead><tr>
-    <th>Titel</th><th>Dato</th><th>Maks</th><th>Tilmeldt</th><th>Status</th><th>Åben</th><th>Handlinger</th>
-  </tr></thead><tbody>`;
-
-  aktive.forEach(r => {
-    const arrId = r[idKol];
-    const tilm  = tilmData.filter(t => t[arrIdKol] === arrId && t[statusKol] !== 'afmeldt').length;
-    const dato  = r[datKol] ? new Date(r[datKol]).toLocaleDateString('da-DK') : '—';
-    const st    = r[stKol] || 'aktiv';
-    const aab   = r[aabKol] === true || r[aabKol] === 'TRUE';
-    const arrIdEnc = encodeURIComponent(arrId);
-
-    html += `<tr>
-      <td><strong>${r[tilKol] || '—'}</strong></td>
-      <td>${dato}</td>
-      <td>${r[makKol] || '∞'}</td>
-      <td>${tilm}</td>
-      <td><span class="badge ${st==='aktiv'?'badge-ok':st==='aflyst'?'badge-fejl':'badge-graa'}">${st}</span></td>
-      <td><span class="badge ${aab?'badge-ok':'badge-graa'}">${aab?'Åben':'Lukket'}</span></td>
-      <td>
-        <button class="btn btn-hvid btn-sm" onclick="redigerArr('${arrIdEnc}')">Redigér</button>
-        <button class="btn btn-fejl btn-sm" onclick="sletArr('${arrIdEnc}')">Slet</button>
-      </td>
-    </tr>`;
-  });
-
-  html += '</tbody></table>';
-  document.getElementById('arr-liste').innerHTML = html;
-}
-
-function nytArr() {
-  ['arr-id','arr-titel','arr-dato','arr-tid-fra','arr-tid-til','arr-pris','arr-lokation','arr-billede','arr-beskrivelse'].forEach(id => {
-    document.getElementById(id).value = '';
-  });
-  document.getElementById('arr-maks').value = '0';
-  document.getElementById('arr-status').value = 'aktiv';
-  document.getElementById('arr-aaben').value = 'true';
-  document.getElementById('arr-form-titel').textContent = 'Nyt arrangement';
-  document.getElementById('arr-form').style.display = 'block';
-  document.getElementById('arr-form').scrollIntoView({behavior:'smooth'});
-}
-
-function redigerArr(arrId) {
-  const { headers, rows } = _allData.ARR;
-  const r = rows.find(row => row[headers.indexOf('ID')] === decodeURIComponent(arrId));
-  if (!r) return;
-
-  const H = k => r[headers.indexOf(k)];
-  document.getElementById('arr-id').value          = H('ID');
-  document.getElementById('arr-titel').value       = H('Titel') || '';
-  const dato = H('Dato');
-  document.getElementById('arr-dato').value        = dato instanceof Date ? dato.toISOString().slice(0,10) : (dato || '');
-  document.getElementById('arr-tid-fra').value     = H('TidFra') || '';
-  document.getElementById('arr-tid-til').value     = H('TidTil') || '';
-  document.getElementById('arr-maks').value        = H('Maks') || 0;
-  document.getElementById('arr-pris').value        = H('Pris') || '';
-  document.getElementById('arr-status').value      = H('Status') || 'aktiv';
-  document.getElementById('arr-aaben').value       = (H('Aaben') === true || H('Aaben') === 'TRUE') ? 'true' : 'false';
-  document.getElementById('arr-lokation').value    = H('Lokation') || '';
-  document.getElementById('arr-billede').value     = H('Billede') || '';
-  document.getElementById('arr-beskrivelse').value = H('Beskrivelse') || '';
-  document.getElementById('arr-form-titel').textContent = 'Redigér: ' + H('Titel');
-  document.getElementById('arr-form').style.display = 'block';
-  document.getElementById('arr-form').scrollIntoView({behavior:'smooth'});
-}
-
-async function gemArr() {
-  const id = document.getElementById('arr-id').value || ('arr_' + Date.now());
-  const arr = {
-    ID:          id,
-    Titel:       document.getElementById('arr-titel').value,
-    Dato:        document.getElementById('arr-dato').value,
-    TidFra:      document.getElementById('arr-tid-fra').value,
-    TidTil:      document.getElementById('arr-tid-til').value,
-    Maks:        Number(document.getElementById('arr-maks').value),
-    Pris:        document.getElementById('arr-pris').value,
-    Status:      document.getElementById('arr-status').value,
-    Aaben:       document.getElementById('arr-aaben').value === 'true',
-    Lokation:    document.getElementById('arr-lokation').value,
-    Billede:     document.getElementById('arr-billede').value,
-    Beskrivelse: document.getElementById('arr-beskrivelse').value,
-  };
-  if (!arr.Titel || !arr.Dato) { visAlert('Titel og dato er påkrævet', 'fejl'); return; }
-
-  try {
-    const res = await apiPost({ action: 'adminSaveArr', arr });
-    if (res.ok) {
-      visAlert('Arrangement gemt!', 'ok');
-      lukArrForm();
-      hentAlleData();
-    } else {
-      visAlert('Fejl: ' + res.fejl, 'fejl');
-    }
-  } catch(e) { visAlert('Netværksfejl', 'fejl'); }
-}
-
-async function sletArr(arrId) {
-  if (!confirm('Er du sikker på, at du vil slette dette arrangement?\n\nTilmeldinger bevares i arkivet.')) return;
-  try {
-    const res = await apiPost({ action: 'adminDeleteArr', arrId: decodeURIComponent(arrId) });
-    if (res.ok) { visAlert('Arrangement slettet', 'ok'); hentAlleData(); }
-    else visAlert('Fejl: ' + res.fejl, 'fejl');
-  } catch(e) { visAlert('Netværksfejl', 'fejl'); }
-}
-
-function lukArrForm() {
-  document.getElementById('arr-form').style.display = 'none';
-}
-
-// ══════════════════════════════════════════════════════════════
-// TILMELDINGER
-// ══════════════════════════════════════════════════════════════
-function renderTilmeldinger() {
-  if (!_allData) return;
-  const { headers: ah, rows: ar } = _allData.ARR || { headers:[], rows:[] };
-  const { headers: th, rows: tr } = _allData.TILM || { headers:[], rows:[] };
-
-  // Byg arrangement-dropdown
-  const sel = document.getElementById('filter-arr');
-  const valgt = sel.value;
-  sel.innerHTML = '<option value="">Alle arrangementer</option>';
-  (ar || []).forEach(r => {
-    const id = r[ah.indexOf('ID')];
-    const t  = r[ah.indexOf('Titel')];
-    sel.innerHTML += `<option value="${id}"${id===valgt?' selected':''}>${t}</option>`;
-  });
-
-  filterTilm();
-}
-
-function filterTilm() {
-  if (!_allData || !_allData.TILM) return;
-  const { headers: th, rows: tr } = _allData.TILM;
-  const valgt = document.getElementById('filter-arr').value;
-
-  const idKol  = th.indexOf('ID');
-  const arrKol = th.indexOf('ArrID');
-  const navnKol = th.indexOf('Navn');
-  const emailKol = th.indexOf('Email');
-  const virKol = th.indexOf('Virksomhed');
-  const antKol = th.indexOf('Antal');
-  const stKol  = th.indexOf('Status');
-  const datKol = th.indexOf('OprettetDato');
-  const titKol = th.indexOf('ArrTitel');
-
-  let rows = tr.filter(r => r[stKol] !== 'afmeldt');
-  if (valgt) rows = rows.filter(r => r[arrKol] === valgt);
-
-  if (!rows.length) {
-    document.getElementById('tilm-liste').innerHTML = '<p style="color:var(--mut);padding:20px">Ingen aktive tilmeldinger for valgte filter.</p>';
-    return;
-  }
-
-  let html = `<table class="adm-tabel"><thead><tr>
-    <th>Navn</th><th>Virksomhed</th><th>E-mail</th><th>Antal</th><th>Arrangement</th><th>Dato</th><th>Afmeld</th>
-  </tr></thead><tbody>`;
-
-  rows.forEach(r => {
-    const tilmId = r[idKol];
-    const dato   = r[datKol] ? new Date(r[datKol]).toLocaleDateString('da-DK') : '—';
-    html += `<tr>
-      <td>${r[navnKol]||'—'}</td>
-      <td>${r[virKol]||'—'}</td>
-      <td><a href="mailto:${r[emailKol]}">${r[emailKol]||'—'}</a></td>
-      <td>${r[antKol]||1}</td>
-      <td>${r[titKol]||r[arrKol]||'—'}</td>
-      <td>${dato}</td>
-      <td><button class="btn btn-fejl btn-sm" onclick="afmeldManuelt('${encodeURIComponent(tilmId)}')">Afmeld</button></td>
-    </tr>`;
-  });
-
-  html += '</tbody></table>';
-  document.getElementById('tilm-liste').innerHTML = html;
-}
-
-async function eksporterCSV() {
-  const arrId = document.getElementById('filter-arr').value || '';
-  try {
-    const res = await apiPost({ action: 'adminEksporterCSV', arrId });
-    if (!res.ok) { visAlert('Fejl: ' + res.fejl, 'fejl'); return; }
-
-    const blob = new Blob(['﻿' + res.csv], { type: 'text/csv;charset=utf-8;' });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href     = url;
-    a.download = 'tilmeldinger_' + new Date().toISOString().slice(0,10) + '.csv';
-    a.click();
-    URL.revokeObjectURL(url);
-    visAlert('CSV-fil downloaded (' + res.antal + ' rækker)', 'ok');
-  } catch(e) { visAlert('Eksport fejlede', 'fejl'); }
-}
-
-async function afmeldManuelt(tilmId) {
-  if (!confirm('Afmeld denne deltager?\n\nDeltager modtager bekræftelse på e-mail.')) return;
-  try {
-    const res = await apiPost({ action: 'adminAfmeldManuelt', tilmId: decodeURIComponent(tilmId), sendMail: true });
-    if (res.ok) { visAlert('Deltager afmeldt', 'ok'); hentAlleData(); renderTilmeldinger(); }
-    else visAlert('Fejl: ' + res.fejl, 'fejl');
-  } catch(e) { visAlert('Netværksfejl', 'fejl'); }
-}
-
-// ══════════════════════════════════════════════════════════════
-// VENTELISTE
-// ══════════════════════════════════════════════════════════════
-function renderVenteliste() {
-  if (!_allData || !_allData.VENTE) {
-    document.getElementById('vente-liste').innerHTML = '<p style="color:var(--mut);padding:20px">Ingen ventelistedata.</p>';
-    return;
-  }
-  const { headers: vh, rows: vr } = _allData.VENTE;
-  const aktive = vr.filter(r => r[vh.indexOf('Status')] !== 'aktiveret');
-
-  if (!aktive.length) {
-    document.getElementById('vente-liste').innerHTML = '<p style="color:var(--mut);padding:20px">Ingen på ventelisten.</p>';
-    return;
-  }
-
-  const idKol  = vh.indexOf('ID');
-  const navnKol = vh.indexOf('Navn');
-  const emailKol = vh.indexOf('Email');
-  const arrKol = vh.indexOf('ArrTitel');
-  const datKol = vh.indexOf('OprettetDato');
-  const antKol = vh.indexOf('Antal');
-
-  let html = `<table class="adm-tabel"><thead><tr>
-    <th>Navn</th><th>E-mail</th><th>Arrangement</th><th>Antal</th><th>Tilmeldt</th><th>Aktiver</th>
-  </tr></thead><tbody>`;
-
-  aktive.forEach(r => {
-    const id   = r[idKol];
-    const dato = r[datKol] ? new Date(r[datKol]).toLocaleDateString('da-DK') : '—';
-    html += `<tr>
-      <td>${r[navnKol]||'—'}</td>
-      <td><a href="mailto:${r[emailKol]}">${r[emailKol]||'—'}</a></td>
-      <td>${r[arrKol]||'—'}</td>
-      <td>${r[antKol]||1}</td>
-      <td>${dato}</td>
-      <td><button class="btn btn-ok btn-sm" onclick="aktiverVente('${encodeURIComponent(id)}')">Tilbyd plads</button></td>
-    </tr>`;
-  });
-
-  html += '</tbody></table>';
-  document.getElementById('vente-liste').innerHTML = html;
-}
-
-async function aktiverVente(venteId) {
-  if (!confirm('Send e-mail til personen om ledig plads?')) return;
-  try {
-    const res = await apiPost({ action: 'adminAktivérVenteliste', venteId: decodeURIComponent(venteId) });
-    if (res.ok) { visAlert('Plads-besked sendt!', 'ok'); hentAlleData(); renderVenteliste(); }
-    else visAlert('Fejl: ' + res.fejl, 'fejl');
-  } catch(e) { visAlert('Netværksfejl', 'fejl'); }
-}
-
-// ══════════════════════════════════════════════════════════════
-// E-MAIL & BESKEDER
-// ══════════════════════════════════════════════════════════════
-function renderArrDropdowns() {
-  if (!_allData || !_allData.ARR) return;
-  const { headers, rows } = _allData.ARR;
-  const aktive = rows.filter(r => r[headers.indexOf('Status')] === 'aktiv');
-  const opts = '<option value="">— Vælg arrangement —</option>' +
-    aktive.map(r => `<option value="${r[headers.indexOf('ID')]}">${r[headers.indexOf('Titel')]}</option>`).join('');
-
-  ['paamind-arr','aendring-arr','aflysning-arr','praktisk-arr'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.innerHTML = opts;
-  });
-}
-
-async function sendPaamind() {
-  const arrId = document.getElementById('paamind-arr').value;
-  if (!arrId) { visAlert('Vælg et arrangement', 'fejl'); return; }
-  if (!confirm('Send påminding til alle tilmeldte i dette arrangement?')) return;
-  try {
-    const res = await apiPost({ action: 'adminSendPaamind', arrId });
-    if (res.ok) visAlert(`Påminding sendt til ${res.sendt} deltagere`, 'ok');
-    else visAlert('Fejl: ' + res.fejl, 'fejl');
-  } catch(e) { visAlert('Netværksfejl', 'fejl'); }
-}
-
-async function sendAendring() {
-  const arrId = document.getElementById('aendring-arr').value;
-  const tekst = document.getElementById('aendring-tekst').value;
-  if (!arrId || !tekst) { visAlert('Vælg arrangement og skriv en besked', 'fejl'); return; }
-  if (!confirm('Send ændringsbesked til alle tilmeldte?')) return;
-  try {
-    const res = await apiPost({ action: 'adminSendAendring', arrId, aendringsTekst: tekst });
-    if (res.ok) visAlert(`Ændringsbesked sendt til ${res.sendt} deltagere`, 'ok');
-    else visAlert('Fejl: ' + res.fejl, 'fejl');
-  } catch(e) { visAlert('Netværksfejl', 'fejl'); }
-}
-
-async function sendAflysning() {
-  const arrId = document.getElementById('aflysning-arr').value;
-  const tekst = document.getElementById('aflysning-tekst').value;
-  if (!arrId) { visAlert('Vælg et arrangement', 'fejl'); return; }
-  if (!confirm('Er du sikker?\n\nArrangementet markeres som AFLYST og alle tilmeldte modtager besked.')) return;
-  try {
-    const res = await apiPost({ action: 'adminSendAflysning', arrId, aflysningsTekst: tekst });
-    if (res.ok) { visAlert(`Aflysning sendt til ${res.sendt} deltagere`, 'ok'); hentAlleData(); }
-    else visAlert('Fejl: ' + res.fejl, 'fejl');
-  } catch(e) { visAlert('Netværksfejl', 'fejl'); }
-}
-
-async function sendPraktisk() {
-  const arrId = document.getElementById('praktisk-arr').value;
-  const tekst = document.getElementById('praktisk-tekst').value;
-  if (!arrId || !tekst) { visAlert('Vælg arrangement og skriv tekst', 'fejl'); return; }
-  if (!confirm('Send praktiske oplysninger til alle tilmeldte?')) return;
-  try {
-    const res = await apiPost({ action: 'adminSendPraktisk', arrId, praktiskTekst: tekst });
-    if (res.ok) visAlert(`Praktiske oplysninger sendt til ${res.sendt} deltagere`, 'ok');
-    else visAlert('Fejl: ' + res.fejl, 'fejl');
-  } catch(e) { visAlert('Netværksfejl', 'fejl'); }
-}
-
-// ══════════════════════════════════════════════════════════════
-// E-MAILLOG
-// ══════════════════════════════════════════════════════════════
-async function hentEmaillog() {
-  const all = document.getElementById('vis-alle-mails')?.checked || false;
-  document.getElementById('email-liste').innerHTML = '<div class="loading"></div>';
-  try {
-    const res = await apiPost({ action: 'adminGetEmaillog', all });
-    if (!res.ok) { document.getElementById('email-liste').innerHTML = '<p style="color:var(--fejl)">Fejl: ' + (res.fejl||'Ukendt') + '</p>'; return; }
-
-    const rows = res.emaillog || [];
-    if (!rows.length) {
-      document.getElementById('email-liste').innerHTML = '<p style="color:var(--mut);padding:20px">' + (all ? 'Ingen e-mails i log.' : 'Ingen fejlede e-mails.') + '</p>';
-      return;
-    }
-
-    let html = `<table class="adm-tabel"><thead><tr>
-      <th>Status</th><th>Type</th><th>Modtager</th><th>Sendt</th><th>Fejl</th><th>Handling</th>
-    </tr></thead><tbody>`;
-
-    rows.forEach(r => {
-      const st     = r.Status || 'fejl';
-      const sendt  = r.Sendt ? new Date(r.Sendt).toLocaleString('da-DK') : '—';
-      const fejl   = r.FejlBesked || '';
-      const id     = r.ID || '';
-      const kanRetry = st !== 'sendt';
-
-      html += `<tr>
-        <td><span class="email-status ${st.startsWith('sendt')?'ok':st==='retry'?'retry':'fejl'}"></span>
-          <span class="badge ${st.startsWith('sendt')?'badge-ok':st==='retry'?'badge-vente':'badge-fejl'}">${st}</span></td>
-        <td>${r.Type||'—'}</td>
-        <td>${r.Modtager||'—'}</td>
-        <td>${sendt}</td>
-        <td style="font-size:.8rem;color:var(--fejl);max-width:200px;overflow:hidden;text-overflow:ellipsis">${fejl}</td>
-        <td>${kanRetry && id ? `<button class="btn btn-g btn-sm" onclick="retryEmail('${encodeURIComponent(id)}')">↩ Gensend</button>` : '—'}</td>
-      </tr>`;
-    });
-
-    html += '</tbody></table>';
-    document.getElementById('email-liste').innerHTML = html;
-  } catch(e) {
-    document.getElementById('email-liste').innerHTML = '<p style="color:var(--fejl)">Fejl: ' + e.message + '</p>';
-  }
-}
-
-async function retryEmail(emailId) {
-  if (!confirm('Forsøg at gensende denne e-mail?\n\nAllerede sendte e-mails sendes IKKE dobbelt.')) return;
-  try {
-    const res = await apiPost({ action: 'adminRetryEmail', emailId: decodeURIComponent(emailId) });
-    if (res.ok) { visAlert('E-mail gensendt!', 'ok'); hentEmaillog(); }
-    else visAlert('Fejl: ' + res.fejl, 'fejl');
-  } catch(e) { visAlert('Netværksfejl', 'fejl'); }
-}
-
-// ══════════════════════════════════════════════════════════════
-// NYHEDER
-// ══════════════════════════════════════════════════════════════
-function renderNyheder() {
-  if (!_allData || !_allData.NYHEDER) return;
-  const { headers, rows } = _allData.NYHEDER;
-  const idK = headers.indexOf('ID'), titK = headers.indexOf('Titel'), datK = headers.indexOf('Dato'), aktK = headers.indexOf('Aktiv');
-
-  if (!rows.length) { document.getElementById('nyheder-liste').innerHTML = '<p style="color:var(--mut);padding:20px">Ingen nyheder endnu.</p>'; return; }
-
-  let html = `<table class="adm-tabel"><thead><tr><th>Titel</th><th>Dato</th><th>Aktiv</th><th>Redigér</th></tr></thead><tbody>`;
-  rows.forEach(r => {
-    const akt = r[aktK] === true || r[aktK] === 'TRUE';
-    html += `<tr>
-      <td>${r[titK]||'—'}</td>
-      <td>${r[datK] ? new Date(r[datK]).toLocaleDateString('da-DK') : '—'}</td>
-      <td><span class="badge ${akt?'badge-ok':'badge-graa'}">${akt?'Aktiv':'Skjult'}</span></td>
-      <td><button class="btn btn-hvid btn-sm" onclick="redigerNyhed('${encodeURIComponent(r[idK])}')">Redigér</button></td>
-    </tr>`;
-  });
-  html += '</tbody></table>';
-  document.getElementById('nyheder-liste').innerHTML = html;
-}
-
-function nyNyhed() {
-  ['nyhed-id','nyhed-titel','nyhed-dato','nyhed-tekst','nyhed-billede','nyhed-url','nyhed-link-tekst'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('nyhed-aktiv').value = 'true';
-  document.getElementById('nyhed-form-titel').textContent = 'Ny nyhed';
-  document.getElementById('nyheder-form').style.display = 'block';
-}
-
-function redigerNyhed(id) {
-  const { headers, rows } = _allData.NYHEDER;
-  const r = rows.find(row => row[headers.indexOf('ID')] === decodeURIComponent(id));
-  if (!r) return;
-  const H = k => r[headers.indexOf(k)];
-  document.getElementById('nyhed-id').value        = H('ID');
-  document.getElementById('nyhed-titel').value     = H('Titel') || '';
-  const d = H('Dato');
-  document.getElementById('nyhed-dato').value      = d instanceof Date ? d.toISOString().slice(0,10) : (d||'');
-  document.getElementById('nyhed-tekst').value     = H('Tekst') || '';
-  document.getElementById('nyhed-aktiv').value     = (H('Aktiv')===true||H('Aktiv')==='TRUE') ? 'true' : 'false';
-  document.getElementById('nyhed-billede').value   = H('Billede') || '';
-  document.getElementById('nyhed-url').value       = H('LinkUrl') || '';
-  document.getElementById('nyhed-link-tekst').value = H('LinkTekst') || '';
-  document.getElementById('nyhed-form-titel').textContent = 'Redigér nyhed';
-  document.getElementById('nyheder-form').style.display = 'block';
-}
-
-async function gemNyhed() {
-  const nyhed = {
-    ID:        document.getElementById('nyhed-id').value || ('nyh_'+Date.now()),
-    Titel:     document.getElementById('nyhed-titel').value,
-    Dato:      document.getElementById('nyhed-dato').value,
-    Tekst:     document.getElementById('nyhed-tekst').value,
-    Aktiv:     document.getElementById('nyhed-aktiv').value === 'true',
-    Billede:   document.getElementById('nyhed-billede').value,
-    LinkUrl:   document.getElementById('nyhed-url').value,
-    LinkTekst: document.getElementById('nyhed-link-tekst').value,
-  };
-  try {
-    const res = await apiPost({ action: 'adminSaveNyhed', nyhed });
-    if (res.ok) { visAlert('Nyhed gemt!', 'ok'); lukNyhedForm(); hentAlleData(); renderNyheder(); }
-    else visAlert('Fejl: ' + res.fejl, 'fejl');
-  } catch(e) { visAlert('Netværksfejl', 'fejl'); }
-}
-
-function lukNyhedForm() { document.getElementById('nyheder-form').style.display = 'none'; }
-
-// ══════════════════════════════════════════════════════════════
-// SPONSORER
-// ══════════════════════════════════════════════════════════════
-function renderSponsorer() {
-  if (!_allData || !_allData.SPONSOR) return;
-  const { headers, rows } = _allData.SPONSOR;
-  const idK = headers.indexOf('ID'), navnK = headers.indexOf('Navn'), nivK = headers.indexOf('Niveau'), aktK = headers.indexOf('Aktiv');
-
-  if (!rows.length) { document.getElementById('sponsor-liste').innerHTML = '<p style="color:var(--mut);padding:20px">Ingen sponsorer endnu.</p>'; return; }
-
-  let html = `<table class="adm-tabel"><thead><tr><th>Navn</th><th>Niveau</th><th>Aktiv</th><th>Redigér</th></tr></thead><tbody>`;
-  rows.forEach(r => {
-    const akt = r[aktK] === true || r[aktK] === 'TRUE';
-    html += `<tr>
-      <td>${r[navnK]||'—'}</td>
-      <td>${r[nivK]||'—'}</td>
-      <td><span class="badge ${akt?'badge-ok':'badge-graa'}">${akt?'Aktiv':'Skjult'}</span></td>
-      <td><button class="btn btn-hvid btn-sm" onclick="redigerSponsor('${encodeURIComponent(r[idK])}')">Redigér</button></td>
-    </tr>`;
-  });
-  html += '</tbody></table>';
-  document.getElementById('sponsor-liste').innerHTML = html;
-}
-
-function nySponsor() {
-  ['sponsor-id','sponsor-navn','sponsor-email','sponsor-tlf','sponsor-web'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('sponsor-aktiv').value = 'true';
-  document.getElementById('sponsor-form').style.display = 'block';
-}
-
-function redigerSponsor(id) {
-  const { headers, rows } = _allData.SPONSOR;
-  const r = rows.find(row => row[headers.indexOf('ID')] === decodeURIComponent(id));
-  if (!r) return;
-  const H = k => r[headers.indexOf(k)];
-  document.getElementById('sponsor-id').value    = H('ID');
-  document.getElementById('sponsor-navn').value  = H('Navn') || '';
-  document.getElementById('sponsor-niveau').value = H('Niveau') || 'Guld';
-  document.getElementById('sponsor-email').value = H('Email') || '';
-  document.getElementById('sponsor-tlf').value   = H('Telefon') || '';
-  document.getElementById('sponsor-aktiv').value = (H('Aktiv')===true||H('Aktiv')==='TRUE') ? 'true' : 'false';
-  document.getElementById('sponsor-web').value   = H('Website') || '';
-  document.getElementById('sponsor-form').style.display = 'block';
-}
-
-async function gemSponsor() {
-  const sponsor = {
-    ID:          document.getElementById('sponsor-id').value || ('spo_'+Date.now()),
-    Navn:        document.getElementById('sponsor-navn').value,
-    Niveau:      document.getElementById('sponsor-niveau').value,
-    Email:       document.getElementById('sponsor-email').value,
-    Telefon:     document.getElementById('sponsor-tlf').value,
-    Aktiv:       document.getElementById('sponsor-aktiv').value === 'true',
-    Website:     document.getElementById('sponsor-web').value,
-  };
-  try {
-    const res = await apiPost({ action: 'adminSaveSponsor', sponsor });
-    if (res.ok) { visAlert('Sponsor gemt!', 'ok'); lukSponsorForm(); hentAlleData(); renderSponsorer(); }
-    else visAlert('Fejl: ' + res.fejl, 'fejl');
-  } catch(e) { visAlert('Netværksfejl', 'fejl'); }
-}
-
-function lukSponsorForm() { document.getElementById('sponsor-form').style.display = 'none'; }
-
-// ══════════════════════════════════════════════════════════════
-// POPUP
-// ══════════════════════════════════════════════════════════════
-function renderPopup() {
-  if (!_allData || !_allData.POPUP || !_allData.POPUP.rows.length) return;
-  const { headers, rows } = _allData.POPUP;
-  const r = rows[0];
-  const H = k => r[headers.indexOf(k)];
-  document.getElementById('popup-aktiv').value    = (H('Aktiv')===true||H('Aktiv')==='TRUE') ? 'true' : 'false';
-  document.getElementById('popup-noegle').value   = H('Noegle') || 'popup_v1';
-  document.getElementById('popup-titel').value    = H('Titel') || '';
-  document.getElementById('popup-tekst').value    = H('Tekst') || '';
-  document.getElementById('popup-cta-tekst').value = H('CtaTekst') || '';
-  document.getElementById('popup-cta-url').value  = H('CtaUrl') || '';
-}
-
-async function gemPopup() {
-  const popup = {
-    Aktiv:    document.getElementById('popup-aktiv').value === 'true',
-    Noegle:   document.getElementById('popup-noegle').value || 'popup_v1',
-    Titel:    document.getElementById('popup-titel').value,
-    Tekst:    document.getElementById('popup-tekst').value,
-    CtaTekst: document.getElementById('popup-cta-tekst').value,
-    CtaUrl:   document.getElementById('popup-cta-url').value,
-  };
-  try {
-    const res = await apiPost({ action: 'adminSavePopup', popup });
-    if (res.ok) visAlert('Popup gemt!', 'ok');
-    else visAlert('Fejl: ' + res.fejl, 'fejl');
-  } catch(e) { visAlert('Netværksfejl', 'fejl'); }
-}
-
-// ══════════════════════════════════════════════════════════════
-// INFOBJÆLKE
-// ══════════════════════════════════════════════════════════════
-function renderInfobjaelke() {
-  if (!_allData || !_allData.INFOBJ || !_allData.INFOBJ.rows.length) return;
-  const { headers, rows } = _allData.INFOBJ;
-  const r = rows[0];
-  const H = k => r[headers.indexOf(k)];
-  document.getElementById('ib-aktiv').value    = (H('Aktiv')===true||H('Aktiv')==='TRUE') ? 'true' : 'false';
-  document.getElementById('ib-tekst').value    = H('Tekst') || '';
-  document.getElementById('ib-url').value      = H('LinkUrl') || '';
-  document.getElementById('ib-link-tekst').value = H('LinkTekst') || '';
-}
-
-async function gemInfobjaelke() {
-  const ib = {
-    Aktiv:     document.getElementById('ib-aktiv').value === 'true',
-    Tekst:     document.getElementById('ib-tekst').value,
-    LinkUrl:   document.getElementById('ib-url').value,
-    LinkTekst: document.getElementById('ib-link-tekst').value,
-  };
-  try {
-    const res = await apiPost({ action: 'adminSaveInfobjaelke', ib });
-    if (res.ok) visAlert('Infobjælke gemt!', 'ok');
-    else visAlert('Fejl: ' + res.fejl, 'fejl');
-  } catch(e) { visAlert('Netværksfejl', 'fejl'); }
-}
-
-// ══════════════════════════════════════════════════════════════
-// INDSTILLINGER (nyt i v8.3)
-// ══════════════════════════════════════════════════════════════
-function renderIndstillinger() {
-  if (!_allData || !_allData.INDSTIL) {
-    document.getElementById('indstil-liste').innerHTML = '<p style="color:var(--mut);padding:20px">Henter indstillinger...</p>';
-    return;
-  }
-  const { headers, rows } = _allData.INDSTIL;
-  if (!rows.length) { document.getElementById('indstil-liste').innerHTML = '<p style="color:var(--mut);padding:20px">Ingen indstillinger endnu.</p>'; return; }
-
-  const nK = headers.indexOf('Nøgle'), vK = headers.indexOf('Værdi'), bK = headers.indexOf('Beskrivelse');
-
-  let html = `<table class="adm-tabel"><thead><tr><th>Nøgle</th><th>Værdi</th><th>Beskrivelse</th><th>Redigér</th></tr></thead><tbody>`;
-  rows.forEach(r => {
-    html += `<tr>
-      <td><code>${r[nK]||'—'}</code></td>
-      <td><strong>${r[vK]||'—'}</strong></td>
-      <td style="color:var(--mut);font-size:.85rem">${r[bK]||''}</td>
-      <td><button class="btn btn-hvid btn-sm" onclick="fyldIndstilling('${encodeURIComponent(r[nK])}','${encodeURIComponent(r[vK])}','${encodeURIComponent(r[bK]||'')}')">Redigér</button></td>
-    </tr>`;
-  });
-  html += '</tbody></table>';
-  document.getElementById('indstil-liste').innerHTML = html;
-}
-
-function fyldIndstilling(noegle, vaerdi, beskrivelse) {
-  document.getElementById('indstil-noegle').value     = decodeURIComponent(noegle);
-  document.getElementById('indstil-vaerdi').value     = decodeURIComponent(vaerdi);
-  document.getElementById('indstil-beskrivelse').value = decodeURIComponent(beskrivelse);
-  document.getElementById('indstil-noegle').scrollIntoView({behavior:'smooth'});
-}
-
-async function gemIndstilling() {
-  const noegle = document.getElementById('indstil-noegle').value;
-  const vaerdi = document.getElementById('indstil-vaerdi').value;
-  const beskrivelse = document.getElementById('indstil-beskrivelse').value;
-  if (!noegle || !vaerdi) { visAlert('Nøgle og værdi er påkrævet', 'fejl'); return; }
-  try {
-    const res = await apiPost({ action: 'adminGemIndstilling', noegle, vaerdi, beskrivelse });
-    if (res.ok) { visAlert('Indstilling gemt!', 'ok'); hentAlleData(); renderIndstillinger(); }
-    else visAlert('Fejl: ' + res.fejl, 'fejl');
-  } catch(e) { visAlert('Netværksfejl', 'fejl'); }
-}
-
-// ══════════════════════════════════════════════════════════════
-// OPSTART
-// ══════════════════════════════════════════════════════════════
+// Check om allerede logget ind
 window.addEventListener('load', () => {
-  if (_adminToken) {
-    visAdminSkærm();
-  } else {
-    document.getElementById('login-screen').style.display = 'flex';
+  const token = localStorage.getItem('ek_admin_token');
+  const email = localStorage.getItem('ek_admin_email');
+  const navn  = localStorage.getItem('ek_admin_navn');
+  if (token && email) {
+    document.getElementById('login-sek').style.display = 'none';
+    const sek = document.getElementById('logget-ind-sek');
+    sek.style.display = 'block';
+    document.getElementById('admin-navn').textContent = navn || 'Administrator';
+    document.getElementById('admin-email-vis').textContent = email;
   }
 });
 </script>
+
 </body>
 </html>
