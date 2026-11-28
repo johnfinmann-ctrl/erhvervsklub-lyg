@@ -20,11 +20,11 @@
   <title>LYG Erhvervsklub</title>
 
   <!-- PWA -->
-  <link rel="manifest" href="./manifest.json?v=8.9.1">
+  <link rel="manifest" href="./manifest.json?v=8.9.2">
   <link rel="apple-touch-icon" href="./icons/icon-192.png">
   <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
 
-  <link rel="stylesheet" href="./style.css?v=8.9.1">
+  <link rel="stylesheet" href="./style.css?v=8.9.2">
 </head>
 <body>
 
@@ -201,34 +201,130 @@
   </div>
 </div>
 
-<!-- ══ OVERSIGT-MENU (Mere-siden) ═════════════════════════════ -->
-<div id="mere-menu" style="display:none;position:fixed;inset:0;z-index:150;background:rgba(13,43,26,.7);backdrop-filter:blur(4px)" onclick="this.style.display='none'">
-  <div style="position:absolute;bottom:calc(60px + env(safe-area-inset-bottom,0px));left:0;right:0;background:var(--p);border-top:2px solid var(--g);padding:1.25rem 1rem 1rem;" onclick="event.stopPropagation()">
-    <p style="color:var(--g);font-size:.7rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;margin-bottom:1rem">OVERSIGT</p>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
-      <button class="knap-sek" style="color:var(--cr);border-color:rgba(245,240,230,.3)" onclick="document.getElementById('mere-menu').style.display='none';navTil('om')">Om EK</button>
-      <button class="knap-sek" style="color:var(--cr);border-color:rgba(245,240,230,.3)" onclick="document.getElementById('mere-menu').style.display='none';navTil('nyheder')">Nyheder</button>
-      <button class="knap-sek" style="color:var(--cr);border-color:rgba(245,240,230,.3)" onclick="document.getElementById('mere-menu').style.display='none';navTil('sponsor')">Sponsorater</button>
-      <button class="knap-sek" style="color:var(--cr);border-color:rgba(245,240,230,.3)" onclick="document.getElementById('mere-menu').style.display='none';navTil('kontakt')">Kontakt</button>
-      <button class="knap-sek" style="color:var(--cr);border-color:rgba(245,240,230,.3)" onclick="document.getElementById('mere-menu').style.display='none';navTil('admin')">Admin</button>
+<!-- ══ OVERSIGT-MENU (Mere-siden) — v8.9.2 professionelt panel ═ -->
+<div id="mere-menu" class="mm-backdrop" onclick="lukMereMenu()" aria-modal="true" role="dialog" aria-label="Oversigt">
+  <div class="mm-panel" onclick="event.stopPropagation()">
+    <div class="mm-topbar">
+      <span class="mm-overskrift">OVERSIGT</span>
+      <button class="mm-luk" onclick="lukMereMenu()" aria-label="Luk menu">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <nav class="mm-liste">
+      <!-- Om Erhvervsklubben -->
+      <button class="mm-punkt" onclick="lukMereMenu();navTil('om')">
+        <span class="mm-ikon-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </span>
+        <span class="mm-tekst">
+          <strong>Om Erhvervsklubben</strong>
+          <span>Netværk og fællesskab</span>
+        </span>
+        <svg class="mm-pil" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+      <!-- Nyheder -->
+      <button class="mm-punkt" onclick="lukMereMenu();navTil('nyheder')">
+        <span class="mm-ikon-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        </span>
+        <span class="mm-tekst">
+          <strong>Nyheder</strong>
+          <span>Seneste fra EK</span>
+        </span>
+        <svg class="mm-pil" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+      <!-- Sponsorater -->
+      <button class="mm-punkt" onclick="lukMereMenu();navTil('sponsor')">
+        <span class="mm-ikon-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        </span>
+        <span class="mm-tekst">
+          <strong>Sponsorater</strong>
+          <span>Bliv synlig partner</span>
+        </span>
+        <svg class="mm-pil" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+      <!-- Kontakt -->
+      <button class="mm-punkt" onclick="lukMereMenu();navTil('kontakt')">
+        <span class="mm-ikon-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        </span>
+        <span class="mm-tekst">
+          <strong>Kontakt</strong>
+          <span>Skriv til os</span>
+        </span>
+        <svg class="mm-pil" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+      <!-- Lyngbygaard.dk -->
+      <a class="mm-punkt" href="https://lyg.dk" target="_blank" rel="noopener" onclick="lukMereMenu()">
+        <span class="mm-ikon-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        </span>
+        <span class="mm-tekst">
+          <strong>Lyngbygaard.dk</strong>
+          <span>Klubbens hjemmeside</span>
+        </span>
+        <svg class="mm-pil" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+      </a>
+      <!-- Installér appen -->
+      <button class="mm-punkt" id="mm-install-knap" style="display:none" onclick="lukMereMenu();visInstallPrompt()">
+        <span class="mm-ikon-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        </span>
+        <span class="mm-tekst">
+          <strong>Installér appen</strong>
+          <span>Tilføj til startskærm</span>
+        </span>
+        <svg class="mm-pil" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+    </nav>
+    <!-- Admin-link diskret i bunden -->
+    <div class="mm-bund">
+      <button class="mm-admin-knap" onclick="lukMereMenu();navTil('admin')">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        Admin
+      </button>
     </div>
   </div>
 </div>
 
-<script src="./app.js?v=8.9.1"></script>
+<script src="./app.js?v=8.9.2"></script>
 
 <script>
-// Oversigt-knap aktiverer menu i stedet for tom side
+// Oversigt-knap aktiverer det professionelle panel — v8.9.2
+function lukMereMenu() {
+  const menu = document.getElementById('mere-menu');
+  if (menu) { menu.classList.remove('aaben'); setTimeout(() => { menu.style.display = 'none'; }, 220); }
+}
+function aabnMereMenu() {
+  const menu = document.getElementById('mere-menu');
+  if (menu) { menu.style.display = 'flex'; requestAnimationFrame(() => menu.classList.add('aaben')); }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   const mereKnap = document.querySelector('.nav-item[data-side="mere"]');
   if (mereKnap) {
     mereKnap.addEventListener('click', e => {
       e.stopPropagation();
       const menu = document.getElementById('mere-menu');
-      if (menu) menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+      if (!menu) return;
+      if (menu.classList.contains('aaben')) { lukMereMenu(); } else { aabnMereMenu(); }
     });
   }
+  // Installér-knap i Oversigt — vis kun hvis beforeinstallprompt er tilgængeligt
+  window.addEventListener('beforeinstallprompt', (e) => {
+    window._installPromptEvent = e;
+    const knap = document.getElementById('mm-install-knap');
+    if (knap) knap.style.display = 'flex';
+  });
 });
+
+function visInstallPrompt() {
+  if (window._installPromptEvent) {
+    window._installPromptEvent.prompt();
+    window._installPromptEvent.userChoice.then(() => { window._installPromptEvent = null; });
+  }
+}
 </script>
 
 </body>

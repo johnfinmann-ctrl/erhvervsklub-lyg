@@ -1,5 +1,5 @@
 /* ================================================================
-   LYNGBYGAARD ERHVERVSKLUB — app.js v8.9.1
+   LYNGBYGAARD ERHVERVSKLUB — app.js v8.9.2
    Al konfiguration samlet øverst. Ret her – ingen andre steder.
 
    CHANGELOG v8.9:
@@ -539,45 +539,26 @@ function pgForside(params = {}) {
 
   </div><!-- /forside-pc-grid -->
 
-  <!-- Stats -->
-  <div class="stats-bjaelke">
-    <div class="stat-item"><span class="stat-tal">100+</span><span class="stat-lbl">Virksomheder</span></div>
-    <div class="stat-sep"></div>
-    <div class="stat-item"><span class="stat-tal">10</span><span class="stat-lbl">Arrangementer</span></div>
-    <div class="stat-sep"></div>
-    <div class="stat-item"><span class="stat-tal">35+</span><span class="stat-lbl">Års tradition</span></div>
-  </div>
-
-  <!-- Om EK -->
-  <div class="forside-sek om-ek-sek">
-    <h2 class="sek-h">Mere end golf</h2>
-    <p class="sek-p">Erhvervsklubben samler virksomheder og beslutningstagere i Aarhus-regionen om relationer, netværk og golf. Med over 100 erhvervsmedlemmer er vi et af regionens stærkeste forretningsnetværk.</p>
-    <div class="om-punkter-grid">
-      <div class="om-p">
-        <svg class="om-ikon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-        <strong>Netværk</strong><span>100+ virksomheder</span>
-      </div>
-      <div class="om-p">
-        <svg class="om-ikon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
-        <strong>Golf & sport</strong><span>Turneringer og rejser</span>
-      </div>
-      <div class="om-p">
-        <svg class="om-ikon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg>
-        <strong>EK-Mesterskabet</strong><span>Årets højdepunkt</span>
-      </div>
-      <div class="om-p">
-        <svg class="om-ikon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-        <strong>10 events/år</strong><span>Fra SIM til julefrokost</span>
-      </div>
-    </div>
-    <button class="knap-sek" onclick="navTil('om')">Om Erhvervsklubben</button>
-  </div>
-
-  <!-- EK-Golf -->
-  <div class="forside-sek ekgolf-sek">
-    <h2 class="sek-h">EK-Golf onsdage</h2>
-    <p class="sek-p">Meld dig til erhvervsklubbens uformelle onsdagsgolf. Åbent for alle niveauer — fra begynder til rutineret spiller. Socialt og afslappet.</p>
-    <button class="knap-p" onclick="navTil('om')">Læs om EK-Golf</button>
+  <!-- Kompakte genveje — 3 primære indgange -->
+  <div class="forside-genveje">
+    <button class="forside-genvej" onclick="navTil('kalender')">
+      <span class="forside-genvej-ikon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      </span>
+      <span>Årskalender</span>
+    </button>
+    <button class="forside-genvej" onclick="navTil('om')">
+      <span class="forside-genvej-ikon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      </span>
+      <span>Erhvervsnetværk</span>
+    </button>
+    <button class="forside-genvej" onclick="navTil('golfarr')">
+      <span class="forside-genvej-ikon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg>
+      </span>
+      <span>Company Day</span>
+    </button>
   </div>
 
   <!-- Push-notifikationer (kun hvis konfigureret) -->
@@ -605,7 +586,7 @@ function pgForside(params = {}) {
       </div>
       <div class="footer-credit-blok">
         <span>Udviklet af <a href="https://nordic-operations.dk" target="_blank" rel="noopener">Nordic Operations</a></span>
-        <span class="footer-ver">v8.9.1</span>
+        <span class="footer-ver">v8.9.2</span>
       </div>
     </div>
   </footer>
@@ -619,7 +600,7 @@ let _heroAktiv = 0;
 function heroInit() {
   if (_heroTimer) clearInterval(_heroTimer);
   _heroAktiv = 0;
-  _heroTimer = setInterval(() => heroSkift((_heroAktiv + 1) % 4), 5000);
+  _heroTimer = setInterval(() => heroSkift((_heroAktiv + 1) % 4), 4000);
 }
 
 function heroSkift(idx) {
@@ -702,8 +683,10 @@ function pgKalender(params = {}) {
           <button class="knap-sek sm" onclick="visAfmeldDialog('${esc(a.id)}','${esc(a.titel)}')">Afmeld</button>
         ` : fristen ? `
           <span class="frist-badge">Tilmelding lukket</span>
-        ` : `
+        ` : a.aaben === true ? `
           <button class="knap-p" onclick="navTil('tilmelding',{id:'${esc(a.id)}'})">Tilmeld dig</button>
+        ` : `
+          <span class="frist-badge">Information følger</span>
         `}
         <button class="knap-sek sm" onclick="tilfoejKalender('${esc(a.id)}')">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
@@ -793,9 +776,15 @@ function pgTilmelding(params = {}) {
 
   return `
 <div class="side-tilmelding">
-  <div class="side-hd">
-    <h1>Tilmelding</h1>
-    <p class="side-sub">Tilmeld dig et af sæsonens 10 arrangementer</p>
+  <!-- Indbydende tilmeldingshero -->
+  <div class="tilm-hero">
+    <div class="tilm-hero-inner">
+      <svg class="tilm-hero-ikon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      <div>
+        <h1 class="tilm-hero-titel">Tilmeld dig</h1>
+        <p class="tilm-hero-sub">Sikker plads til sæsonens 10 arrangementer — golf, netværk og oplevelser</p>
+      </div>
+    </div>
   </div>
 
   <div class="tilm-form-wrap">
@@ -1115,6 +1104,16 @@ function visInstallVejledning() {
 /* ================================================================
    GOLF (Firmaarrangementer)
    ================================================================ */
+/* SVG-ikoner til golf-arrangement typer */
+const GOLF_IKONER = {
+  'ga1': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg>`,
+  'ga2': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,
+  'ga3': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
+  'ga4': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`,
+  'ga5': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>`,
+  'ga6': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`
+};
+
 function pgGolf(params = {}) {
   return `
 <div class="side-golf">
@@ -1123,24 +1122,47 @@ function pgGolf(params = {}) {
     <p class="side-sub">Golf og firmaarrangementer i professionelle rammer</p>
   </div>
 
+  <!-- EK-Golf onsdag — fremhævet -->
   <div class="golf-intro-sek">
     <div class="golf-intro-kort">
-      <h2>EK-Golf onsdage</h2>
-      <p>Erhvervsklubbens uformelle onsdagsgolf er åben for alle niveauer. Socialt, afslappet og et fremragende sted at møde nye forretningsforbindelser.</p>
-      <a href="${CONFIG.golfboxUrl}" target="_blank" rel="noopener" class="knap-p">Book via GolfBox →</a>
+      <div class="golf-intro-ikon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      </div>
+      <div class="golf-intro-tekst">
+        <h2>EK-Golf onsdage</h2>
+        <p>Erhvervsklubbens uformelle onsdagsgolf er åben for alle niveauer — fra begynder til rutineret spiller. Socialt, afslappet og et fremragende sted at møde nye forretningsforbindelser på banen.</p>
+        <a href="${CONFIG.golfboxUrl}" target="_blank" rel="noopener" class="knap-p">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          Book via GolfBox
+        </a>
+      </div>
     </div>
   </div>
 
+  <!-- Firmaarrangementer — professionelle fotokort -->
   <div class="golf-arr-sek">
     <h2 class="sek-h">Firmaarrangementer</h2>
-    <p class="sek-p">Lyngbygaard Golf tilbyder skræddersyede firmaarrangementer. Priser og program aftales individuelt.</p>
-    <div class="golf-arr-grid">
+    <p class="sek-p">Skræddersyede arrangementer på Lyngbygaard. Program og pris aftales individuelt — kontakt os for et uforpligtende tilbud.</p>
+    <div class="golf-foto-grid">
       ${CONFIG.golfArrangementer.map(g => `
-      <div class="golf-arr-kort">
-        <h3>${esc(g.titel)}</h3>
-        <p>${esc(g.besk)}</p>
-        <ul class="golf-inkl">${g.inkl.map(i=>`<li>${esc(i)}</li>`).join('')}</ul>
-        <button class="knap-sek" onclick="navTil('kontakt')">Forespørg →</button>
+      <div class="golf-foto-kort">
+        <div class="golf-foto-ikon-wrap">
+          ${GOLF_IKONER[g.id] || GOLF_IKONER['ga6']}
+        </div>
+        <div class="golf-foto-indhold">
+          <h3 class="golf-foto-titel">${esc(g.titel)}</h3>
+          <p class="golf-foto-besk">${esc(g.besk)}</p>
+          <ul class="golf-foto-inkl">
+            ${g.inkl.map(i=>`<li>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              ${esc(i)}
+            </li>`).join('')}
+          </ul>
+          <button class="knap-p golf-foto-cta" onclick="navTil('kontakt')">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            Forespørg om ${esc(g.titel)}
+          </button>
+        </div>
       </div>`).join('')}
     </div>
   </div>
